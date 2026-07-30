@@ -253,7 +253,6 @@ export function Estudio() {
                         ratio={b.ratio}
                         radio="0"
                         copy={app.borrador.copy}
-                        mostrarLogo={false}
                         extra={
                           <>
                             <span

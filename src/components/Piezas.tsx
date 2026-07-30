@@ -52,15 +52,19 @@ export function MarcaOverlay({
       {url && mostrarLogo && (
         <div
           style={sx(
-            `position:absolute;top:${grande ? '14px' : '9px'};right:${grande ? '14px' : '9px'};background:#fff;border-radius:${grande ? '9px' : '7px'};padding:${grande ? '6px 10px' : '4px 7px'};display:flex;align-items:center;box-shadow:0 3px 12px rgba(0,0,0,.22)`,
+            `position:absolute;bottom:${grande ? '16px' : '9px'};right:${grande ? '16px' : '9px'};background:#fff;border-radius:${grande ? '9px' : '6px'};padding:${grande ? '6px 10px' : '4px 6px'};display:flex;align-items:center;box-shadow:0 3px 12px rgba(0,0,0,.25)`,
           )}
         >
-          <img src={ribera} alt="Ribera" style={sx(`height:${grande ? '20px' : '13px'};width:auto;display:block`)} />
+          <img src={ribera} alt="Ribera" style={sx(`height:${grande ? '20px' : '12px'};width:auto;display:block`)} />
         </div>
       )}
 
       {url && hayCopy && (
-        <div style={sx(`position:absolute;left:${grande ? '20px' : '13px'};right:${grande ? '20px' : '13px'};bottom:${grande ? '18px' : '12px'}`)}>
+        <div
+          style={sx(
+            `position:absolute;left:${grande ? '20px' : '13px'};right:${mostrarLogo ? (grande ? '96px' : '54px') : grande ? '20px' : '13px'};bottom:${grande ? '18px' : '12px'}`,
+          )}
+        >
           <div style={sx(`width:${grande ? '34px' : '24px'};height:${grande ? '4px' : '3px'};border-radius:2px;background:#D71029;margin-bottom:${grande ? '10px' : '7px'}`)} />
           <div
             style={sx(
