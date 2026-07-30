@@ -1,5 +1,7 @@
 import { sx } from '../lib/sx'
-import { ratioToCss } from '../lib/ui'
+import { MarcaOverlay } from '../components/Piezas'
+import * as api from '../lib/api'
+import { mensajeError } from '../lib/supabase'
 import { useApp } from '../store'
 
 /**
@@ -26,49 +28,34 @@ export function Detalle() {
   return (
     <section className="fade" style={sx('display:grid;grid-template-columns:1fr 296px;height:calc(100vh - 64px)')}>
       <div style={sx('display:grid;place-items:center;padding:30px;background:#eceef0;overflow-y:auto')}>
-        <div
-          style={sx(
-            `width:min(100%,420px);aspect-ratio:${ratioToCss(b.ratio)};border-radius:16px;box-shadow:0 18px 44px rgba(23,25,31,.14);position:relative;overflow:hidden;background:#f4f5f6`,
-          )}
-        >
-          {pieza.imagen_url ? (
-            <img
-              src={pieza.imagen_url}
-              alt={pieza.titulo}
-              style={sx('width:100%;height:100%;object-fit:cover;display:block')}
-            />
-          ) : (
-            <div
-              style={sx(
-                'width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;color:rgba(23,25,31,.4);text-align:center;padding:24px',
-              )}
-            >
-              <svg width="34" height="34" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.3">
-                <rect x="5" y="7" width="22" height="18" rx="2.5" />
-                <circle cx="12" cy="14" r="2" />
-                <path d="M5 21L12 16L18 20L22.5 17L27 20" strokeLinejoin="round" />
-              </svg>
-              <span style={sx('font-size:12px;line-height:1.5;max-width:240px')}>
-                Esta pieza todavía no tiene imagen. Genera desde el estudio para que n8n la produzca.
-              </span>
-            </div>
-          )}
-          <span
-            style={sx(
-              "position:absolute;bottom:13px;left:13px;background:rgba(23,25,31,.75);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:9.5px;padding:4px 8px;border-radius:6px",
-            )}
-          >
-            {b.ratio}
-          </span>
-          {esAnimacion && (
-            <span
-              style={sx(
-                'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:52px;height:52px;border-radius:50%;background:rgba(23,25,31,.7);color:#fff;display:grid;place-items:center;font-size:18px',
-              )}
-            >
-              ▶
-            </span>
-          )}
+        <div style={sx('width:min(100%,420px);border-radius:16px;box-shadow:0 18px 44px rgba(23,25,31,.14);overflow:hidden')}>
+          <MarcaOverlay
+            url={pieza.imagen_url}
+            ratio={b.ratio}
+            radio="0"
+            copy={b.copy}
+            grande
+            extra={
+              <>
+                <span
+                  style={sx(
+                    "position:absolute;bottom:13px;right:13px;background:rgba(23,25,31,.75);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:9.5px;padding:4px 8px;border-radius:6px",
+                  )}
+                >
+                  {b.ratio}
+                </span>
+                {esAnimacion && (
+                  <span
+                    style={sx(
+                      'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:52px;height:52px;border-radius:50%;background:rgba(23,25,31,.7);color:#fff;display:grid;place-items:center;font-size:18px',
+                    )}
+                  >
+                    ▶
+                  </span>
+                )}
+              </>
+            }
+          />
         </div>
       </div>
 
@@ -77,6 +64,32 @@ export function Detalle() {
         <div style={sx('font-size:11px;color:rgba(23,25,31,.5);margin-bottom:18px')}>
           {pieza.canal ?? '—'} · {app.lineaDe(pieza.linea_id)?.nombre ?? 'Sin línea'}
         </div>
+
+        <div
+          style={sx(
+            "font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.09em;color:rgba(23,25,31,.4);margin-bottom:9px",
+          )}
+        >
+          MENSAJE SOBRE LA PIEZA
+        </div>
+        <textarea
+          value={b.copy}
+          onChange={(e) => app.setBorrador({ copy: e.target.value })}
+          onBlur={async () => {
+            try {
+              await api.actualizarPieza(pieza.id, { brief: { ...(pieza.brief ?? {}), copy: b.copy } })
+              app.set((s) => ({
+                piezas: s.piezas.map((x) => (x.id === pieza.id ? { ...x, brief: { ...(x.brief ?? {}), copy: b.copy } } : x)),
+              }))
+            } catch (error) {
+              app.avisar(mensajeError(error), 'error')
+            }
+          }}
+          placeholder="Texto que aparece encima de la imagen, con el logo de Ribera. Se guarda al salir del campo."
+          style={sx(
+            "width:100%;min-height:60px;resize:vertical;border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:11px;font-family:'Mulish';font-size:12.5px;line-height:1.5;background:#fff;color:#17191f;margin-bottom:18px",
+          )}
+        />
 
         <div
           style={sx(

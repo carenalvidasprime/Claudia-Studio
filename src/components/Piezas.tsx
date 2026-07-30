@@ -1,5 +1,81 @@
 import { sx } from '../lib/sx'
 import { ratioToCss } from '../lib/ui'
+import ribera from '../assets/logo-ribera-cropped.png'
+
+/**
+ * Capa de marca sobre la imagen generada.
+ *
+ * La IA produce solo la fotografía de fondo (limpia, sin texto ni logos). Aquí,
+ * en el frontend y con los assets reales, se compone la identidad de Ribera
+ * ENCIMA: logo real, mensaje/copy en Mulish y un acento de color corporativo.
+ * Así el logo nunca es inventado y el texto es siempre legible y correcto.
+ */
+export function MarcaOverlay({
+  url,
+  ratio,
+  copy,
+  radio = '13px',
+  grande,
+  mostrarLogo = true,
+  extra,
+}: {
+  url: string | null | undefined
+  ratio: string | null | undefined
+  copy?: string | null
+  radio?: string
+  /** Vista ampliada (detalle): tipografía y logo mayores. */
+  grande?: boolean
+  mostrarLogo?: boolean
+  extra?: React.ReactNode
+}) {
+  const base = `aspect-ratio:${ratioToCss(ratio)};border-radius:${radio};position:relative;overflow:hidden;background:#eef0f1`
+  const hayCopy = !!copy && copy.trim().length > 0
+
+  return (
+    <div style={sx(base)}>
+      {url ? (
+        <img src={url} alt={copy ?? 'Creatividad'} loading="lazy" style={sx('width:100%;height:100%;object-fit:cover;display:block')} />
+      ) : (
+        <div style={sx('width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f4f5f6;color:rgba(23,25,31,.35);font-size:11px')}>
+          Sin imagen todavía
+        </div>
+      )}
+
+      {url && hayCopy && (
+        <div
+          style={sx(
+            'position:absolute;left:0;right:0;bottom:0;height:64%;background:linear-gradient(to top,rgba(14,14,16,.86) 6%,rgba(14,14,16,.42) 42%,rgba(14,14,16,0) 100%);pointer-events:none',
+          )}
+        />
+      )}
+
+      {url && mostrarLogo && (
+        <div
+          style={sx(
+            `position:absolute;top:${grande ? '14px' : '9px'};right:${grande ? '14px' : '9px'};background:#fff;border-radius:${grande ? '9px' : '7px'};padding:${grande ? '6px 10px' : '4px 7px'};display:flex;align-items:center;box-shadow:0 3px 12px rgba(0,0,0,.22)`,
+          )}
+        >
+          <img src={ribera} alt="Ribera" style={sx(`height:${grande ? '20px' : '13px'};width:auto;display:block`)} />
+        </div>
+      )}
+
+      {url && hayCopy && (
+        <div style={sx(`position:absolute;left:${grande ? '20px' : '13px'};right:${grande ? '20px' : '13px'};bottom:${grande ? '18px' : '12px'}`)}>
+          <div style={sx(`width:${grande ? '34px' : '24px'};height:${grande ? '4px' : '3px'};border-radius:2px;background:#D71029;margin-bottom:${grande ? '10px' : '7px'}`)} />
+          <div
+            style={sx(
+              `font-family:'Mulish';font-weight:800;font-size:${grande ? '23px' : '14px'};line-height:1.2;color:#fff;letter-spacing:-.01em;text-shadow:0 1px 12px rgba(0,0,0,.35)`,
+            )}
+          >
+            {copy}
+          </div>
+        </div>
+      )}
+
+      {extra}
+    </div>
+  )
+}
 
 /**
  * Representación visual de una pieza.

@@ -62,6 +62,8 @@ export const ESTADO_LABEL: Record<Estado, string> = {
  */
 export interface Brief {
   texto?: string
+  /** Mensaje/copy que se superpone sobre la imagen en la capa de marca. */
+  copy?: string
   objetivo?: 'Orgánico' | 'Promoción'
   ratio?: '1:1' | '4:5' | '9:16' | '16:9'
   formato?: 'Imagen' | 'Animación'

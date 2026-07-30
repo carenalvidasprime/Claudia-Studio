@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { sx } from '../lib/sx'
 import { colorDeCentro, objInline, outInline, pill, ratioToCss, seg } from '../lib/ui'
 import { CRITERIOS } from '../lib/marca'
-import { IconoAnimacion, VistaPieza } from '../components/Piezas'
+import { IconoAnimacion, MarcaOverlay } from '../components/Piezas'
 import * as api from '../lib/api'
 import { mensajeError } from '../lib/supabase'
 import { useApp } from '../store'
@@ -126,6 +126,16 @@ export function Estudio() {
           )}
         />
 
+        <div style={sx(rotulo, 'margin:20px 0 9px')}>MENSAJE SOBRE LA PIEZA</div>
+        <textarea
+          value={b.copy}
+          onChange={(e) => app.setBorrador({ copy: e.target.value })}
+          placeholder="Texto que aparecerá encima de la imagen (con el logo de Ribera). Déjalo vacío para una pieza solo imagen."
+          style={sx(
+            "width:100%;min-height:56px;resize:vertical;border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:11px;font-family:'Mulish';font-size:12.5px;line-height:1.5;background:#fff;color:#17191f",
+          )}
+        />
+
         <div style={sx('margin-top:15px;display:flex;align-items:center;gap:10px')}>
           <div style={sx('font-size:11.5px;font-weight:500;color:rgba(23,25,31,.62)')}>Variantes</div>
           <div style={sx('display:flex;gap:5px;margin-left:auto')}>
@@ -238,16 +248,17 @@ export function Estudio() {
                     )}
                   >
                     <div onClick={() => app.set({ piezaId: p.id, pantalla: 'detalle' })} style={sx('cursor:pointer')}>
-                      <VistaPieza
+                      <MarcaOverlay
                         url={p.imagen_url}
                         ratio={b.ratio}
                         radio="0"
-                        titulo={p.titulo}
+                        copy={app.borrador.copy}
+                        mostrarLogo={false}
                         extra={
                           <>
                             <span
                               style={sx(
-                                "position:absolute;bottom:9px;left:9px;background:rgba(23,25,31,.72);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:9px;padding:3px 6px;border-radius:5px",
+                                "position:absolute;top:8px;left:50%;transform:translateX(-50%);background:rgba(23,25,31,.72);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:9px;padding:3px 6px;border-radius:5px",
                               )}
                             >
                               V{i + 1}

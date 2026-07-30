@@ -51,6 +51,8 @@ export type Origen = 'scratch' | 'testimonio' | 'colaboracion' | 'hito' | 'situa
 export interface Borrador {
   titulo: string
   texto: string
+  /** Mensaje/copy que se pinta sobre la imagen en la capa de marca. */
+  copy: string
   objetivo: 'Orgánico' | 'Promoción'
   canal: string
   ratio: '1:1' | '4:5' | '9:16' | '16:9'
@@ -81,6 +83,7 @@ export interface Borrador {
 export const BORRADOR_INICIAL: Borrador = {
   titulo: '',
   texto: '',
+  copy: '',
   objetivo: 'Orgánico',
   canal: 'Instagram',
   ratio: '4:5',
@@ -460,6 +463,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           ...BORRADOR_INICIAL,
           titulo: pieza.titulo,
           texto: brief.texto ?? '',
+          copy: brief.copy ?? '',
           objetivo: brief.objetivo ?? 'Orgánico',
           canal: pieza.canal ?? 'Instagram',
           ratio: brief.ratio ?? '4:5',
@@ -664,6 +668,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const brief: Brief = {
       texto: b.texto,
+      copy: b.copy,
       objetivo: b.objetivo,
       ratio: b.ratio,
       formato: b.formato,
@@ -697,7 +702,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         canal: b.canal,
         consentimiento_ok: b.consentimiento,
         notas_compliance: notasCompliance(st.borrador, situacion),
-        prompt: b.prompt,
+        // La marca (logo, colores, copy) la compone la app POR ENCIMA de la
+        // imagen. Por eso a la IA se le pide una foto limpia sin texto ni logos:
+        // así no inventa rótulos y queda sitio para superponer la marca real.
+        prompt: [
+          b.prompt.trim(),
+          'Fotografia profesional limpia y fotorrealista. No incluyas ningun texto, palabra, letra, numero, logotipo, emblema, marca de agua ni cartel dentro de la imagen. Deja las esquinas despejadas para superponer la marca despues.',
+        ]
+          .filter(Boolean)
+          .join(' '),
         brief,
       },
       contexto: {
