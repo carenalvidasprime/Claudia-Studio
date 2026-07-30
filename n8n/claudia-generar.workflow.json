@@ -1,0 +1,156 @@
+{
+  "name": "Claudia Studio - Generar imagen",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "claudia-generar",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "14123a0c-54b6-4c10-852b-6ce544e53094",
+      "name": "Webhook",
+      "webhookId": "b213df66-d5d0-409b-baff-23c303162841"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Recibe la pieza completa desde la app (contrato en n8n/claudia-generar.md)\n// y construye el prompt final incorporando la marca de Ribera.\nconst body = ($input.first().json.body) || {};\nconst pieza = body.pieza || {};\nconst ctx = body.contexto || {};\nconst marca = ctx.marca || {};\nconst centro = ctx.centro || {};\nconst linea = ctx.linea || {};\nconst situacion = ctx.situacion || {};\nconst brief = pieza.brief || {};\nconst dir = brief.direccion || {};\n\nconst paleta = Array.isArray(marca.paleta)\n  ? marca.paleta.map(c => (c && c.nombre ? c.nombre + ' (' + c.hex + ')' : c)).filter(Boolean).join(', ')\n  : '';\nconst reglas = Array.isArray(marca.reglas) ? marca.reglas.map(r => '- ' + r).join('\\n') : '';\nconst ratio = brief.ratio || '1:1';\n\nconst promptFinal = [\n  pieza.prompt || 'Imagen corporativa del sector salud, sobria y profesional, sin texto.',\n  '',\n  'Identidad de marca: territorio \"' + (marca.territorio || 'Salud Responsable') + '\".',\n  paleta ? 'Paleta de color de marca: ' + paleta + '.' : '',\n  centro.nombre ? 'Centro: ' + centro.nombre + (centro.ciudad ? ' (' + centro.ciudad + ')' : '') + '.' : '',\n  linea.nombre ? 'Linea de comunicacion: ' + linea.nombre + '.' : '',\n  situacion.nombre ? 'Situacion: ' + situacion.nombre + '.' : '',\n  dir.estilo ? 'Estilo: ' + dir.estilo + '.' : '',\n  dir.iluminacion ? 'Iluminacion: ' + dir.iluminacion + '.' : '',\n  dir.encuadre ? 'Encuadre: ' + dir.encuadre + '.' : '',\n  'Relacion de aspecto ' + ratio + '.',\n  'IMPORTANTE: la imagen no debe incluir ningun texto, palabra ni logotipo.',\n  reglas ? 'Reglas de cumplimiento que respetar:\\n' + reglas : '',\n  pieza.notas_compliance ? 'Notas de compliance: ' + pieza.notas_compliance : '',\n].filter(Boolean).join('\\n');\n\nreturn [{\n  json: {\n    prompt: promptFinal,\n    promptOriginal: pieza.prompt || null,\n    titulo: pieza.titulo || 'Pieza generada',\n    centro_id: pieza.centro_id != null ? pieza.centro_id : null,\n    carpeta_id: pieza.carpeta_id != null ? pieza.carpeta_id : null,\n    situacion_id: pieza.situacion_id != null ? pieza.situacion_id : null,\n    linea_id: pieza.linea_id != null ? pieza.linea_id : null,\n    estado: pieza.estado || 'borrador',\n    fecha_publicacion: pieza.fecha_publicacion != null ? pieza.fecha_publicacion : null,\n    canal: pieza.canal != null ? pieza.canal : null,\n    consentimiento_ok: pieza.consentimiento_ok != null ? pieza.consentimiento_ok : false,\n    notas_compliance: pieza.notas_compliance != null ? pieza.notas_compliance : null,\n    brief: brief,\n    pieza_id: body.pieza_id != null ? body.pieza_id : null,\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0],
+      "id": "0b1c2d3e-1111-4a11-9b11-aaaaaaaaaaaa",
+      "name": "Preparar datos"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash-image",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash-image (Nano Banana)",
+          "cachedResultUrl": ""
+        },
+        "prompt": "={{ $json.prompt }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [440, 0],
+      "id": "5e567a74-73cc-4e79-a9aa-1f0db6db3ecc",
+      "name": "Generar imagen",
+      "credentials": {
+        "googlePalmApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://gegcgyznynrpmxqtjmrv.supabase.co/storage/v1/object/piezas/{{ $now.toMillis() }}.png",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [660, 0],
+      "id": "6fa64b4a-435a-4652-922d-8f2f1bdd27a7",
+      "name": "Subir imagen",
+      "credentials": {
+        "supabaseApi": {
+          "id": "FvgfZTyfsETtHa1o",
+          "name": "Supabase Claudia"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gegcgyznynrpmxqtjmrv.supabase.co/rest/v1/piezas",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Prefer", "value": "return=representation" },
+            { "name": "Accept", "value": "application/vnd.pgrst.object+json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ titulo: $('Preparar datos').item.json.titulo, centro_id: $('Preparar datos').item.json.centro_id, carpeta_id: $('Preparar datos').item.json.carpeta_id, situacion_id: $('Preparar datos').item.json.situacion_id, linea_id: $('Preparar datos').item.json.linea_id, estado: $('Preparar datos').item.json.estado, fecha_publicacion: $('Preparar datos').item.json.fecha_publicacion, canal: $('Preparar datos').item.json.canal, consentimiento_ok: $('Preparar datos').item.json.consentimiento_ok, notas_compliance: $('Preparar datos').item.json.notas_compliance, prompt: $('Preparar datos').item.json.promptOriginal, brief: $('Preparar datos').item.json.brief, imagen_url: 'https://gegcgyznynrpmxqtjmrv.supabase.co/storage/v1/object/public/' + $json.Key }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [880, 0],
+      "id": "a1313e81-69a0-4a84-a0f7-bb080ba72d20",
+      "name": "Crear fila",
+      "credentials": {
+        "supabaseApi": {
+          "id": "FvgfZTyfsETtHa1o",
+          "name": "Supabase Claudia"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"ok\": true, \"pieza_id\": $json.id, \"imagen_url\": $json.imagen_url } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Access-Control-Allow-Origin", "value": "*" }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1100, 0],
+      "id": "c3d4e5f6-2222-4b22-9c22-bbbbbbbbbbbb",
+      "name": "Responder"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Preparar datos", "type": "main", "index": 0 }]]
+    },
+    "Preparar datos": {
+      "main": [[{ "node": "Generar imagen", "type": "main", "index": 0 }]]
+    },
+    "Generar imagen": {
+      "main": [[{ "node": "Subir imagen", "type": "main", "index": 0 }]]
+    },
+    "Subir imagen": {
+      "main": [[{ "node": "Crear fila", "type": "main", "index": 0 }]]
+    },
+    "Crear fila": {
+      "main": [[{ "node": "Responder", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "be20fad46fec302075ccb7387442981cf4d56b0249a910c0a186b0aea0db8f2e"
+  },
+  "tags": []
+}
