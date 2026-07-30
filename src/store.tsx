@@ -713,18 +713,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
       },
     }
 
+    // Una llamada a n8n por variante: el workflow genera una imagen por llamada,
+    // así conseguimos las N variantes que pide el brief sin depender de que n8n
+    // itere por dentro. Se lanzan en paralelo y luego se relee Supabase.
+    const nVariantes = Math.min(Math.max(brief.variantes ?? 1, 1), 6)
+    const payloadUno: PayloadGenerar = {
+      ...payload,
+      pieza: { ...payload.pieza, brief: { ...payload.pieza.brief, variantes: 1 } },
+    }
+
     const desde = new Date().toISOString()
     setSt((p) => ({ ...p, generando: true, errorGeneracion: null, resultados: [], seleccion: {}, favoritas: {} }))
 
     try {
-      const respuesta = await generarPieza(payload)
-      if (!respuesta.ok && respuesta.error) throw new Error(respuesta.error)
+      const respuestas = await Promise.allSettled(
+        Array.from({ length: nVariantes }, () => generarPieza(payloadUno)),
+      )
+      const algunaOk = respuestas.some((r) => r.status === 'fulfilled' && r.value.ok !== false)
 
-      // Supabase es la fuente de verdad: n8n escribe la fila, la app la relee.
+      // Si todas fallan, propaga el primer error para mostrarlo en el estudio.
+      if (!algunaOk) {
+        const fallo = respuestas.find(
+          (r) => r.status === 'rejected' || (r.status === 'fulfilled' && r.value.ok === false),
+        )
+        const msg =
+          fallo?.status === 'rejected'
+            ? (fallo.reason as Error)?.message ?? 'No se pudo generar.'
+            : (fallo?.status === 'fulfilled' ? fallo.value.error : null) ?? 'No se pudo generar.'
+        throw new Error(msg)
+      }
+
+      // Supabase es la fuente de verdad: n8n escribe las filas, la app las relee.
       const piezas = await api.cargarPiezas()
       const nuevas = piezas
         .filter((p) => String(p.centro_id) === String(centro.id))
-        .filter((p) => (respuesta.pieza_id ? p.id === respuesta.pieza_id : (p.created_at ?? '') >= desde))
+        .filter((p) => (p.created_at ?? '') >= desde)
         .sort((a, b2) => (a.created_at ?? '').localeCompare(b2.created_at ?? ''))
 
       const resultados = nuevas.length
@@ -741,9 +764,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         piezaId: resultados[0] ?? p.piezaId,
         errorGeneracion: resultados.length
           ? null
-          : 'n8n respondió, pero no ha aparecido ninguna pieza nueva en Supabase. Revisa el workflow.',
+          : 'n8n respondió, pero no han aparecido piezas nuevas en Supabase. Revisa el workflow.',
       }))
-      if (resultados.length) avisar(`${resultados.length === 1 ? 'Pieza generada' : 'Piezas generadas'} ✓`)
+      if (resultados.length)
+        avisar(`${resultados.length === 1 ? 'Pieza generada' : `${resultados.length} variantes generadas`} ✓`)
     } catch (error) {
       setSt((p) => ({ ...p, generando: false, errorGeneracion: mensajeError(error) }))
     }
