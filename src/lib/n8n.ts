@@ -1,0 +1,137 @@
+import type { Brief, Centro, Hub, Id, Linea, Situacion } from './types'
+
+const URL_GENERAR = import.meta.env.VITE_N8N_GENERAR_URL as string | undefined
+const URL_CHAT = import.meta.env.VITE_N8N_CHAT_URL as string | undefined
+
+export const generarConfigurado = Boolean(URL_GENERAR)
+export const chatConfigurado = Boolean(URL_CHAT)
+
+/**
+ * Cuerpo que la app envía a n8n para producir una pieza.
+ *
+ * n8n genera la imagen, la sube al bucket `piezas` y escribe la fila en la tabla
+ * `piezas` con la service_role key —que nunca sale del workflow—. La app no
+ * inserta la fila: tras la respuesta recarga desde Supabase, que es la fuente de
+ * verdad. Si `pieza_id` viene informado, n8n actualiza esa fila en vez de crear
+ * una nueva (regenerar una pieza existente).
+ *
+ * El contrato completo está en `n8n/claudia-generar.md`.
+ */
+export interface PayloadGenerar {
+  pieza_id: string | null
+  pieza: {
+    titulo: string
+    centro_id: Id
+    carpeta_id: Id | null
+    situacion_id: Id | null
+    linea_id: Id | null
+    estado: string
+    fecha_publicacion: string | null
+    canal: string | null
+    consentimiento_ok: boolean
+    notas_compliance: string | null
+    prompt: string
+    brief: Brief
+  }
+  contexto: {
+    centro: Pick<Centro, 'id' | 'nombre' | 'ciudad' | 'tipo'> & { hub: Hub | null }
+    linea: Linea | null
+    situacion: Situacion | null
+    marca: {
+      territorio: string
+      tipografia: string
+      paleta: { hex: string; nombre: string }[]
+      reglas: string[]
+    }
+  }
+}
+
+export interface RespuestaGenerar {
+  ok: boolean
+  pieza_id?: string
+  imagen_url?: string
+  error?: string
+}
+
+const TIEMPO_MAXIMO_MS = 120_000
+
+async function postJson(url: string, body: unknown, timeoutMs: number): Promise<unknown> {
+  const ctrl = new AbortController()
+  const t = setTimeout(() => ctrl.abort(), timeoutMs)
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: ctrl.signal,
+    })
+    const texto = await res.text()
+    if (!res.ok) {
+      throw new Error(`n8n respondió ${res.status}. ${texto.slice(0, 200)}`)
+    }
+    if (!texto) return {}
+    try {
+      return JSON.parse(texto)
+    } catch {
+      // Un workflow sin nodo «Respond to Webhook» puede devolver texto plano.
+      return { ok: true, raw: texto }
+    }
+  } catch (err) {
+    const e = err as Error
+    if (e.name === 'AbortError') {
+      throw new Error('El workflow de n8n ha tardado demasiado en responder. Vuelve a intentarlo en un momento.')
+    }
+    // `fetch` lanza un TypeError genérico tanto si el host no responde como si
+    // el navegador bloquea la respuesta por CORS: lo segundo es lo más habitual
+    // la primera vez, así que conviene nombrarlo.
+    if (e instanceof TypeError || /failed to fetch|networkerror|load failed/i.test(e.message)) {
+      throw new Error(
+        `No se pudo contactar con n8n (${new URL(url).pathname}). Comprueba que el workflow está activo y que permite peticiones desde este dominio (CORS y preflight OPTIONS).`,
+      )
+    }
+    throw e
+  } finally {
+    clearTimeout(t)
+  }
+}
+
+export async function generarPieza(payload: PayloadGenerar): Promise<RespuestaGenerar> {
+  if (!URL_GENERAR) {
+    throw new Error('Falta configurar VITE_N8N_GENERAR_URL.')
+  }
+  const bruto = await postJson(URL_GENERAR, payload, TIEMPO_MAXIMO_MS)
+  // n8n devuelve a veces un array con un elemento por ítem procesado.
+  const dato = (Array.isArray(bruto) ? bruto[0] : bruto) as Record<string, unknown> | undefined
+  if (!dato) return { ok: true }
+  if (dato.error) return { ok: false, error: String(dato.error) }
+  return {
+    ok: dato.ok !== false,
+    pieza_id: typeof dato.pieza_id === 'string' ? dato.pieza_id : undefined,
+    imagen_url: typeof dato.imagen_url === 'string' ? dato.imagen_url : undefined,
+  }
+}
+
+export interface MensajeChat {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+/**
+ * Copiloto. La clave del modelo vive en n8n, nunca en el navegador.
+ * Contrato en `n8n/claudia-chat.md`.
+ */
+export async function preguntarACopiloto(
+  mensajes: MensajeChat[],
+  contexto: Record<string, unknown>,
+): Promise<string> {
+  if (!URL_CHAT) {
+    throw new Error('El copiloto aún no está disponible: falta configurar VITE_N8N_CHAT_URL.')
+  }
+  const bruto = await postJson(URL_CHAT, { mensajes, contexto }, 60_000)
+  const dato = (Array.isArray(bruto) ? bruto[0] : bruto) as Record<string, unknown> | undefined
+  const texto = dato?.respuesta ?? dato?.output ?? dato?.text
+  if (typeof texto !== 'string' || !texto.trim()) {
+    throw new Error('El copiloto no devolvió ninguna respuesta.')
+  }
+  return texto.trim()
+}

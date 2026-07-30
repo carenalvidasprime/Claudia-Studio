@@ -1,0 +1,46 @@
+/* Base portada literalmente del prototipo (bloque <helmet> de Claudia Ribera.dc.html). */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: 'Mulish', system-ui, sans-serif;
+  background: #f2f2f2;
+  color: #17191f;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -.005em;
+}
+a { color: #17191f; text-decoration: none; }
+a:hover { color: #4a4d55; }
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-thumb {
+  background: rgba(23, 25, 31, .14);
+  border-radius: 6px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+textarea:focus, button:focus, input:focus, select:focus { outline: none; }
+
+@keyframes fadeup { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes shimmer { 0% { background-position: -420px 0; } 100% { background-position: 420px 0; } }
+@keyframes pop { from { opacity: 0; transform: translateY(9px) scale(.98); } to { opacity: 1; transform: none; } }
+.fade { animation: fadeup .3s cubic-bezier(.2, .7, .3, 1) both; }
+
+/* El runtime de Claude Design resolvía `style-hover` en el propio elemento.
+   Aquí cada efecto de hover del prototipo pasa a una clase equivalente. */
+.hv-card:hover { box-shadow: 0 12px 28px rgba(23, 25, 31, .08); }
+.hv-menu-item:hover { background: #f4f4f4; }
+.hv-border:hover { border-color: rgba(23, 25, 31, .22); }
+.hv-border-soft:hover { border-color: rgba(23, 25, 31, .28); }
+.hv-border-red:hover { border-color: #D71029; }
+.hv-newfolder:hover { border-color: #D71029; color: #D71029; }
+.hv-crumb:hover { color: #17191f; }
+.hv-retouch:hover { background: #fff; border-color: rgba(23, 25, 31, .14); }
+.hv-situacion:hover {
+  border-color: var(--sit-color, #D71029);
+  box-shadow: 0 10px 24px -14px rgba(23, 25, 31, .28);
+  transform: translateY(-2px);
+}
+.hv-result:hover { transform: translateY(-3px); }
+
+/* Estados deshabilitados de las acciones aún no disponibles (retoque). */
+.is-pending { opacity: .55; cursor: not-allowed; }

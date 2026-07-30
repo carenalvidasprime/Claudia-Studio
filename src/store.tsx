@@ -1,0 +1,878 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
+import type { Session } from '@supabase/supabase-js'
+import { supabase, supabaseConfigurado, mensajeError } from './lib/supabase'
+import * as api from './lib/api'
+import { generarPieza, generarConfigurado, type PayloadGenerar } from './lib/n8n'
+import { presentacionDe, PALETA_POR_DEFECTO, REGLAS_POR_DEFECTO, TERRITORIO, TIPOGRAFIA } from './lib/marca'
+import type {
+  Brief,
+  Carpeta,
+  Centro,
+  Estado,
+  Hub,
+  Id,
+  Linea,
+  MarcaColor,
+  MarcaRegla,
+  Pieza,
+  Situacion,
+} from './lib/types'
+
+export type Pantalla =
+  | 'dashboard'
+  | 'calendario'
+  | 'marcaRibera'
+  | 'centro'
+  | 'gateway'
+  | 'situaciones'
+  | 'pasoTestConsent'
+  | 'pasoTestExposicion'
+  | 'pasoColabPersonas'
+  | 'pasoColabEntorno'
+  | 'pasoHitoValidacion'
+  | 'pasoHitoEntorno'
+  | 'brief'
+  | 'estudio'
+  | 'detalle'
+  | 'exportar'
+
+export type Origen = 'scratch' | 'testimonio' | 'colaboracion' | 'hito' | 'situacionDirecta' | 'centro' | null
+
+/** Encargo en curso: vive en memoria hasta que n8n crea la fila en `piezas`. */
+export interface Borrador {
+  titulo: string
+  texto: string
+  objetivo: 'Orgánico' | 'Promoción'
+  canal: string
+  ratio: '1:1' | '4:5' | '9:16' | '16:9'
+  formato: 'Imagen' | 'Animación'
+  variantes: number
+  estilo: string
+  iluminacion: string
+  encuadre: string
+  ritmo: string
+  textoEnPantalla: string
+  transicion: string
+  prompt: string
+  fechaPublicacion: string
+  material: { url: string; nombre: string } | null
+  lineaId: Id | null
+  situacionId: Id | null
+  situacionClave: string | null
+  consentimiento: boolean
+  exposicion: string
+  personas: string | null
+  menores: boolean
+  entorno: string | null
+  validadoPorProfesional: boolean
+  fondoLibre: boolean
+  sinPacientes: boolean
+}
+
+export const BORRADOR_INICIAL: Borrador = {
+  titulo: '',
+  texto: '',
+  objetivo: 'Orgánico',
+  canal: 'Instagram',
+  ratio: '4:5',
+  formato: 'Imagen',
+  variantes: 4,
+  estilo: 'Editorial',
+  iluminacion: 'Natural',
+  encuadre: 'Medio',
+  ritmo: 'Dinámico',
+  textoEnPantalla: 'Destacado',
+  transicion: 'Suave',
+  prompt: '',
+  fechaPublicacion: '',
+  material: null,
+  lineaId: null,
+  situacionId: null,
+  situacionClave: null,
+  consentimiento: false,
+  exposicion: 'Rostro visible',
+  personas: null,
+  menores: false,
+  entorno: null,
+  validadoPorProfesional: false,
+  fondoLibre: false,
+  sinPacientes: false,
+}
+
+export interface Modal {
+  tipo: 'renombrar' | 'eliminar' | 'color' | 'texto'
+  titulo: string
+  sub: string
+  valor?: string
+  hex?: string
+  nombre?: string
+  error?: string
+  confirmar: (valor: string, extra?: { hex: string; nombre: string }) => void | Promise<void>
+}
+
+export interface Aviso {
+  msg: string
+  deshacer?: () => void
+  tono?: 'normal' | 'error'
+}
+
+interface Estado_ {
+  sesion: Session | null
+  comprobandoSesion: boolean
+
+  hubs: Hub[]
+  centros: Centro[]
+  lineas: Linea[]
+  situaciones: Situacion[]
+  carpetas: Carpeta[]
+  piezas: Pieza[]
+  paleta: MarcaColor[]
+  reglas: MarcaRegla[]
+  marcaEditable: boolean
+
+  cargandoDatos: boolean
+  errorDatos: string | null
+
+  pantalla: Pantalla
+  hubFiltro: Id | null
+  centroId: Id | null
+  carpetaId: Id | null
+  piezaId: string | null
+  origen: Origen
+  centroTab: 'carpetas' | 'marca'
+  desplegadas: Record<string, boolean>
+
+  borrador: Borrador
+  generando: boolean
+  errorGeneracion: string | null
+  /** Piezas creadas por la última generación, en orden. */
+  resultados: string[]
+  seleccion: Record<string, boolean>
+  favoritas: Record<string, boolean>
+  filtroResultados: 'Todas' | 'Favoritas'
+
+  busquedaCentros: string
+  ordenCentros: 'Recientes' | 'A–Z'
+  busquedaCarpetas: string
+  ordenCarpetas: 'Recientes' | 'A–Z'
+  busquedaPiezas: string
+  filtroEstado: 'Todas' | Estado
+
+  calMes: number
+  calAnio: number
+  calHub: Id | null
+  calEstado: 'Todas' | Estado
+  calCentroScope: Id | null
+  calHubScope: Id | null
+
+  formato: string
+  resolucion: string
+  destino: string
+  entregada: { tipo: 'descarga' | 'centro'; etiqueta: string } | null
+
+  menu: string | null
+  modal: Modal | null
+  aviso: Aviso | null
+}
+
+const ESTADO_INICIAL: Estado_ = {
+  sesion: null,
+  comprobandoSesion: true,
+  hubs: [],
+  centros: [],
+  lineas: [],
+  situaciones: [],
+  carpetas: [],
+  piezas: [],
+  paleta: PALETA_POR_DEFECTO,
+  reglas: REGLAS_POR_DEFECTO,
+  marcaEditable: false,
+  cargandoDatos: false,
+  errorDatos: null,
+  pantalla: 'dashboard',
+  hubFiltro: null,
+  centroId: null,
+  carpetaId: null,
+  piezaId: null,
+  origen: null,
+  centroTab: 'carpetas',
+  desplegadas: {},
+  borrador: BORRADOR_INICIAL,
+  generando: false,
+  errorGeneracion: null,
+  resultados: [],
+  seleccion: {},
+  favoritas: {},
+  filtroResultados: 'Todas',
+  busquedaCentros: '',
+  ordenCentros: 'Recientes',
+  busquedaCarpetas: '',
+  ordenCarpetas: 'Recientes',
+  busquedaPiezas: '',
+  filtroEstado: 'Todas',
+  calMes: new Date().getMonth(),
+  calAnio: new Date().getFullYear(),
+  calHub: null,
+  calEstado: 'Todas',
+  calCentroScope: null,
+  calHubScope: null,
+  formato: 'JPG',
+  resolucion: '4K',
+  destino: 'Descargar',
+  entregada: null,
+  menu: null,
+  modal: null,
+  aviso: null,
+}
+
+type Parche = Partial<Estado_> | ((prev: Estado_) => Partial<Estado_>)
+
+interface Contexto extends Estado_ {
+  set: (parche: Parche) => void
+  setBorrador: (parche: Partial<Borrador>) => void
+
+  entrar: (email: string, password: string) => Promise<void>
+  salir: () => Promise<void>
+  recargar: () => Promise<void>
+
+  ir: (pantalla: Pantalla) => void
+  volver: () => void
+  abrirCentro: (id: Id) => void
+  abrirPieza: (id: string) => void
+  abrirCalendarioCentro: () => void
+  abrirCalendarioHub: () => void
+
+  nuevaCarpeta: () => Promise<void>
+  nuevaCreatividad: (carpetaId: Id) => void
+  elegirSituacion: (s: Situacion) => void
+  generar: () => Promise<void>
+  aprobarPieza: (id: string) => Promise<void>
+  ponerEstado: (id: string, estado: Estado) => Promise<void>
+  ponerFecha: (id: string, fecha: string) => Promise<void>
+  entregar: (tipo: 'descarga' | 'centro') => Promise<void>
+
+  avisar: (msg: string, tono?: 'normal' | 'error') => void
+  avisarConDeshacer: (msg: string, deshacer: () => void) => void
+  cerrarAviso: () => void
+  abrirModal: (m: Modal) => void
+  confirmarModal: () => void
+  cerrarModal: () => void
+  alternarMenu: (clave: string) => void
+
+  centroActual: Centro | null
+  carpetaActual: Carpeta | null
+  piezaActual: Pieza | null
+  situacionDe: (id: Id | null) => Situacion | null
+  lineaDe: (id: Id | null) => Linea | null
+  hubDeCentro: (centro: Centro | null) => Hub | null
+  piezasDeCarpeta: (carpetaId: Id) => Pieza[]
+  piezasDeCentro: (centroId: Id) => Pieza[]
+  generarDisponible: boolean
+}
+
+const Ctx = createContext<Contexto | null>(null)
+
+export function useApp(): Contexto {
+  const ctx = useContext(Ctx)
+  if (!ctx) throw new Error('useApp fuera de <AppProvider>')
+  return ctx
+}
+
+export function AppProvider({ children }: { children: ReactNode }) {
+  const [st, setSt] = useState<Estado_>(ESTADO_INICIAL)
+  const timerAviso = useRef<number | undefined>(undefined)
+  const accionModal = useRef<Modal['confirmar'] | null>(null)
+
+  const set = useCallback((parche: Parche) => {
+    setSt((prev) => ({ ...prev, ...(typeof parche === 'function' ? parche(prev) : parche) }))
+  }, [])
+
+  const setBorrador = useCallback((parche: Partial<Borrador>) => {
+    setSt((prev) => ({ ...prev, borrador: { ...prev.borrador, ...parche } }))
+  }, [])
+
+  const avisar = useCallback((msg: string, tono: 'normal' | 'error' = 'normal') => {
+    window.clearTimeout(timerAviso.current)
+    setSt((p) => ({ ...p, aviso: { msg, tono } }))
+    timerAviso.current = window.setTimeout(() => setSt((p) => ({ ...p, aviso: null })), tono === 'error' ? 5200 : 2800)
+  }, [])
+
+  const avisarConDeshacer = useCallback((msg: string, deshacer: () => void) => {
+    window.clearTimeout(timerAviso.current)
+    setSt((p) => ({ ...p, aviso: { msg, deshacer } }))
+    timerAviso.current = window.setTimeout(() => setSt((p) => ({ ...p, aviso: null })), 6000)
+  }, [])
+
+  const cerrarAviso = useCallback(() => {
+    window.clearTimeout(timerAviso.current)
+    setSt((p) => ({ ...p, aviso: null }))
+  }, [])
+
+  // --- Sesión ---------------------------------------------------------------
+  useEffect(() => {
+    if (!supabaseConfigurado) {
+      setSt((p) => ({
+        ...p,
+        comprobandoSesion: false,
+        errorDatos:
+          'Falta configurar VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY. Copia .env.example a .env y rellénalos.',
+      }))
+      return
+    }
+    let vivo = true
+    supabase.auth.getSession().then(({ data }) => {
+      if (!vivo) return
+      setSt((p) => ({ ...p, sesion: data.session, comprobandoSesion: false }))
+    })
+    const { data: sub } = supabase.auth.onAuthStateChange((_evento, sesion) => {
+      setSt((p) => ({ ...p, sesion, comprobandoSesion: false }))
+    })
+    return () => {
+      vivo = false
+      sub.subscription.unsubscribe()
+    }
+  }, [])
+
+  const recargar = useCallback(async () => {
+    setSt((p) => ({ ...p, cargandoDatos: true, errorDatos: null }))
+    try {
+      const [catalogos, piezas, marca] = await Promise.all([
+        api.cargarCatalogos(),
+        api.cargarPiezas(),
+        api.cargarMarca(),
+      ])
+      let carpetas: Carpeta[] = []
+      let errorCarpetas: string | null = null
+      try {
+        carpetas = await api.cargarCarpetas()
+      } catch {
+        errorCarpetas =
+          'Falta la tabla «carpetas». Ejecuta supabase/01_carpetas.sql para poder organizar las piezas en carpetas.'
+      }
+      setSt((p) => ({
+        ...p,
+        ...catalogos,
+        carpetas,
+        piezas,
+        paleta: marca?.paleta.length ? marca.paleta : PALETA_POR_DEFECTO,
+        reglas: marca?.reglas.length ? marca.reglas : REGLAS_POR_DEFECTO,
+        marcaEditable: marca !== null,
+        cargandoDatos: false,
+        errorDatos: errorCarpetas,
+      }))
+    } catch (error) {
+      setSt((p) => ({ ...p, cargandoDatos: false, errorDatos: mensajeError(error) }))
+    }
+  }, [])
+
+  useEffect(() => {
+    if (st.sesion) void recargar()
+  }, [st.sesion, recargar])
+
+  const entrar = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) throw new Error(mensajeError(error))
+  }, [])
+
+  const salir = useCallback(async () => {
+    await supabase.auth.signOut()
+    setSt((p) => ({ ...ESTADO_INICIAL, sesion: null, comprobandoSesion: false, paleta: p.paleta, reglas: p.reglas }))
+  }, [])
+
+  // --- Cierre de menús al hacer clic fuera ----------------------------------
+  useEffect(() => {
+    const cerrar = () => setSt((p) => (p.menu ? { ...p, menu: null } : p))
+    document.addEventListener('click', cerrar)
+    return () => document.removeEventListener('click', cerrar)
+  }, [])
+
+  // --- Selectores -----------------------------------------------------------
+  const centroActual = useMemo(
+    () => st.centros.find((c) => String(c.id) === String(st.centroId)) ?? null,
+    [st.centros, st.centroId],
+  )
+  const carpetaActual = useMemo(
+    () => st.carpetas.find((c) => String(c.id) === String(st.carpetaId)) ?? null,
+    [st.carpetas, st.carpetaId],
+  )
+  const piezaActual = useMemo(
+    () => st.piezas.find((p) => p.id === st.piezaId) ?? null,
+    [st.piezas, st.piezaId],
+  )
+
+  const situacionDe = useCallback(
+    (id: Id | null) => (id == null ? null : st.situaciones.find((s) => String(s.id) === String(id)) ?? null),
+    [st.situaciones],
+  )
+  const lineaDe = useCallback(
+    (id: Id | null) => (id == null ? null : st.lineas.find((l) => String(l.id) === String(id)) ?? null),
+    [st.lineas],
+  )
+  const hubDeCentro = useCallback(
+    (centro: Centro | null) =>
+      centro?.hub_id == null ? null : st.hubs.find((h) => String(h.id) === String(centro.hub_id)) ?? null,
+    [st.hubs],
+  )
+  const piezasDeCarpeta = useCallback(
+    (carpetaId: Id) => st.piezas.filter((p) => p.carpeta_id != null && String(p.carpeta_id) === String(carpetaId)),
+    [st.piezas],
+  )
+  const piezasDeCentro = useCallback(
+    (centroId: Id) => st.piezas.filter((p) => String(p.centro_id) === String(centroId)),
+    [st.piezas],
+  )
+
+  // --- Navegación -----------------------------------------------------------
+  const ir = useCallback((pantalla: Pantalla) => setSt((p) => ({ ...p, pantalla })), [])
+
+  const abrirCentro = useCallback((id: Id) => {
+    setSt((p) => ({ ...p, centroId: id, carpetaId: null, centroTab: 'carpetas', pantalla: 'centro' }))
+  }, [])
+
+  const abrirPieza = useCallback((id: string) => {
+    setSt((p) => {
+      const pieza = p.piezas.find((x) => x.id === id)
+      if (!pieza) return p
+      const brief = pieza.brief ?? {}
+      const sit = p.situaciones.find((s) => String(s.id) === String(pieza.situacion_id)) ?? null
+      return {
+        ...p,
+        centroId: pieza.centro_id,
+        carpetaId: pieza.carpeta_id,
+        piezaId: pieza.id,
+        origen: 'centro',
+        pantalla: 'estudio',
+        resultados: [pieza.id],
+        seleccion: {},
+        favoritas: {},
+        filtroResultados: 'Todas',
+        errorGeneracion: null,
+        borrador: {
+          ...BORRADOR_INICIAL,
+          titulo: pieza.titulo,
+          texto: brief.texto ?? '',
+          objetivo: brief.objetivo ?? 'Orgánico',
+          canal: pieza.canal ?? 'Instagram',
+          ratio: brief.ratio ?? '4:5',
+          formato: brief.formato ?? 'Imagen',
+          variantes: brief.variantes ?? 4,
+          estilo: brief.direccion?.estilo ?? 'Editorial',
+          iluminacion: brief.direccion?.iluminacion ?? 'Natural',
+          encuadre: brief.direccion?.encuadre ?? 'Medio',
+          ritmo: brief.direccion?.ritmo ?? 'Dinámico',
+          textoEnPantalla: brief.direccion?.texto ?? 'Destacado',
+          transicion: brief.direccion?.transicion ?? 'Suave',
+          prompt: pieza.prompt ?? '',
+          fechaPublicacion: pieza.fecha_publicacion ?? '',
+          material: brief.material ?? null,
+          lineaId: pieza.linea_id,
+          situacionId: pieza.situacion_id,
+          situacionClave: sit?.clave ?? null,
+          consentimiento: pieza.consentimiento_ok ?? false,
+          exposicion: brief.situacion?.exposicion ?? 'Rostro visible',
+          personas: brief.situacion?.personas ?? null,
+          menores: brief.situacion?.menores ?? false,
+          entorno: brief.situacion?.entorno ?? null,
+          validadoPorProfesional: brief.situacion?.validadoPorProfesional ?? false,
+          fondoLibre: brief.situacion?.fondoLibre ?? false,
+          sinPacientes: brief.situacion?.sinPacientes ?? false,
+        },
+      }
+    })
+  }, [])
+
+  const volver = useCallback(() => {
+    setSt((p) => {
+      const destino: Record<Pantalla, Pantalla> = {
+        dashboard: 'dashboard',
+        calendario: 'dashboard',
+        marcaRibera: 'dashboard',
+        centro: 'dashboard',
+        gateway: 'centro',
+        situaciones: 'gateway',
+        pasoTestConsent: 'situaciones',
+        pasoTestExposicion: 'pasoTestConsent',
+        pasoColabPersonas: 'situaciones',
+        pasoColabEntorno: 'pasoColabPersonas',
+        pasoHitoValidacion: 'situaciones',
+        pasoHitoEntorno: 'pasoHitoValidacion',
+        brief: 'gateway',
+        estudio: 'centro',
+        detalle: 'estudio',
+        exportar: 'estudio',
+      }
+      if (p.pantalla === 'estudio') {
+        const porOrigen: Record<string, Pantalla> = {
+          testimonio: 'pasoTestExposicion',
+          colaboracion: 'pasoColabEntorno',
+          hito: 'pasoHitoEntorno',
+          situacionDirecta: 'situaciones',
+          scratch: 'brief',
+          centro: 'centro',
+        }
+        return { ...p, pantalla: porOrigen[p.origen ?? 'centro'] ?? 'centro' }
+      }
+      return { ...p, pantalla: destino[p.pantalla] }
+    })
+  }, [])
+
+  const abrirCalendarioCentro = useCallback(() => {
+    setSt((p) => ({ ...p, calCentroScope: p.centroId, calHubScope: null, calHub: null, pantalla: 'calendario' }))
+  }, [])
+  const abrirCalendarioHub = useCallback(() => {
+    setSt((p) => ({ ...p, calCentroScope: null, calHubScope: p.hubFiltro, calHub: null, pantalla: 'calendario' }))
+  }, [])
+
+  // --- Modales --------------------------------------------------------------
+  const abrirModal = useCallback((m: Modal) => {
+    accionModal.current = m.confirmar
+    setSt((p) => ({ ...p, menu: null, modal: m }))
+  }, [])
+  const cerrarModal = useCallback(() => {
+    accionModal.current = null
+    setSt((p) => ({ ...p, modal: null }))
+  }, [])
+  const confirmarModal = useCallback(() => {
+    const m = st.modal
+    if (!m) return
+    const accion = accionModal.current
+    if (m.tipo === 'color') {
+      void accion?.('', { hex: m.hex ?? '', nombre: m.nombre ?? '' })
+      return
+    }
+    accionModal.current = null
+    setSt((p) => ({ ...p, modal: null }))
+    void accion?.(m.valor ?? '')
+  }, [st.modal])
+
+  const alternarMenu = useCallback((clave: string) => {
+    setSt((p) => ({ ...p, menu: p.menu === clave ? null : clave }))
+  }, [])
+
+  // --- Carpetas y piezas ----------------------------------------------------
+  const nombreMesActual = () => {
+    const m = new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+    return m.charAt(0).toUpperCase() + m.slice(1)
+  }
+
+  const nuevaCarpeta = useCallback(async () => {
+    const centroId = st.centroId
+    if (centroId == null) return
+    abrirModal({
+      tipo: 'renombrar',
+      titulo: 'Nueva carpeta',
+      sub: 'Ponle nombre: un mes («Septiembre 2026») o una campaña.',
+      valor: nombreMesActual(),
+      confirmar: async (valor) => {
+        try {
+          const carpeta = await api.crearCarpeta(centroId, valor.trim() || nombreMesActual())
+          setSt((p) => ({
+            ...p,
+            carpetas: [...p.carpetas, carpeta],
+            desplegadas: { ...p.desplegadas, [String(carpeta.id)]: true },
+          }))
+          avisar('Carpeta creada ✓')
+        } catch (error) {
+          avisar(mensajeError(error), 'error')
+        }
+      },
+    })
+  }, [st.centroId, abrirModal, avisar])
+
+  const nuevaCreatividad = useCallback(
+    (carpetaId: Id) => {
+      const centro = st.centros.find((c) => String(c.id) === String(st.centroId))
+      setSt((p) => ({
+        ...p,
+        carpetaId,
+        piezaId: null,
+        origen: null,
+        pantalla: 'gateway',
+        resultados: [],
+        seleccion: {},
+        favoritas: {},
+        errorGeneracion: null,
+        borrador: { ...BORRADOR_INICIAL, titulo: centro ? `Nueva creatividad · ${centro.nombre}` : 'Nueva creatividad' },
+      }))
+    },
+    [st.centros, st.centroId],
+  )
+
+  const elegirSituacion = useCallback((s: Situacion) => {
+    const pres = presentacionDe(s.clave)
+    const pantallaPorPasos: Record<string, Pantalla> = {
+      testimonio: 'pasoTestConsent',
+      colaboracion: 'pasoColabPersonas',
+      hito: 'pasoHitoValidacion',
+    }
+    // Una situación marcada en Supabase como `requiere_consentimiento` siempre
+    // pasa por la puerta de consentimiento, aunque no tenga pasos propios.
+    const pasos = pres.pasos ?? (s.requiere_consentimiento ? 'testimonio' : null)
+    setSt((p) => ({
+      ...p,
+      pantalla: pasos ? pantallaPorPasos[pasos] : 'estudio',
+      origen: pasos ?? 'situacionDirecta',
+      borrador: {
+        ...p.borrador,
+        situacionId: s.id,
+        situacionClave: s.clave,
+        texto: pres.briefPorDefecto,
+        prompt: pres.briefPorDefecto,
+        objetivo: pres.objetivo,
+        canal: pres.canal,
+        ratio: pres.ratio,
+        consentimiento: false,
+        exposicion: 'Rostro visible',
+        personas: null,
+        menores: false,
+        entorno: null,
+        validadoPorProfesional: false,
+        fondoLibre: false,
+        sinPacientes: false,
+      },
+    }))
+  }, [])
+
+  // --- Generación -----------------------------------------------------------
+  const generar = useCallback(async () => {
+    const centro = st.centros.find((c) => String(c.id) === String(st.centroId))
+    if (!centro) {
+      avisar('Selecciona un centro antes de generar.', 'error')
+      return
+    }
+    if (!generarConfigurado) {
+      setSt((p) => ({
+        ...p,
+        errorGeneracion:
+          'Falta configurar VITE_N8N_GENERAR_URL. Sin el webhook de n8n no se puede producir la imagen.',
+      }))
+      return
+    }
+    const b = st.borrador
+    const situacion = st.situaciones.find((s) => String(s.id) === String(b.situacionId)) ?? null
+    const linea = st.lineas.find((l) => String(l.id) === String(b.lineaId)) ?? null
+    const hub = centro.hub_id == null ? null : st.hubs.find((h) => String(h.id) === String(centro.hub_id)) ?? null
+
+    const brief: Brief = {
+      texto: b.texto,
+      objetivo: b.objetivo,
+      ratio: b.ratio,
+      formato: b.formato,
+      variantes: b.variantes,
+      direccion:
+        b.formato === 'Animación'
+          ? { estilo: b.estilo, ritmo: b.ritmo, texto: b.textoEnPantalla, transicion: b.transicion }
+          : { estilo: b.estilo, iluminacion: b.iluminacion, encuadre: b.encuadre },
+      material: b.material ?? undefined,
+      situacion: {
+        exposicion: b.exposicion,
+        personas: b.personas ?? undefined,
+        menores: b.menores,
+        entorno: b.entorno ?? undefined,
+        validadoPorProfesional: b.validadoPorProfesional,
+        fondoLibre: b.fondoLibre,
+        sinPacientes: b.sinPacientes,
+      },
+    }
+
+    const payload: PayloadGenerar = {
+      pieza_id: st.piezaId,
+      pieza: {
+        titulo: b.titulo.trim() || `${b.formato} · ${b.canal}`,
+        centro_id: centro.id,
+        carpeta_id: st.carpetaId,
+        situacion_id: b.situacionId,
+        linea_id: b.lineaId,
+        estado: 'borrador',
+        fecha_publicacion: b.fechaPublicacion || null,
+        canal: b.canal,
+        consentimiento_ok: b.consentimiento,
+        notas_compliance: notasCompliance(st.borrador, situacion),
+        prompt: b.prompt,
+        brief,
+      },
+      contexto: {
+        centro: { id: centro.id, nombre: centro.nombre, ciudad: centro.ciudad, tipo: centro.tipo, hub },
+        linea,
+        situacion,
+        marca: {
+          territorio: TERRITORIO,
+          tipografia: TIPOGRAFIA,
+          paleta: st.paleta.map((c) => ({ hex: c.hex, nombre: c.nombre })),
+          reglas: st.reglas.map((r) => r.texto),
+        },
+      },
+    }
+
+    const desde = new Date().toISOString()
+    setSt((p) => ({ ...p, generando: true, errorGeneracion: null, resultados: [], seleccion: {}, favoritas: {} }))
+
+    try {
+      const respuesta = await generarPieza(payload)
+      if (!respuesta.ok && respuesta.error) throw new Error(respuesta.error)
+
+      // Supabase es la fuente de verdad: n8n escribe la fila, la app la relee.
+      const piezas = await api.cargarPiezas()
+      const nuevas = piezas
+        .filter((p) => String(p.centro_id) === String(centro.id))
+        .filter((p) => (respuesta.pieza_id ? p.id === respuesta.pieza_id : (p.created_at ?? '') >= desde))
+        .sort((a, b2) => (a.created_at ?? '').localeCompare(b2.created_at ?? ''))
+
+      const resultados = nuevas.length
+        ? nuevas.map((p) => p.id)
+        : st.piezaId && piezas.some((p) => p.id === st.piezaId)
+          ? [st.piezaId]
+          : []
+
+      setSt((p) => ({
+        ...p,
+        piezas,
+        generando: false,
+        resultados,
+        piezaId: resultados[0] ?? p.piezaId,
+        errorGeneracion: resultados.length
+          ? null
+          : 'n8n respondió, pero no ha aparecido ninguna pieza nueva en Supabase. Revisa el workflow.',
+      }))
+      if (resultados.length) avisar(`${resultados.length === 1 ? 'Pieza generada' : 'Piezas generadas'} ✓`)
+    } catch (error) {
+      setSt((p) => ({ ...p, generando: false, errorGeneracion: mensajeError(error) }))
+    }
+  }, [st.centros, st.centroId, st.borrador, st.situaciones, st.lineas, st.hubs, st.paleta, st.reglas, st.carpetaId, st.piezaId, avisar])
+
+  const ponerEstado = useCallback(
+    async (id: string, estado: Estado) => {
+      const anterior = st.piezas.find((p) => p.id === id)?.estado
+      setSt((p) => ({ ...p, piezas: p.piezas.map((x) => (x.id === id ? { ...x, estado } : x)), menu: null }))
+      try {
+        await api.cambiarEstado(id, estado)
+      } catch (error) {
+        setSt((p) => ({
+          ...p,
+          piezas: p.piezas.map((x) => (x.id === id && anterior ? { ...x, estado: anterior } : x)),
+        }))
+        avisar(mensajeError(error), 'error')
+      }
+    },
+    [st.piezas, avisar],
+  )
+
+  const aprobarPieza = useCallback(
+    async (id: string) => {
+      await ponerEstado(id, 'aprobado')
+      setSt((p) => ({ ...p, seleccion: { ...p.seleccion, [id]: true }, pantalla: 'exportar' }))
+    },
+    [ponerEstado],
+  )
+
+  const ponerFecha = useCallback(
+    async (id: string, fecha: string) => {
+      const valor = fecha || null
+      setSt((p) => ({ ...p, piezas: p.piezas.map((x) => (x.id === id ? { ...x, fecha_publicacion: valor } : x)) }))
+      try {
+        await api.actualizarPieza(id, { fecha_publicacion: valor })
+      } catch (error) {
+        avisar(mensajeError(error), 'error')
+        void recargar()
+      }
+    },
+    [avisar, recargar],
+  )
+
+  const entregar = useCallback(
+    async (tipo: 'descarga' | 'centro') => {
+      const ids = Object.keys(st.seleccion).filter((k) => st.seleccion[k])
+      if (!ids.length) {
+        avisar('No hay creatividades en la entrega.', 'error')
+        return
+      }
+      try {
+        await Promise.all(ids.map((id) => api.cambiarEstado(id, 'publicado')))
+        setSt((p) => ({
+          ...p,
+          piezas: p.piezas.map((x) => (ids.includes(x.id) ? { ...x, estado: 'publicado' as Estado } : x)),
+          entregada: { tipo, etiqueta: tipo === 'descarga' ? 'Descargada' : 'Enviada al centro' },
+        }))
+      } catch (error) {
+        avisar(mensajeError(error), 'error')
+      }
+    },
+    [st.seleccion, avisar],
+  )
+
+  const valor: Contexto = {
+    ...st,
+    set,
+    setBorrador,
+    entrar,
+    salir,
+    recargar,
+    ir,
+    volver,
+    abrirCentro,
+    abrirPieza,
+    abrirCalendarioCentro,
+    abrirCalendarioHub,
+    nuevaCarpeta,
+    nuevaCreatividad,
+    elegirSituacion,
+    generar,
+    aprobarPieza,
+    ponerEstado,
+    ponerFecha,
+    entregar,
+    avisar,
+    avisarConDeshacer,
+    cerrarAviso,
+    abrirModal,
+    confirmarModal,
+    cerrarModal,
+    alternarMenu,
+    centroActual,
+    carpetaActual,
+    piezaActual,
+    situacionDe,
+    lineaDe,
+    hubDeCentro,
+    piezasDeCarpeta,
+    piezasDeCentro,
+    generarDisponible: generarConfigurado,
+  }
+
+  return <Ctx.Provider value={valor}>{children}</Ctx.Provider>
+}
+
+/** Resumen de cumplimiento que se guarda en `piezas.notas_compliance`. */
+export function notasCompliance(b: Borrador, situacion: Situacion | null): string {
+  const partes: string[] = []
+  if (situacion) partes.push(`Situación: ${situacion.nombre}.`)
+  if (situacion?.requiere_consentimiento || b.situacionClave === 'testimonio') {
+    partes.push(b.consentimiento ? 'Consentimiento firmado confirmado.' : 'Consentimiento PENDIENTE.')
+    partes.push(`Nivel de exposición: ${b.exposicion}.`)
+  }
+  if (b.situacionClave === 'colaboracion') {
+    if (b.personas) partes.push(`Personas en imagen: ${b.personas}.`)
+    if (b.menores) partes.push('Aparecen menores: requiere permiso familiar por escrito.')
+    if (b.entorno) partes.push(`Entorno: ${b.entorno}.`)
+  }
+  if (b.situacionClave === 'hito') {
+    partes.push(
+      b.validadoPorProfesional
+        ? 'Afirmaciones clínicas validadas por un profesional del centro.'
+        : 'Afirmaciones clínicas SIN validar.',
+    )
+    if (b.fondoLibre) partes.push('Fondo libre de pantallas con datos clínicos.')
+    if (b.sinPacientes) partes.push('Sin pacientes identificables en el plano.')
+  }
+  partes.push('Marca Ribera aplicada · sin promesas de curación · sin superlativos no verificables · tono Salud Responsable.')
+  return partes.join(' ')
+}
