@@ -1,12 +1,12 @@
 import { useRef, useState } from 'react'
 import { sx } from '../lib/sx'
-import { colorDeCentro, objInline, outInline, pill, ratioToCss, seg } from '../lib/ui'
+import { colorDeCentro, objInline, pill, ratioToCss, seg } from '../lib/ui'
 import { CRITERIOS } from '../lib/marca'
 import { IconoAnimacion, MarcaOverlay } from '../components/Piezas'
 import * as api from '../lib/api'
 import { mensajeError } from '../lib/supabase'
 import { useApp } from '../store'
-import type { Pieza } from '../lib/types'
+import { FORMATOS, type Pieza } from '../lib/types'
 
 const rotulo =
   "font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.09em;color:rgba(23,25,31,.4);margin-bottom:9px"
@@ -64,23 +64,32 @@ export function Estudio() {
           </div>
         </div>
 
-        <div style={sx(rotulo)}>ENCARGO</div>
-        <div style={sx('background:#f4f4f4;border-radius:10px;padding:11px 12px;margin-bottom:14px')}>
-          <div style={sx('display:flex;align-items:center;gap:6px;flex-wrap:wrap')}>
-            <span style={sx(outInline(b.formato))}>{b.formato}</span>
-            <span style={sx(objInline(b.objetivo))}>{b.objetivo}</span>
-            <span
-              style={sx(
-                "margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:9px;background:#fff;padding:2px 7px;border-radius:5px;color:rgba(23,25,31,.55)",
-              )}
-            >
-              {b.ratio}
-            </span>
-          </div>
-          <div style={sx('font-size:10.5px;color:rgba(23,25,31,.55);margin-top:8px')}>
-            {b.canal}
-            {linea ? ` · ${linea.nombre}` : ''}
-          </div>
+        <div style={sx(rotulo)}>RED SOCIAL Y FORMATO</div>
+        <div style={sx('display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px')}>
+          {FORMATOS.map((f) => {
+            const activo = b.redFormato === f.id
+            return (
+              <button
+                key={f.id}
+                onClick={() => app.setBorrador({ redFormato: f.id, ratio: f.ratio, canal: f.red })}
+                style={sx(
+                  "display:flex;flex-direction:column;align-items:flex-start;gap:1px;border-radius:9px;padding:7px 9px;cursor:pointer;font-family:'Mulish'",
+                  activo
+                    ? 'background:#D71029;border:1px solid #D71029;color:#fff'
+                    : 'background:#f4f4f4;border:1px solid rgba(23,25,31,.1);color:#17191f',
+                )}
+              >
+                <span style={sx('font-weight:700;font-size:11px')}>{f.red}</span>
+                <span style={sx(`font-size:9px;${activo ? 'color:rgba(255,255,255,.85)' : 'color:rgba(23,25,31,.5)'}`)}>
+                  {f.nombre} · {f.ratio}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+        <div style={sx('display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:14px')}>
+          <span style={sx(objInline(b.objetivo))}>{b.objetivo}</span>
+          {linea && <span style={sx('font-size:10.5px;color:rgba(23,25,31,.55)')}>· {linea.nombre}</span>}
         </div>
 
         <ResumenSituacion />
