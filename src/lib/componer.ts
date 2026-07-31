@@ -78,8 +78,9 @@ export async function componerPiezaPNG(opciones: {
   copy?: string | null
   ratio?: string | null
   mostrarLogo?: boolean
+  plantilla?: 'editorial' | 'franja'
 }): Promise<Blob> {
-  const { url, copy, ratio, mostrarLogo = true } = opciones
+  const { url, copy, ratio, mostrarLogo = true, plantilla = 'editorial' } = opciones
   const [W, H] = RESOLUCION[ratio ?? '1:1'] ?? RESOLUCION['1:1']
 
   const canvas = document.createElement('canvas')
@@ -97,6 +98,15 @@ export async function componerPiezaPNG(opciones: {
 
   const pad = Math.round(W * 0.055)
   const hayCopy = !!copy && copy.trim().length > 0
+  const fs = Math.round(W * 0.052)
+  const lh = Math.round(fs * 1.2)
+  try {
+    await (document as unknown as { fonts?: { load: (f: string) => Promise<unknown> } }).fonts?.load(`800 ${fs}px Mulish`)
+  } catch {
+    /* si la fuente no carga, se usa la de sistema */
+  }
+  ctx.font = `800 ${fs}px Mulish, system-ui, sans-serif`
+  ctx.textBaseline = 'alphabetic'
 
   // Medidas del logo (para reservar su hueco y pintarlo luego).
   let logo: HTMLImageElement | null = null
@@ -114,55 +124,63 @@ export async function componerPiezaPNG(opciones: {
     chipH = logoH + margenChip * 2
   }
 
-  if (hayCopy) {
-    // Degradado inferior para que el texto blanco se lea sobre cualquier foto.
-    const grad = ctx.createLinearGradient(0, H, 0, H * 0.36)
-    grad.addColorStop(0, 'rgba(14,14,16,0.86)')
-    grad.addColorStop(1, 'rgba(14,14,16,0)')
-    ctx.fillStyle = grad
-    ctx.fillRect(0, Math.round(H * 0.36), W, H - Math.round(H * 0.36))
-
-    const fs = Math.round(W * 0.052)
-    try {
-      await (document as unknown as { fonts?: { load: (f: string) => Promise<unknown> } }).fonts?.load(`800 ${fs}px Mulish`)
-    } catch {
-      /* si la fuente no carga, se usa la de sistema */
-    }
-    ctx.font = `800 ${fs}px Mulish, system-ui, sans-serif`
-    ctx.textBaseline = 'alphabetic'
-
-    const maxAncho = W - pad * 2 - (mostrarLogo ? chipW + pad * 0.5 : 0)
-    const lineas = envolver(ctx, copy!.trim(), maxAncho)
-    const lh = Math.round(fs * 1.2)
-    const baseY = H - pad
-    const alturaBloque = (lineas.length - 1) * lh
-
-    // Acento rojo de marca sobre el texto.
-    const accentH = Math.max(3, Math.round(W * 0.008))
+  if (plantilla === 'franja') {
+    // Banda de color corporativo con el copy (izquierda) y el logo (derecha).
+    const maxAncho = W - pad * 2 - (mostrarLogo ? chipW + pad : 0)
+    const lineas = hayCopy ? envolver(ctx, copy!.trim(), maxAncho) : []
+    const alturaTexto = lineas.length * lh
+    const bandaH = Math.max(alturaTexto, chipH) + pad * 2
+    const bandaY = H - bandaH
     ctx.fillStyle = '#D71029'
-    ctx.fillRect(pad, baseY - alturaBloque - fs - Math.round(W * 0.03), Math.round(W * 0.08), accentH)
+    ctx.fillRect(0, bandaY, W, bandaH)
+    if (lineas.length) {
+      ctx.fillStyle = '#ffffff'
+      const bloqueTop = bandaY + (bandaH - alturaTexto) / 2
+      lineas.forEach((linea, i) => ctx.fillText(linea, pad, bloqueTop + i * lh + fs * 0.82))
+    }
+    if (logo) {
+      const x = W - pad - chipW
+      const y = bandaY + (bandaH - chipH) / 2
+      ctx.fillStyle = '#ffffff'
+      rectRedondeado(ctx, x, y, chipW, chipH, Math.round(chipH * 0.28))
+      ctx.fill()
+      ctx.drawImage(logo, x + margenChip, y + margenChip, logoW, logoH)
+    }
+  } else {
+    // EDITORIAL: degradado + acento + copy + logo en esquina.
+    if (hayCopy) {
+      const grad = ctx.createLinearGradient(0, H, 0, H * 0.36)
+      grad.addColorStop(0, 'rgba(14,14,16,0.86)')
+      grad.addColorStop(1, 'rgba(14,14,16,0)')
+      ctx.fillStyle = grad
+      ctx.fillRect(0, Math.round(H * 0.36), W, H - Math.round(H * 0.36))
 
-    // Copy.
-    ctx.fillStyle = '#ffffff'
-    ctx.shadowColor = 'rgba(0,0,0,0.35)'
-    ctx.shadowBlur = Math.round(W * 0.018)
-    ctx.shadowOffsetY = 2
-    lineas.forEach((linea, i) => {
-      ctx.fillText(linea, pad, baseY - (lineas.length - 1 - i) * lh)
-    })
-    ctx.shadowColor = 'transparent'
-    ctx.shadowBlur = 0
-    ctx.shadowOffsetY = 0
-  }
+      const maxAncho = W - pad * 2 - (mostrarLogo ? chipW + pad * 0.5 : 0)
+      const lineas = envolver(ctx, copy!.trim(), maxAncho)
+      const baseY = H - pad
+      const alturaBloque = (lineas.length - 1) * lh
 
-  // Logo real de Ribera sobre un chip blanco, abajo a la derecha.
-  if (logo) {
-    const x = W - pad - chipW
-    const y = H - pad - chipH
-    ctx.fillStyle = '#ffffff'
-    rectRedondeado(ctx, x, y, chipW, chipH, Math.round(chipH * 0.28))
-    ctx.fill()
-    ctx.drawImage(logo, x + margenChip, y + margenChip, logoW, logoH)
+      const accentH = Math.max(3, Math.round(W * 0.008))
+      ctx.fillStyle = '#D71029'
+      ctx.fillRect(pad, baseY - alturaBloque - fs - Math.round(W * 0.03), Math.round(W * 0.08), accentH)
+
+      ctx.fillStyle = '#ffffff'
+      ctx.shadowColor = 'rgba(0,0,0,0.35)'
+      ctx.shadowBlur = Math.round(W * 0.018)
+      ctx.shadowOffsetY = 2
+      lineas.forEach((linea, i) => ctx.fillText(linea, pad, baseY - (lineas.length - 1 - i) * lh))
+      ctx.shadowColor = 'transparent'
+      ctx.shadowBlur = 0
+      ctx.shadowOffsetY = 0
+    }
+    if (logo) {
+      const x = W - pad - chipW
+      const y = H - pad - chipH
+      ctx.fillStyle = '#ffffff'
+      rectRedondeado(ctx, x, y, chipW, chipH, Math.round(chipH * 0.28))
+      ctx.fill()
+      ctx.drawImage(logo, x + margenChip, y + margenChip, logoW, logoH)
+    }
   }
 
   return await new Promise<Blob>((resolve, reject) =>
@@ -196,8 +214,9 @@ export async function componerPiezaSVG(opciones: {
   copy?: string | null
   ratio?: string | null
   mostrarLogo?: boolean
+  plantilla?: 'editorial' | 'franja'
 }): Promise<string> {
-  const { url, copy, ratio, mostrarLogo = true } = opciones
+  const { url, copy, ratio, mostrarLogo = true, plantilla = 'editorial' } = opciones
   const [W, H] = RESOLUCION[ratio ?? '1:1'] ?? RESOLUCION['1:1']
   const pad = Math.round(W * 0.055)
   const fondoData = await comoDataURL(url)
@@ -225,38 +244,47 @@ export async function componerPiezaSVG(opciones: {
     chipH = logoH + margenChip * 2
   }
 
+  const chip = (x: number, y: number) =>
+    `<g><rect x="${x}" y="${y}" width="${chipW}" height="${chipH}" rx="${Math.round(chipH * 0.28)}" fill="#ffffff"/>` +
+    `<image x="${x + margenChip}" y="${y + margenChip}" width="${logoW}" height="${logoH}" href="${logoData}"/></g>`
+
   const capas: string[] = []
   capas.push(
     `<image x="0" y="0" width="${W}" height="${H}" preserveAspectRatio="xMidYMid slice" href="${fondoData}"/>`,
   )
 
-  if (hayCopy) {
-    capas.push(
-      `<rect x="0" y="0" width="${W}" height="${H}" fill="url(#scrim)"/>`,
-    )
-    const maxAncho = W - pad * 2 - (mostrarLogo ? chipW + pad * 0.5 : 0)
-    const lineas = envolver(medidor, copy!.trim(), maxAncho)
-    const baseY = H - pad
-    const primeraY = baseY - (lineas.length - 1) * lh
-    const accentY = primeraY - fs - Math.round(W * 0.03)
-    capas.push(
-      `<rect x="${pad}" y="${accentY}" width="${Math.round(W * 0.08)}" height="${Math.max(3, Math.round(W * 0.008))}" fill="#D71029"/>`,
-    )
-    const tspans = lineas
-      .map((l, i) => `<tspan x="${pad}" ${i === 0 ? `y="${primeraY}"` : `dy="${lh}"`}>${escaparXML(l)}</tspan>`)
-      .join('')
-    capas.push(
-      `<text font-family="Mulish, sans-serif" font-weight="800" font-size="${fs}" fill="#ffffff">${tspans}</text>`,
-    )
-  }
-
-  if (mostrarLogo) {
-    const x = W - pad - chipW
-    const y = H - pad - chipH
-    capas.push(
-      `<g><rect x="${x}" y="${y}" width="${chipW}" height="${chipH}" rx="${Math.round(chipH * 0.28)}" fill="#ffffff"/>` +
-        `<image x="${x + margenChip}" y="${y + margenChip}" width="${logoW}" height="${logoH}" href="${logoData}"/></g>`,
-    )
+  if (plantilla === 'franja') {
+    const maxAncho = W - pad * 2 - (mostrarLogo ? chipW + pad : 0)
+    const lineas = hayCopy ? envolver(medidor, copy!.trim(), maxAncho) : []
+    const alturaTexto = lineas.length * lh
+    const bandaH = Math.max(alturaTexto, chipH) + pad * 2
+    const bandaY = H - bandaH
+    capas.push(`<rect x="0" y="${bandaY}" width="${W}" height="${bandaH}" fill="#D71029"/>`)
+    if (lineas.length) {
+      const primeraY = Math.round(bandaY + (bandaH - alturaTexto) / 2 + fs * 0.82)
+      const tspans = lineas
+        .map((l, i) => `<tspan x="${pad}" ${i === 0 ? `y="${primeraY}"` : `dy="${lh}"`}>${escaparXML(l)}</tspan>`)
+        .join('')
+      capas.push(`<text font-family="Mulish, sans-serif" font-weight="800" font-size="${fs}" fill="#ffffff">${tspans}</text>`)
+    }
+    if (mostrarLogo) capas.push(chip(W - pad - chipW, Math.round(bandaY + (bandaH - chipH) / 2)))
+  } else {
+    if (hayCopy) {
+      capas.push(`<rect x="0" y="0" width="${W}" height="${H}" fill="url(#scrim)"/>`)
+      const maxAncho = W - pad * 2 - (mostrarLogo ? chipW + pad * 0.5 : 0)
+      const lineas = envolver(medidor, copy!.trim(), maxAncho)
+      const baseY = H - pad
+      const primeraY = baseY - (lineas.length - 1) * lh
+      const accentY = primeraY - fs - Math.round(W * 0.03)
+      capas.push(
+        `<rect x="${pad}" y="${accentY}" width="${Math.round(W * 0.08)}" height="${Math.max(3, Math.round(W * 0.008))}" fill="#D71029"/>`,
+      )
+      const tspans = lineas
+        .map((l, i) => `<tspan x="${pad}" ${i === 0 ? `y="${primeraY}"` : `dy="${lh}"`}>${escaparXML(l)}</tspan>`)
+        .join('')
+      capas.push(`<text font-family="Mulish, sans-serif" font-weight="800" font-size="${fs}" fill="#ffffff">${tspans}</text>`)
+    }
+    if (mostrarLogo) capas.push(chip(W - pad - chipW, H - pad - chipH))
   }
 
   return (
@@ -284,8 +312,12 @@ function slug(texto: string): string {
 /** Compone la pieza y lanza la descarga del PNG en el navegador. */
 export async function descargarPieza(pieza: Pieza, copy?: string | null): Promise<void> {
   if (!pieza.imagen_url) throw new Error('Esta pieza todavía no tiene imagen.')
-  const ratio = pieza.brief?.ratio ?? '1:1'
-  const blob = await componerPiezaPNG({ url: pieza.imagen_url, copy: copy ?? pieza.brief?.copy, ratio })
+  const blob = await componerPiezaPNG({
+    url: pieza.imagen_url,
+    copy: copy ?? pieza.brief?.copy,
+    ratio: pieza.brief?.ratio ?? '1:1',
+    plantilla: pieza.brief?.plantilla ?? 'editorial',
+  })
   const enlace = document.createElement('a')
   enlace.href = URL.createObjectURL(blob)
   enlace.download = `${slug(pieza.titulo)}.png`
@@ -302,6 +334,7 @@ export async function descargarPiezaSVG(pieza: Pieza, copy?: string | null): Pro
     url: pieza.imagen_url,
     copy: copy ?? pieza.brief?.copy,
     ratio: pieza.brief?.ratio ?? '1:1',
+    plantilla: pieza.brief?.plantilla ?? 'editorial',
   })
   const blob = new Blob([svg], { type: 'image/svg+xml' })
   const enlace = document.createElement('a')

@@ -53,6 +53,8 @@ export interface Borrador {
   texto: string
   /** Mensaje/copy que se pinta sobre la imagen en la capa de marca. */
   copy: string
+  /** Plantilla de marca con la que se compone la pieza. */
+  plantilla: 'editorial' | 'franja'
   objetivo: 'Orgánico' | 'Promoción'
   canal: string
   ratio: '1:1' | '4:5' | '9:16' | '16:9'
@@ -84,6 +86,7 @@ export const BORRADOR_INICIAL: Borrador = {
   titulo: '',
   texto: '',
   copy: '',
+  plantilla: 'editorial',
   objetivo: 'Orgánico',
   canal: 'Instagram',
   ratio: '4:5',
@@ -464,6 +467,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           titulo: pieza.titulo,
           texto: brief.texto ?? '',
           copy: brief.copy ?? '',
+          plantilla: brief.plantilla ?? 'editorial',
           objetivo: brief.objetivo ?? 'Orgánico',
           canal: pieza.canal ?? 'Instagram',
           ratio: brief.ratio ?? '4:5',
@@ -669,6 +673,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const brief: Brief = {
       texto: b.texto,
       copy: b.copy,
+      plantilla: b.plantilla,
       objetivo: b.objetivo,
       ratio: b.ratio,
       formato: b.formato,

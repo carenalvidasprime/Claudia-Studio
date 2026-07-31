@@ -136,6 +136,20 @@ export function Estudio() {
           )}
         />
 
+        <div style={sx(rotulo, 'margin:16px 0 9px')}>PLANTILLA DE MARCA</div>
+        <div style={sx('display:flex;gap:5px')}>
+          {(
+            [
+              ['editorial', 'Editorial'],
+              ['franja', 'Franja'],
+            ] as const
+          ).map(([val, label]) => (
+            <button key={val} onClick={() => app.setBorrador({ plantilla: val })} style={sx(seg(b.plantilla === val), 'flex:1')}>
+              {label}
+            </button>
+          ))}
+        </div>
+
         <div style={sx('margin-top:15px;display:flex;align-items:center;gap:10px')}>
           <div style={sx('font-size:11.5px;font-weight:500;color:rgba(23,25,31,.62)')}>Variantes</div>
           <div style={sx('display:flex;gap:5px;margin-left:auto')}>
@@ -253,6 +267,7 @@ export function Estudio() {
                         ratio={b.ratio}
                         radio="0"
                         copy={app.borrador.copy}
+                        plantilla={app.borrador.plantilla}
                         extra={
                           <>
                             <span

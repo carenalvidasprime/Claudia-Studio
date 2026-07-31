@@ -82,7 +82,13 @@ export function Exportar() {
           <div style={sx('display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:11px')}>
             {seleccionadas.map((p) => (
               <div key={p.id} style={sx('position:relative')}>
-                <MarcaOverlay url={p.imagen_url} ratio={p.brief?.ratio ?? b.ratio} radio="12px" copy={p.brief?.copy} />
+                <MarcaOverlay
+                  url={p.imagen_url}
+                  ratio={p.brief?.ratio ?? b.ratio}
+                  radio="12px"
+                  copy={p.brief?.copy}
+                  plantilla={p.brief?.plantilla ?? 'editorial'}
+                />
                 <span
                   style={sx(
                     'position:absolute;top:8px;right:8px;width:19px;height:19px;border-radius:50%;background:oklch(0.62 0.13 155);color:#fff;display:grid;place-items:center;font-size:11px',

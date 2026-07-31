@@ -57,6 +57,7 @@ export function Detalle() {
             ratio={b.ratio}
             radio="0"
             copy={b.copy}
+            plantilla={b.plantilla}
             grande
             extra={
               <>

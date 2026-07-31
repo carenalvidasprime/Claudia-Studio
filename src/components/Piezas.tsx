@@ -17,6 +17,7 @@ export function MarcaOverlay({
   radio = '13px',
   grande,
   mostrarLogo = true,
+  plantilla = 'editorial',
   extra,
 }: {
   url: string | null | undefined
@@ -26,6 +27,7 @@ export function MarcaOverlay({
   /** Vista ampliada (detalle): tipografía y logo mayores. */
   grande?: boolean
   mostrarLogo?: boolean
+  plantilla?: 'editorial' | 'franja'
   extra?: React.ReactNode
 }) {
   const base = `aspect-ratio:${ratioToCss(ratio)};border-radius:${radio};position:relative;overflow:hidden;background:#eef0f1`
@@ -41,39 +43,70 @@ export function MarcaOverlay({
         </div>
       )}
 
-      {url && hayCopy && (
+      {/* Plantilla FRANJA: banda de color corporativo con el copy y el logo. */}
+      {url && plantilla === 'franja' && (hayCopy || mostrarLogo) && (
         <div
           style={sx(
-            'position:absolute;left:0;right:0;bottom:0;height:64%;background:linear-gradient(to top,rgba(14,14,16,.86) 6%,rgba(14,14,16,.42) 42%,rgba(14,14,16,0) 100%);pointer-events:none',
-          )}
-        />
-      )}
-
-      {url && mostrarLogo && (
-        <div
-          style={sx(
-            `position:absolute;bottom:${grande ? '16px' : '9px'};right:${grande ? '16px' : '9px'};background:#fff;border-radius:${grande ? '9px' : '6px'};padding:${grande ? '6px 10px' : '4px 6px'};display:flex;align-items:center;box-shadow:0 3px 12px rgba(0,0,0,.25)`,
+            `position:absolute;left:0;right:0;bottom:0;background:#D71029;display:flex;align-items:center;gap:${grande ? '14px' : '8px'};padding:${grande ? '16px 18px' : '9px 10px'}`,
           )}
         >
-          <img src={ribera} alt="Ribera" style={sx(`height:${grande ? '20px' : '12px'};width:auto;display:block`)} />
+          {hayCopy && (
+            <div
+              style={sx(
+                `flex:1;min-width:0;font-family:'Mulish';font-weight:800;font-size:${grande ? '22px' : '12.5px'};line-height:1.18;color:#fff;letter-spacing:-.01em`,
+              )}
+            >
+              {copy}
+            </div>
+          )}
+          {mostrarLogo && (
+            <div
+              style={sx(
+                `flex:none;background:#fff;border-radius:${grande ? '8px' : '5px'};padding:${grande ? '6px 9px' : '3px 5px'};display:flex;align-items:center`,
+              )}
+            >
+              <img src={ribera} alt="Ribera" style={sx(`height:${grande ? '20px' : '11px'};width:auto;display:block`)} />
+            </div>
+          )}
         </div>
       )}
 
-      {url && hayCopy && (
-        <div
-          style={sx(
-            `position:absolute;left:${grande ? '20px' : '13px'};right:${mostrarLogo ? (grande ? '96px' : '54px') : grande ? '20px' : '13px'};bottom:${grande ? '18px' : '12px'}`,
+      {/* Plantilla EDITORIAL: degradado, acento y logo en esquina. */}
+      {url && plantilla !== 'franja' && (
+        <>
+          {hayCopy && (
+            <div
+              style={sx(
+                'position:absolute;left:0;right:0;bottom:0;height:64%;background:linear-gradient(to top,rgba(14,14,16,.86) 6%,rgba(14,14,16,.42) 42%,rgba(14,14,16,0) 100%);pointer-events:none',
+              )}
+            />
           )}
-        >
-          <div style={sx(`width:${grande ? '34px' : '24px'};height:${grande ? '4px' : '3px'};border-radius:2px;background:#D71029;margin-bottom:${grande ? '10px' : '7px'}`)} />
-          <div
-            style={sx(
-              `font-family:'Mulish';font-weight:800;font-size:${grande ? '23px' : '14px'};line-height:1.2;color:#fff;letter-spacing:-.01em;text-shadow:0 1px 12px rgba(0,0,0,.35)`,
-            )}
-          >
-            {copy}
-          </div>
-        </div>
+          {mostrarLogo && (
+            <div
+              style={sx(
+                `position:absolute;bottom:${grande ? '16px' : '9px'};right:${grande ? '16px' : '9px'};background:#fff;border-radius:${grande ? '9px' : '6px'};padding:${grande ? '6px 10px' : '4px 6px'};display:flex;align-items:center;box-shadow:0 3px 12px rgba(0,0,0,.25)`,
+              )}
+            >
+              <img src={ribera} alt="Ribera" style={sx(`height:${grande ? '20px' : '12px'};width:auto;display:block`)} />
+            </div>
+          )}
+          {hayCopy && (
+            <div
+              style={sx(
+                `position:absolute;left:${grande ? '20px' : '13px'};right:${mostrarLogo ? (grande ? '96px' : '54px') : grande ? '20px' : '13px'};bottom:${grande ? '18px' : '12px'}`,
+              )}
+            >
+              <div style={sx(`width:${grande ? '34px' : '24px'};height:${grande ? '4px' : '3px'};border-radius:2px;background:#D71029;margin-bottom:${grande ? '10px' : '7px'}`)} />
+              <div
+                style={sx(
+                  `font-family:'Mulish';font-weight:800;font-size:${grande ? '23px' : '14px'};line-height:1.2;color:#fff;letter-spacing:-.01em;text-shadow:0 1px 12px rgba(0,0,0,.35)`,
+                )}
+              >
+                {copy}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {extra}
