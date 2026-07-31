@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { sx } from '../lib/sx'
 import { MarcaOverlay } from '../components/Piezas'
-import { descargarPieza } from '../lib/componer'
+import { descargarPieza, descargarPiezaSVG } from '../lib/componer'
 import * as api from '../lib/api'
 import { mensajeError } from '../lib/supabase'
 import { useApp } from '../store'
@@ -28,11 +28,12 @@ export function Detalle() {
 
   const esAnimacion = b.formato === 'Animación'
 
-  const descargar = async () => {
+  const descargar = async (formato: 'png' | 'svg') => {
     setDescargando(true)
     try {
-      await descargarPieza(pieza, b.copy)
-      app.avisar('Pieza descargada ✓')
+      if (formato === 'png') await descargarPieza(pieza, b.copy)
+      else await descargarPiezaSVG(pieza, b.copy)
+      app.avisar(formato === 'png' ? 'PNG descargado ✓' : 'SVG editable descargado ✓')
     } catch (error) {
       app.avisar(mensajeError(error), 'error')
     } finally {
@@ -146,16 +147,30 @@ export function Detalle() {
         <div
           style={sx('margin-top:18px;border-top:1px solid rgba(23,25,31,.08);padding-top:16px;display:flex;flex-direction:column;gap:8px')}
         >
-          <button
-            onClick={() => void descargar()}
-            disabled={descargando || !pieza.imagen_url}
-            style={sx(
-              "width:100%;background:#17191f;color:#fff;border:none;border-radius:10px;padding:12px;font-family:'Mulish';font-weight:600;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px",
-              (descargando || !pieza.imagen_url) && 'opacity:.6;cursor:not-allowed',
-            )}
-          >
-            {descargando ? 'Componiendo PNG…' : '↓ Descargar pieza (PNG)'}
-          </button>
+          <div style={sx('display:flex;gap:8px')}>
+            <button
+              onClick={() => void descargar('png')}
+              disabled={descargando || !pieza.imagen_url}
+              title="Pieza final lista para publicar"
+              style={sx(
+                "flex:1;background:#17191f;color:#fff;border:none;border-radius:10px;padding:12px 10px;font-family:'Mulish';font-weight:600;font-size:12.5px;cursor:pointer",
+                (descargando || !pieza.imagen_url) && 'opacity:.6;cursor:not-allowed',
+              )}
+            >
+              {descargando ? 'Componiendo…' : '↓ PNG (final)'}
+            </button>
+            <button
+              onClick={() => void descargar('svg')}
+              disabled={descargando || !pieza.imagen_url}
+              title="Editable: capas sueltas para retocar en Figma, Illustrator o Inkscape"
+              style={sx(
+                "flex:1;background:#fff;color:#17191f;border:1px solid rgba(23,25,31,.18);border-radius:10px;padding:12px 10px;font-family:'Mulish';font-weight:600;font-size:12.5px;cursor:pointer",
+                (descargando || !pieza.imagen_url) && 'opacity:.6;cursor:not-allowed',
+              )}
+            >
+              ↓ SVG (editable)
+            </button>
+          </div>
           <button
             onClick={() => void app.aprobarPieza(pieza.id)}
             style={sx(

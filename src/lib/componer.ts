@@ -170,6 +170,105 @@ export async function componerPiezaPNG(opciones: {
   )
 }
 
+async function comoDataURL(url: string): Promise<string> {
+  const resp = await fetch(url, { mode: 'cors' })
+  if (!resp.ok) throw new Error('No se pudo descargar la imagen de fondo.')
+  const blob = await resp.blob()
+  return await new Promise((resolve, reject) => {
+    const fr = new FileReader()
+    fr.onload = () => resolve(fr.result as string)
+    fr.onerror = () => reject(new Error('No se pudo leer la imagen.'))
+    fr.readAsDataURL(blob)
+  })
+}
+
+function escaparXML(t: string): string {
+  return t.replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[c]!)
+}
+
+/**
+ * Versión EDITABLE de la pieza: un SVG con la foto, el logo y el copy como
+ * capas independientes. El texto sigue siendo texto (reescribible) y todo se
+ * puede mover en Figma, Illustrator o Inkscape. Complementa al PNG cerrado.
+ */
+export async function componerPiezaSVG(opciones: {
+  url: string
+  copy?: string | null
+  ratio?: string | null
+  mostrarLogo?: boolean
+}): Promise<string> {
+  const { url, copy, ratio, mostrarLogo = true } = opciones
+  const [W, H] = RESOLUCION[ratio ?? '1:1'] ?? RESOLUCION['1:1']
+  const pad = Math.round(W * 0.055)
+  const fondoData = await comoDataURL(url)
+  const logoData = mostrarLogo ? await comoDataURL(ribera) : ''
+  const hayCopy = !!copy && copy.trim().length > 0
+
+  // Medir para envolver el copy con la misma tipografía y tamaño que el PNG.
+  const fs = Math.round(W * 0.052)
+  const lh = Math.round(fs * 1.2)
+  const medidor = document.createElement('canvas').getContext('2d')!
+  medidor.font = `800 ${fs}px Mulish, sans-serif`
+
+  // Dimensiones del logo (para reservar hueco).
+  let chipW = 0
+  let chipH = 0
+  let logoH = 0
+  let logoW = 0
+  let margenChip = 0
+  if (mostrarLogo) {
+    const img = await cargarImagen(ribera)
+    logoH = Math.round(W * 0.05)
+    logoW = Math.round(logoH * (img.width / img.height))
+    margenChip = Math.round(logoH * 0.5)
+    chipW = logoW + margenChip * 2
+    chipH = logoH + margenChip * 2
+  }
+
+  const capas: string[] = []
+  capas.push(
+    `<image x="0" y="0" width="${W}" height="${H}" preserveAspectRatio="xMidYMid slice" href="${fondoData}"/>`,
+  )
+
+  if (hayCopy) {
+    capas.push(
+      `<rect x="0" y="0" width="${W}" height="${H}" fill="url(#scrim)"/>`,
+    )
+    const maxAncho = W - pad * 2 - (mostrarLogo ? chipW + pad * 0.5 : 0)
+    const lineas = envolver(medidor, copy!.trim(), maxAncho)
+    const baseY = H - pad
+    const primeraY = baseY - (lineas.length - 1) * lh
+    const accentY = primeraY - fs - Math.round(W * 0.03)
+    capas.push(
+      `<rect x="${pad}" y="${accentY}" width="${Math.round(W * 0.08)}" height="${Math.max(3, Math.round(W * 0.008))}" fill="#D71029"/>`,
+    )
+    const tspans = lineas
+      .map((l, i) => `<tspan x="${pad}" ${i === 0 ? `y="${primeraY}"` : `dy="${lh}"`}>${escaparXML(l)}</tspan>`)
+      .join('')
+    capas.push(
+      `<text font-family="Mulish, sans-serif" font-weight="800" font-size="${fs}" fill="#ffffff">${tspans}</text>`,
+    )
+  }
+
+  if (mostrarLogo) {
+    const x = W - pad - chipW
+    const y = H - pad - chipH
+    capas.push(
+      `<g><rect x="${x}" y="${y}" width="${chipW}" height="${chipH}" rx="${Math.round(chipH * 0.28)}" fill="#ffffff"/>` +
+        `<image x="${x + margenChip}" y="${y + margenChip}" width="${logoW}" height="${logoH}" href="${logoData}"/></g>`,
+    )
+  }
+
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">` +
+    `<defs><linearGradient id="scrim" x1="0" y1="0" x2="0" y2="1">` +
+    `<stop offset="0.36" stop-color="#0e0e10" stop-opacity="0"/>` +
+    `<stop offset="1" stop-color="#0e0e10" stop-opacity="0.86"/></linearGradient></defs>` +
+    capas.join('') +
+    `</svg>`
+  )
+}
+
 function slug(texto: string): string {
   return (
     texto
@@ -190,6 +289,24 @@ export async function descargarPieza(pieza: Pieza, copy?: string | null): Promis
   const enlace = document.createElement('a')
   enlace.href = URL.createObjectURL(blob)
   enlace.download = `${slug(pieza.titulo)}.png`
+  document.body.appendChild(enlace)
+  enlace.click()
+  enlace.remove()
+  setTimeout(() => URL.revokeObjectURL(enlace.href), 1000)
+}
+
+/** Compone la pieza editable y lanza la descarga del SVG en el navegador. */
+export async function descargarPiezaSVG(pieza: Pieza, copy?: string | null): Promise<void> {
+  if (!pieza.imagen_url) throw new Error('Esta pieza todavía no tiene imagen.')
+  const svg = await componerPiezaSVG({
+    url: pieza.imagen_url,
+    copy: copy ?? pieza.brief?.copy,
+    ratio: pieza.brief?.ratio ?? '1:1',
+  })
+  const blob = new Blob([svg], { type: 'image/svg+xml' })
+  const enlace = document.createElement('a')
+  enlace.href = URL.createObjectURL(blob)
+  enlace.download = `${slug(pieza.titulo)}-editable.svg`
   document.body.appendChild(enlace)
   enlace.click()
   enlace.remove()
