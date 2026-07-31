@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { sx } from '../lib/sx'
 import { MarcaOverlay } from '../components/Piezas'
+import { descargarPieza } from '../lib/componer'
 import * as api from '../lib/api'
 import { mensajeError } from '../lib/supabase'
 import { useApp } from '../store'
@@ -21,9 +23,22 @@ export function Detalle() {
   const app = useApp()
   const pieza = app.piezaActual
   const b = app.borrador
+  const [descargando, setDescargando] = useState(false)
   if (!pieza) return null
 
   const esAnimacion = b.formato === 'Animación'
+
+  const descargar = async () => {
+    setDescargando(true)
+    try {
+      await descargarPieza(pieza, b.copy)
+      app.avisar('Pieza descargada ✓')
+    } catch (error) {
+      app.avisar(mensajeError(error), 'error')
+    } finally {
+      setDescargando(false)
+    }
+  }
 
   return (
     <section className="fade" style={sx('display:grid;grid-template-columns:1fr 296px;height:calc(100vh - 64px)')}>
@@ -131,6 +146,16 @@ export function Detalle() {
         <div
           style={sx('margin-top:18px;border-top:1px solid rgba(23,25,31,.08);padding-top:16px;display:flex;flex-direction:column;gap:8px')}
         >
+          <button
+            onClick={() => void descargar()}
+            disabled={descargando || !pieza.imagen_url}
+            style={sx(
+              "width:100%;background:#17191f;color:#fff;border:none;border-radius:10px;padding:12px;font-family:'Mulish';font-weight:600;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px",
+              (descargando || !pieza.imagen_url) && 'opacity:.6;cursor:not-allowed',
+            )}
+          >
+            {descargando ? 'Componiendo PNG…' : '↓ Descargar pieza (PNG)'}
+          </button>
           <button
             onClick={() => void app.aprobarPieza(pieza.id)}
             style={sx(
