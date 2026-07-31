@@ -1,6 +1,6 @@
 import { sx } from '../lib/sx'
-import { colorDeCentro, outCard, pill, seg } from '../lib/ui'
-import { CANALES, RATIOS } from '../lib/types'
+import { colorDeCentro, outCard, pill } from '../lib/ui'
+import { FORMATOS } from '../lib/types'
 import { useApp } from '../store'
 
 const OUTPUTS = [
@@ -56,33 +56,38 @@ export function Brief() {
         )}
 
         <div style={sx('display:grid;grid-template-columns:1fr 1fr;gap:18px 24px;margin-top:20px')}>
+          <div style={sx('grid-column:span 2')}>
+            <div style={sx(rotulo)}>RED SOCIAL Y FORMATO</div>
+            <div style={sx('display:flex;flex-wrap:wrap;gap:8px')}>
+              {FORMATOS.map((f) => {
+                const activo = b.redFormato === f.id
+                return (
+                  <button
+                    key={f.id}
+                    onClick={() => app.setBorrador({ redFormato: f.id, ratio: f.ratio, canal: f.red })}
+                    style={sx(
+                      "display:flex;flex-direction:column;align-items:flex-start;gap:2px;border-radius:11px;padding:10px 13px;cursor:pointer;font-family:'Mulish';min-width:118px",
+                      activo
+                        ? 'background:#D71029;border:1px solid #D71029;color:#fff'
+                        : 'background:#fafbfb;border:1px solid rgba(23,25,31,.12);color:#17191f',
+                    )}
+                  >
+                    <span style={sx('font-weight:700;font-size:12.5px')}>{f.red}</span>
+                    <span style={sx(`font-size:10.5px;${activo ? 'color:rgba(255,255,255,.85)' : 'color:rgba(23,25,31,.5)'}`)}>
+                      {f.nombre} · {f.ratio}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
           <div>
             <div style={sx(rotulo)}>OBJETIVO</div>
             <div style={sx('display:flex;gap:5px')}>
               {(['Orgánico', 'Promoción'] as const).map((o) => (
                 <button key={o} onClick={() => app.setBorrador({ objetivo: o })} style={sx(pill(b.objetivo === o))}>
                   {o}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <div style={sx(rotulo)}>PROPORCIÓN</div>
-            <div style={sx('display:flex;gap:5px;flex-wrap:wrap')}>
-              {RATIOS.map((r) => (
-                <button key={r} onClick={() => app.setBorrador({ ratio: r })} style={sx(seg(b.ratio === r))}>
-                  {r}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={sx('grid-column:span 2')}>
-            <div style={sx(rotulo)}>CANAL</div>
-            <div style={sx('display:flex;flex-wrap:wrap;gap:5px')}>
-              {CANALES.map((c) => (
-                <button key={c} onClick={() => app.setBorrador({ canal: c })} style={sx(pill(b.canal === c))}>
-                  {c}
                 </button>
               ))}
             </div>

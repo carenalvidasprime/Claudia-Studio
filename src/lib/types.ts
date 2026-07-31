@@ -66,6 +66,8 @@ export interface Brief {
   copy?: string
   /** Plantilla de marca con la que se compone la pieza. */
   plantilla?: 'editorial' | 'franja'
+  /** Formato de red social elegido (id de FORMATOS). Fija proporción y canal. */
+  redFormato?: string
   objetivo?: 'Orgánico' | 'Promoción'
   ratio?: '1:1' | '4:5' | '9:16' | '16:9'
   formato?: 'Imagen' | 'Animación'
@@ -126,3 +128,24 @@ export interface MarcaRegla {
 
 export const CANALES = ['Instagram', 'Facebook', 'TikTok', 'Snapchat', 'LinkedIn'] as const
 export const RATIOS = ['1:1', '4:5', '9:16', '16:9'] as const
+
+/**
+ * Formatos de publicación por red social. Son el eje del encargo: elegir uno
+ * fija la proporción correcta de la imagen y el canal de destino, para que el
+ * equipo no tenga que pensar en tamaños ni proporciones.
+ */
+export interface FormatoRed {
+  id: string
+  red: string
+  nombre: string
+  ratio: '1:1' | '4:5' | '9:16' | '16:9'
+  descripcion: string
+}
+
+export const FORMATOS: FormatoRed[] = [
+  { id: 'ig-post', red: 'Instagram', nombre: 'Publicación', ratio: '4:5', descripcion: 'Feed vertical' },
+  { id: 'ig-story', red: 'Instagram', nombre: 'Story / Reel', ratio: '9:16', descripcion: 'Pantalla completa' },
+  { id: 'fb-post', red: 'Facebook', nombre: 'Publicación', ratio: '1:1', descripcion: 'Cuadrado' },
+  { id: 'li-post', red: 'LinkedIn', nombre: 'Publicación', ratio: '1:1', descripcion: 'Cuadrado' },
+  { id: 'x-post', red: 'X', nombre: 'Publicación', ratio: '16:9', descripcion: 'Horizontal' },
+]

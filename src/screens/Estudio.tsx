@@ -28,19 +28,6 @@ export function Estudio() {
   const visibles = app.filtroResultados === 'Favoritas' ? resultados.filter((p) => app.favoritas[p.id]) : resultados
   const seleccionadas = Object.keys(app.seleccion).filter((k) => app.seleccion[k]).length
 
-  const controles = esAnimacion
-    ? [
-        { etiqueta: 'Estilo', clave: 'estilo' as const, opciones: ['Editorial', 'Cálido', 'Clínico limpio', 'Cinemático'] },
-        { etiqueta: 'Ritmo', clave: 'ritmo' as const, opciones: ['Suave', 'Dinámico', 'Enérgico'] },
-        { etiqueta: 'Texto en pantalla', clave: 'textoEnPantalla' as const, opciones: ['Mínimo', 'Destacado'] },
-        { etiqueta: 'Transición', clave: 'transicion' as const, opciones: ['Suave', 'Corte', 'Cinemática'] },
-      ]
-    : [
-        { etiqueta: 'Estilo', clave: 'estilo' as const, opciones: ['Editorial', 'Cálido', 'Clínico limpio', 'Cinemático'] },
-        { etiqueta: 'Iluminación', clave: 'iluminacion' as const, opciones: ['Natural', 'Suave difusa', 'Dramática'] },
-        { etiqueta: 'Encuadre', clave: 'encuadre' as const, opciones: ['Primer plano', 'Medio', 'General'] },
-      ]
-
   // Sin acentos ni mayúsculas, para que «Testimonio» y «testimonío» detecten igual.
   const normaliza = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   const mencionaPersonas = /paciente|testimonio|historia real|persona real|caso real/.test(
@@ -101,20 +88,6 @@ export function Estudio() {
 
         <div style={sx(rotulo)}>FOTO BASE</div>
         <FotoBase />
-
-        <div style={sx(rotulo, 'margin:20px 0 9px')}>DIRECCIÓN</div>
-        {controles.map((c) => (
-          <div key={c.etiqueta} style={sx('margin-bottom:13px')}>
-            <div style={sx('font-size:11.5px;font-weight:500;margin-bottom:6px;color:rgba(23,25,31,.62)')}>{c.etiqueta}</div>
-            <div style={sx('display:flex;flex-wrap:wrap;gap:5px')}>
-              {c.opciones.map((o) => (
-                <button key={o} onClick={() => app.setBorrador({ [c.clave]: o })} style={sx(seg(b[c.clave] === o))}>
-                  {o}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
 
         <div style={sx(rotulo, 'margin:20px 0 9px')}>DESCRIPCIÓN</div>
         <textarea
