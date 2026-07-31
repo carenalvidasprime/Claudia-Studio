@@ -12,11 +12,11 @@ import { useApp } from '../store'
  * dejarlas activas prometería una capacidad que no existe.
  */
 const RETOQUES = [
-  { icono: '✦', nombre: 'Generar variaciones', sub: '4 versiones nuevas de esta toma' },
-  { icono: '⤢', nombre: 'Mejorar resolución', sub: 'Reescalado a mayor tamaño' },
-  { icono: '◫', nombre: 'Cambiar fondo', sub: 'Otro color de la paleta de marca' },
-  { icono: '☀', nombre: 'Ajustar iluminación', sub: 'Reilumina la escena' },
-  { icono: '✎', nombre: 'Corregir color', sub: 'Equilibrio y saturación naturales' },
+  { icono: '✦', nombre: 'Generar otras versiones', sub: 'Nuevas imágenes con la misma idea y el mismo texto', activo: true },
+  { icono: '⤢', nombre: 'Mejorar resolución', sub: 'Reescalado a mayor tamaño', activo: false },
+  { icono: '◫', nombre: 'Cambiar fondo', sub: 'Otro color de la paleta de marca', activo: false },
+  { icono: '☀', nombre: 'Ajustar iluminación', sub: 'Reilumina la escena', activo: false },
+  { icono: '✎', nombre: 'Corregir color', sub: 'Equilibrio y saturación naturales', activo: false },
 ]
 
 export function Detalle() {
@@ -39,6 +39,13 @@ export function Detalle() {
     } finally {
       setDescargando(false)
     }
+  }
+
+  // Reutiliza el encargo de esta pieza (idea, texto, dirección) y regenera
+  // otras versiones. El borrador ya refleja la pieza abierta.
+  const otrasVersiones = () => {
+    app.ir('estudio')
+    void app.generar()
   }
 
   return (
@@ -118,16 +125,25 @@ export function Detalle() {
           {RETOQUES.map((r) => (
             <button
               key={r.nombre}
-              disabled
-              title="Disponible cuando el workflow de n8n incorpore un paso de edición."
-              className="is-pending"
+              disabled={!r.activo || app.generando}
+              onClick={r.activo ? otrasVersiones : undefined}
+              title={
+                r.activo
+                  ? 'Regenera versiones nuevas manteniendo la idea y el texto'
+                  : 'Disponible cuando el workflow de n8n incorpore un paso de edición.'
+              }
+              className={r.activo ? undefined : 'is-pending'}
               style={sx(
-                "display:flex;align-items:center;gap:11px;background:#f4f4f4;border:1px solid transparent;border-radius:10px;padding:11px 12px;font-family:'Mulish';font-weight:500;font-size:12.5px;color:#17191f;text-align:left;width:100%",
+                "display:flex;align-items:center;gap:11px;border-radius:10px;padding:11px 12px;font-family:'Mulish';font-weight:500;font-size:12.5px;color:#17191f;text-align:left;width:100%",
+                r.activo
+                  ? 'background:#fff;border:1px solid rgba(23,25,31,.16);cursor:pointer'
+                  : 'background:#f4f4f4;border:1px solid transparent',
               )}
             >
               <span
                 style={sx(
-                  'width:28px;height:28px;border-radius:8px;background:#ddf3fb;display:grid;place-items:center;font-size:13px;flex:none;color:oklch(0.45 0.09 220)',
+                  'width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:13px;flex:none',
+                  r.activo ? 'background:#FDE8DE;color:#D71029' : 'background:#ddf3fb;color:oklch(0.45 0.09 220)',
                 )}
               >
                 {r.icono}
@@ -141,7 +157,7 @@ export function Detalle() {
           ))}
         </div>
         <div style={sx('font-size:10.5px;color:rgba(23,25,31,.45);margin-top:9px;line-height:1.5')}>
-          Próximamente: el retoque necesita un paso de edición en el workflow de n8n.
+          El resto de retoques (resolución, fondo, iluminación…) llegará cuando el workflow de n8n incorpore un paso de edición sobre la propia imagen.
         </div>
 
         <div
