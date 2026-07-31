@@ -1,36 +1,10 @@
 import { useState } from 'react'
 import { sx } from '../lib/sx'
 import { colorDeCentro, plural, seg } from '../lib/ui'
-import { VistaPieza } from '../components/Piezas'
+import { MarcaOverlay } from '../components/Piezas'
+import { descargarPieza, descargarPiezaSVG } from '../lib/componer'
 import { useApp } from '../store'
 import type { Pieza } from '../lib/types'
-
-/**
- * Descarga la imagen real del bucket. Si el navegador bloquea la lectura
- * cruzada, se abre en una pestaña para que el usuario la guarde a mano en vez
- * de fallar en silencio.
- */
-async function descargar(pieza: Pieza, indice: number) {
-  const url = pieza.imagen_url
-  if (!url) return
-  const nombreBase = `Ribera-${pieza.titulo.replace(/[^a-z0-9]+/gi, '-')}-${indice + 1}`
-  try {
-    const res = await fetch(url)
-    if (!res.ok) throw new Error(String(res.status))
-    const blob = await res.blob()
-    const extension = (url.split('.').pop() ?? 'jpg').split('?')[0].slice(0, 4)
-    const objectUrl = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = objectUrl
-    a.download = `${nombreBase}.${extension}`
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 4000)
-  } catch {
-    window.open(url, '_blank', 'noopener')
-  }
-}
 
 export function Exportar() {
   const app = useApp()
@@ -64,12 +38,23 @@ export function Exportar() {
     },
   ]
 
-  const descargarTodas = async () => {
+  // Descarga en lote: compone cada pieza (foto + logo + copy) y baja el archivo.
+  const descargarTodas = async (formato: 'png' | 'svg') => {
     setOcupado(true)
+    let fallos = 0
     try {
-      for (let i = 0; i < seleccionadas.length; i++) {
-        await descargar(seleccionadas[i], i)
+      for (const p of seleccionadas) {
+        try {
+          if (formato === 'png') await descargarPieza(p)
+          else await descargarPiezaSVG(p)
+          // Pequeña pausa: algunos navegadores bloquean descargas muy seguidas.
+          await new Promise((r) => setTimeout(r, 350))
+        } catch {
+          fallos++
+        }
       }
+      if (fallos) app.avisar(`${fallos} de ${seleccionadas.length} no se pudieron componer.`, 'error')
+      else app.avisar(`${plural(seleccionadas.length, 'pieza descargada', 'piezas descargadas')} ✓`)
       await app.entregar('descarga')
     } finally {
       setOcupado(false)
@@ -97,7 +82,7 @@ export function Exportar() {
           <div style={sx('display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:11px')}>
             {seleccionadas.map((p) => (
               <div key={p.id} style={sx('position:relative')}>
-                <VistaPieza url={p.imagen_url} ratio={b.ratio} radio="12px" titulo={p.titulo} />
+                <MarcaOverlay url={p.imagen_url} ratio={p.brief?.ratio ?? b.ratio} radio="12px" copy={p.brief?.copy} />
                 <span
                   style={sx(
                     'position:absolute;top:8px;right:8px;width:19px;height:19px;border-radius:50%;background:oklch(0.62 0.13 155);color:#fff;display:grid;place-items:center;font-size:11px',
@@ -134,19 +119,29 @@ export function Exportar() {
           ))}
 
           <div style={sx('font-size:10.5px;color:rgba(23,25,31,.45);line-height:1.5;margin-bottom:12px')}>
-            La descarga entrega el archivo tal como lo produjo n8n; formato y resolución acompañan a la entrega como
-            instrucción, no reconvierten la imagen.
+            La descarga compone cada pieza con su marca (logo de Ribera + mensaje) en un archivo listo para publicar. El
+            PNG es la pieza final; el SVG es editable (capas sueltas) para retocar en Figma o Illustrator.
           </div>
 
           <button
-            onClick={() => void descargarTodas()}
+            onClick={() => void descargarTodas('png')}
             disabled={!seleccionadas.length || ocupado}
             style={sx(
               "width:100%;background:#D71029;color:#fff;border:none;border-radius:10px;padding:13px;font-family:'Mulish';font-weight:600;font-size:13.5px;cursor:pointer",
               (!seleccionadas.length || ocupado) && 'opacity:.55;cursor:not-allowed',
             )}
           >
-            {ocupado ? 'Descargando…' : 'Descargar creatividades'}
+            {ocupado ? 'Componiendo…' : `↓ Descargar ${seleccionadas.length || ''} en PNG`}
+          </button>
+          <button
+            onClick={() => void descargarTodas('svg')}
+            disabled={!seleccionadas.length || ocupado}
+            style={sx(
+              "margin-top:8px;width:100%;background:#fff;color:#17191f;border:1px solid rgba(23,25,31,.16);border-radius:10px;padding:11px;font-family:'Mulish';font-weight:600;font-size:12.5px;cursor:pointer",
+              (!seleccionadas.length || ocupado) && 'opacity:.55;cursor:not-allowed',
+            )}
+          >
+            ↓ Descargar en SVG (editable)
           </button>
           <button
             onClick={() => void app.entregar('centro')}
