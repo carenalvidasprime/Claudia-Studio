@@ -56,7 +56,8 @@ export function Detalle() {
             url={pieza.imagen_url}
             ratio={b.ratio}
             radio="0"
-            copy={b.copy}
+            copy={b.marca ? b.copy : undefined}
+            mostrarLogo={b.marca}
             plantilla={b.plantilla}
             grande
             extra={

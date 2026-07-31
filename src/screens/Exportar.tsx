@@ -86,7 +86,8 @@ export function Exportar() {
                   url={p.imagen_url}
                   ratio={p.brief?.ratio ?? b.ratio}
                   radio="12px"
-                  copy={p.brief?.copy}
+                  copy={p.brief?.marca !== false ? p.brief?.copy : undefined}
+                  mostrarLogo={p.brief?.marca !== false}
                   plantilla={p.brief?.plantilla ?? 'editorial'}
                 />
                 <span

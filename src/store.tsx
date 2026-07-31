@@ -57,6 +57,8 @@ export interface Borrador {
   plantilla: 'editorial' | 'franja'
   /** Formato de red social (id de FORMATOS): fija proporción y canal. */
   redFormato: string
+  /** Si se aplica la capa de marca (logo + copy) o se entrega la foto limpia. */
+  marca: boolean
   objetivo: 'Orgánico' | 'Promoción'
   canal: string
   ratio: '1:1' | '4:5' | '9:16' | '16:9'
@@ -90,6 +92,7 @@ export const BORRADOR_INICIAL: Borrador = {
   copy: '',
   plantilla: 'editorial',
   redFormato: 'ig-post',
+  marca: true,
   objetivo: 'Orgánico',
   canal: 'Instagram',
   ratio: '4:5',
@@ -472,6 +475,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           copy: brief.copy ?? '',
           plantilla: brief.plantilla ?? 'editorial',
           redFormato: brief.redFormato ?? 'ig-post',
+          marca: brief.marca !== false,
           objetivo: brief.objetivo ?? 'Orgánico',
           canal: pieza.canal ?? 'Instagram',
           ratio: brief.ratio ?? '4:5',
@@ -679,6 +683,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       copy: b.copy,
       plantilla: b.plantilla,
       redFormato: b.redFormato,
+      marca: b.marca,
       objetivo: b.objetivo,
       ratio: b.ratio,
       formato: b.formato,

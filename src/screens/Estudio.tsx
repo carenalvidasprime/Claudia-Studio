@@ -99,29 +99,54 @@ export function Estudio() {
           )}
         />
 
-        <div style={sx(rotulo, 'margin:20px 0 9px')}>MENSAJE SOBRE LA PIEZA</div>
-        <textarea
-          value={b.copy}
-          onChange={(e) => app.setBorrador({ copy: e.target.value })}
-          placeholder="Texto que aparecerá encima de la imagen (con el logo de Ribera). Déjalo vacío para una pieza solo imagen."
-          style={sx(
-            "width:100%;min-height:56px;resize:vertical;border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:11px;font-family:'Mulish';font-size:12.5px;line-height:1.5;background:#fff;color:#17191f",
-          )}
-        />
-
-        <div style={sx(rotulo, 'margin:16px 0 9px')}>PLANTILLA DE MARCA</div>
+        <div style={sx(rotulo, 'margin:20px 0 9px')}>MARCA</div>
         <div style={sx('display:flex;gap:5px')}>
           {(
             [
-              ['editorial', 'Editorial'],
-              ['franja', 'Franja'],
+              [true, 'Con marca'],
+              [false, 'Sin marca'],
             ] as const
           ).map(([val, label]) => (
-            <button key={val} onClick={() => app.setBorrador({ plantilla: val })} style={sx(seg(b.plantilla === val), 'flex:1')}>
+            <button key={label} onClick={() => app.setBorrador({ marca: val })} style={sx(seg(b.marca === val), 'flex:1')}>
               {label}
             </button>
           ))}
         </div>
+        <div style={sx('font-size:10px;color:rgba(23,25,31,.45);margin-top:6px;line-height:1.5')}>
+          {b.marca ? 'Se compone el logo de Ribera y el mensaje sobre la imagen.' : 'Se entrega la foto limpia, sin logo ni texto.'}
+        </div>
+
+        {b.marca && (
+          <>
+            <div style={sx(rotulo, 'margin:18px 0 9px')}>MENSAJE SOBRE LA PIEZA</div>
+            <textarea
+              value={b.copy}
+              onChange={(e) => app.setBorrador({ copy: e.target.value })}
+              placeholder="Texto que aparecerá encima de la imagen. Déjalo vacío para solo logo."
+              style={sx(
+                "width:100%;min-height:56px;resize:vertical;border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:11px;font-family:'Mulish';font-size:12.5px;line-height:1.5;background:#fff;color:#17191f",
+              )}
+            />
+
+            <div style={sx(rotulo, 'margin:16px 0 9px')}>PLANTILLA DE MARCA</div>
+            <div style={sx('display:flex;gap:5px')}>
+              {(
+                [
+                  ['editorial', 'Editorial'],
+                  ['franja', 'Franja'],
+                ] as const
+              ).map(([val, label]) => (
+                <button
+                  key={val}
+                  onClick={() => app.setBorrador({ plantilla: val })}
+                  style={sx(seg(b.plantilla === val), 'flex:1')}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         <div style={sx('margin-top:15px;display:flex;align-items:center;gap:10px')}>
           <div style={sx('font-size:11.5px;font-weight:500;color:rgba(23,25,31,.62)')}>Variantes</div>
@@ -239,7 +264,8 @@ export function Estudio() {
                         url={p.imagen_url}
                         ratio={b.ratio}
                         radio="0"
-                        copy={app.borrador.copy}
+                        copy={app.borrador.marca ? app.borrador.copy : undefined}
+                        mostrarLogo={app.borrador.marca}
                         plantilla={app.borrador.plantilla}
                         extra={
                           <>

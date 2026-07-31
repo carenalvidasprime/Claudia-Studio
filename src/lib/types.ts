@@ -68,6 +68,8 @@ export interface Brief {
   plantilla?: 'editorial' | 'franja'
   /** Formato de red social elegido (id de FORMATOS). Fija proporción y canal. */
   redFormato?: string
+  /** Si se aplica la capa de marca (logo + copy) o se entrega la foto limpia. */
+  marca?: boolean
   objetivo?: 'Orgánico' | 'Promoción'
   ratio?: '1:1' | '4:5' | '9:16' | '16:9'
   formato?: 'Imagen' | 'Animación'

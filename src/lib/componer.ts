@@ -312,11 +312,13 @@ function slug(texto: string): string {
 /** Compone la pieza y lanza la descarga del PNG en el navegador. */
 export async function descargarPieza(pieza: Pieza, copy?: string | null): Promise<void> {
   if (!pieza.imagen_url) throw new Error('Esta pieza todavía no tiene imagen.')
+  const marca = pieza.brief?.marca !== false
   const blob = await componerPiezaPNG({
     url: pieza.imagen_url,
-    copy: copy ?? pieza.brief?.copy,
+    copy: marca ? copy ?? pieza.brief?.copy : null,
     ratio: pieza.brief?.ratio ?? '1:1',
     plantilla: pieza.brief?.plantilla ?? 'editorial',
+    mostrarLogo: marca,
   })
   const enlace = document.createElement('a')
   enlace.href = URL.createObjectURL(blob)
@@ -330,11 +332,13 @@ export async function descargarPieza(pieza: Pieza, copy?: string | null): Promis
 /** Compone la pieza editable y lanza la descarga del SVG en el navegador. */
 export async function descargarPiezaSVG(pieza: Pieza, copy?: string | null): Promise<void> {
   if (!pieza.imagen_url) throw new Error('Esta pieza todavía no tiene imagen.')
+  const marca = pieza.brief?.marca !== false
   const svg = await componerPiezaSVG({
     url: pieza.imagen_url,
-    copy: copy ?? pieza.brief?.copy,
+    copy: marca ? copy ?? pieza.brief?.copy : null,
     ratio: pieza.brief?.ratio ?? '1:1',
     plantilla: pieza.brief?.plantilla ?? 'editorial',
+    mostrarLogo: marca,
   })
   const blob = new Blob([svg], { type: 'image/svg+xml' })
   const enlace = document.createElement('a')
