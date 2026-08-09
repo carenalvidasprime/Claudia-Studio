@@ -13,7 +13,7 @@ export function MarcaRibera() {
       tipo: 'color',
       titulo: 'Añadir color',
       sub: 'Código hexadecimal y nombre del nuevo color de marca.',
-      hex: '#D71029',
+      hex: 'var(--acento)',
       nombre: '',
       confirmar: async (_valor, extra) => {
         const hex = normalizarHex(extra?.hex ?? '')
@@ -55,7 +55,7 @@ export function MarcaRibera() {
 
   return (
     <section className="fade" style={sx('padding:28px 32px 60px;max-width:900px')}>
-      <div style={sx('background:linear-gradient(155deg,#fafafa 35%,#FDE8DE);border-radius:16px;padding:26px 28px;margin-bottom:22px')}>
+      <div style={sx('background:linear-gradient(155deg,#fafafa 35%,var(--suave-1));border-radius:16px;padding:26px 28px;margin-bottom:22px')}>
         <div
           style={sx(
             "font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.09em;color:rgba(29,29,27,.5);margin-bottom:8px",
@@ -180,7 +180,7 @@ export function MarcaRibera() {
         {editable && (
           <button
             onClick={anadirRegla}
-            style={sx("background:none;border:none;color:#D71029;font-family:'Mulish';font-weight:700;font-size:12px;cursor:pointer;flex:none")}
+            style={sx("background:none;border:none;color:var(--acento);font-family:'Mulish';font-weight:700;font-size:12px;cursor:pointer;flex:none")}
           >
             + Añadir regla
           </button>
@@ -192,7 +192,7 @@ export function MarcaRibera() {
             key={String(r.id)}
             style={sx('display:flex;align-items:center;gap:10px;padding:8px 15px;border-bottom:1px solid rgba(29,29,27,.06)')}
           >
-            <span style={sx('color:#D71029;font-weight:700;flex:none')}>✓</span>
+            <span style={sx('color:var(--acento);font-weight:700;flex:none')}>✓</span>
             {editable ? (
               <input
                 defaultValue={r.texto}

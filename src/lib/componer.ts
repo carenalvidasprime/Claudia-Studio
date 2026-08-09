@@ -131,7 +131,7 @@ export async function componerPiezaPNG(opciones: {
     const alturaTexto = lineas.length * lh
     const bandaH = Math.max(alturaTexto, chipH) + pad * 2
     const bandaY = H - bandaH
-    ctx.fillStyle = '#D71029'
+    ctx.fillStyle = CLIENTE.tema.acento
     ctx.fillRect(0, bandaY, W, bandaH)
     if (lineas.length) {
       ctx.fillStyle = '#ffffff'
@@ -161,7 +161,7 @@ export async function componerPiezaPNG(opciones: {
       const alturaBloque = (lineas.length - 1) * lh
 
       const accentH = Math.max(3, Math.round(W * 0.008))
-      ctx.fillStyle = '#D71029'
+      ctx.fillStyle = CLIENTE.tema.acento
       ctx.fillRect(pad, baseY - alturaBloque - fs - Math.round(W * 0.03), Math.round(W * 0.08), accentH)
 
       ctx.fillStyle = '#ffffff'
@@ -260,7 +260,7 @@ export async function componerPiezaSVG(opciones: {
     const alturaTexto = lineas.length * lh
     const bandaH = Math.max(alturaTexto, chipH) + pad * 2
     const bandaY = H - bandaH
-    capas.push(`<rect x="0" y="${bandaY}" width="${W}" height="${bandaH}" fill="#D71029"/>`)
+    capas.push(`<rect x="0" y="${bandaY}" width="${W}" height="${bandaH}" fill="${CLIENTE.tema.acento}"/>`)
     if (lineas.length) {
       const primeraY = Math.round(bandaY + (bandaH - alturaTexto) / 2 + fs * 0.82)
       const tspans = lineas
@@ -278,7 +278,7 @@ export async function componerPiezaSVG(opciones: {
       const primeraY = baseY - (lineas.length - 1) * lh
       const accentY = primeraY - fs - Math.round(W * 0.03)
       capas.push(
-        `<rect x="${pad}" y="${accentY}" width="${Math.round(W * 0.08)}" height="${Math.max(3, Math.round(W * 0.008))}" fill="#D71029"/>`,
+        `<rect x="${pad}" y="${accentY}" width="${Math.round(W * 0.08)}" height="${Math.max(3, Math.round(W * 0.008))}" fill="${CLIENTE.tema.acento}"/>`,
       )
       const tspans = lineas
         .map((l, i) => `<tspan x="${pad}" ${i === 0 ? `y="${primeraY}"` : `dy="${lh}"`}>${escaparXML(l)}</tspan>`)

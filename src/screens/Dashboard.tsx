@@ -41,7 +41,7 @@ export function Dashboard() {
   return (
     <section className="fade" style={sx('padding:28px 32px 60px')}>
       <div style={sx('display:grid;grid-template-columns:1.5fr 1fr;border-radius:16px;overflow:hidden;margin-bottom:22px;min-height:172px')}>
-        <div style={sx('background:linear-gradient(155deg,#fafafa 35%,#FDE8DE);padding:28px 30px;position:relative')}>
+        <div style={sx('background:linear-gradient(155deg,#fafafa 35%,var(--suave-1));padding:28px 30px;position:relative')}>
           <div style={sx('font-size:25px;font-weight:500;letter-spacing:-.02em;line-height:1.25')}>
             Una marca. Todos los centros{DE_CLIENTE}.
             <br />
@@ -51,7 +51,7 @@ export function Dashboard() {
         </div>
         <div
           style={sx(
-            'background:linear-gradient(180deg,#f7dede,#f0c3ca);position:relative;display:flex;align-items:flex-end;justify-content:flex-end;padding:24px 28px',
+            'background:linear-gradient(180deg,var(--suave-2),var(--suave-3));position:relative;display:flex;align-items:flex-end;justify-content:flex-end;padding:24px 28px',
           )}
         >
           <Flecha style="position:absolute;top:24px;right:30px" />

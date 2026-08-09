@@ -151,7 +151,7 @@ export function Modal() {
             style={sx(
               esBorrado
                 ? 'background:oklch(0.55 0.18 25);color:#fff;border:none;border-radius:9px;padding:9px 15px;font-family:Mulish;font-weight:600;font-size:12.5px;cursor:pointer'
-                : 'background:#D71029;color:#fff;border:none;border-radius:9px;padding:9px 15px;font-family:Mulish;font-weight:600;font-size:12.5px;cursor:pointer',
+                : 'background:var(--acento);color:#fff;border:none;border-radius:9px;padding:9px 15px;font-family:Mulish;font-weight:600;font-size:12.5px;cursor:pointer',
             )}
           >
             {esBorrado ? 'Eliminar' : 'Guardar'}
@@ -170,7 +170,7 @@ export function Aviso() {
   return (
     <div
       style={sx(
-        `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:${error ? 'oklch(0.5 0.17 25)' : '#D71029'};color:#fff;padding:12px 19px;border-radius:11px;font-size:12.5px;font-weight:500;box-shadow:0 12px 30px rgba(0,0,0,.22);animation:pop .3s both;display:flex;align-items:center;gap:9px;z-index:90;max-width:min(92vw,560px)`,
+        `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:${error ? 'oklch(0.5 0.17 25)' : 'var(--acento)'};color:#fff;padding:12px 19px;border-radius:11px;font-size:12.5px;font-weight:500;box-shadow:0 12px 30px rgba(0,0,0,.22);animation:pop .3s both;display:flex;align-items:center;gap:9px;z-index:90;max-width:min(92vw,560px)`,
       )}
     >
       <span style={sx('width:7px;height:7px;border-radius:50%;background:#f0607a;flex:none')} />

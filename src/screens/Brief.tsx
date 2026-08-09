@@ -68,7 +68,7 @@ export function Brief() {
                     style={sx(
                       "display:flex;flex-direction:column;align-items:flex-start;gap:2px;border-radius:11px;padding:10px 13px;cursor:pointer;font-family:'Mulish';min-width:118px",
                       activo
-                        ? 'background:#D71029;border:1px solid #D71029;color:#fff'
+                        ? 'background:var(--acento);border:1px solid var(--acento);color:#fff'
                         : 'background:#fafbfb;border:1px solid rgba(23,25,31,.12);color:#17191f',
                     )}
                   >
@@ -146,7 +146,7 @@ export function Brief() {
       <button
         onClick={() => app.ir('estudio')}
         style={sx(
-          "margin-top:24px;background:#D71029;color:#fff;border:none;border-radius:11px;padding:13px 22px;font-family:'Mulish';font-weight:600;font-size:13.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px",
+          "margin-top:24px;background:var(--acento);color:#fff;border:none;border-radius:11px;padding:13px 22px;font-family:'Mulish';font-weight:600;font-size:13.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px",
         )}
       >
         Abrir estudio <span style={sx('font-size:15px')}>→</span>

@@ -134,7 +134,7 @@ export function Exportar() {
             onClick={() => void descargarTodas('png')}
             disabled={!seleccionadas.length || ocupado}
             style={sx(
-              "width:100%;background:#D71029;color:#fff;border:none;border-radius:10px;padding:13px;font-family:'Mulish';font-weight:600;font-size:13.5px;cursor:pointer",
+              "width:100%;background:var(--acento);color:#fff;border:none;border-radius:10px;padding:13px;font-family:'Mulish';font-weight:600;font-size:13.5px;cursor:pointer",
               (!seleccionadas.length || ocupado) && 'opacity:.55;cursor:not-allowed',
             )}
           >

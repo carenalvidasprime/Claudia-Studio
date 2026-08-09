@@ -145,7 +145,7 @@ export function Detalle() {
               <span
                 style={sx(
                   'width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:13px;flex:none',
-                  r.activo ? 'background:#FDE8DE;color:#D71029' : 'background:#ddf3fb;color:oklch(0.45 0.09 220)',
+                  r.activo ? 'background:var(--suave-1);color:var(--acento)' : 'background:#ddf3fb;color:oklch(0.45 0.09 220)',
                 )}
               >
                 {r.icono}
@@ -192,7 +192,7 @@ export function Detalle() {
           <button
             onClick={() => void app.aprobarPieza(pieza.id)}
             style={sx(
-              "width:100%;background:#D71029;color:#fff;border:none;border-radius:10px;padding:12px;font-family:'Mulish';font-weight:600;font-size:13px;cursor:pointer",
+              "width:100%;background:var(--acento);color:#fff;border:none;border-radius:10px;padding:12px;font-family:'Mulish';font-weight:600;font-size:13px;cursor:pointer",
             )}
           >
             Aprobar y añadir a entrega

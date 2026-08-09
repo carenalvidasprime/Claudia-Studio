@@ -31,7 +31,7 @@ export function Login() {
     <div style={sx('position:fixed;inset:0;z-index:100;display:grid;grid-template-columns:1.1fr 1fr')}>
       <div
         style={sx(
-          'background:linear-gradient(155deg,#fafafa 35%,#FDE8DE);padding:40px 48px 44px;position:relative;display:flex;flex-direction:column',
+          'background:linear-gradient(155deg,#fafafa 35%,var(--suave-1));padding:40px 48px 44px;position:relative;display:flex;flex-direction:column',
         )}
       >
         <Lockup variante="login" />
@@ -73,7 +73,7 @@ export function Login() {
           {error && (
             <div
               style={sx(
-                'background:#FDE8DE;border:1px solid rgba(215,16,41,.28);border-radius:10px;padding:11px 12px;font-size:11.5px;line-height:1.5;color:#1D1D1B;margin-bottom:14px',
+                'background:var(--suave-1);border:1px solid rgba(var(--acento-rgb),.28);border-radius:10px;padding:11px 12px;font-size:11.5px;line-height:1.5;color:#1D1D1B;margin-bottom:14px',
               )}
             >
               {error}
@@ -84,7 +84,7 @@ export function Login() {
             type="submit"
             disabled={enviando}
             style={sx(
-              "width:100%;background:#D71029;color:#fff;border:none;border-radius:10px;padding:13px;font-family:'Mulish';font-weight:600;font-size:13.5px;cursor:pointer",
+              "width:100%;background:var(--acento);color:#fff;border:none;border-radius:10px;padding:13px;font-family:'Mulish';font-weight:600;font-size:13.5px;cursor:pointer",
               enviando && 'opacity:.6;cursor:progress',
             )}
           >

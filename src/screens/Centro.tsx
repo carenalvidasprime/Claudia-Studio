@@ -47,7 +47,7 @@ export function CentroScreen() {
         <button
           onClick={() => void app.nuevaCarpeta()}
           style={sx(
-            "display:flex;align-items:center;gap:7px;background:#D71029;color:#fff;border:none;border-radius:10px;padding:10px 15px;font-family:'Mulish';font-weight:600;font-size:12.5px;cursor:pointer",
+            "display:flex;align-items:center;gap:7px;background:var(--acento);color:#fff;border:none;border-radius:10px;padding:10px 15px;font-family:'Mulish';font-weight:600;font-size:12.5px;cursor:pointer",
           )}
         >
           <span style={sx('font-size:15px;line-height:1;margin-top:-1px')}>+</span> Nueva carpeta
@@ -134,7 +134,7 @@ function TabCarpetas({ carpetas, piezasCentro }: { carpetas: Carpeta[]; piezasCe
       {app.errorDatos && (
         <div
           style={sx(
-            'background:#FDE8DE;border:1px solid rgba(215,16,41,.25);border-radius:12px;padding:14px 16px;font-size:12px;line-height:1.55;color:#1D1D1B;margin-bottom:16px',
+            'background:var(--suave-1);border:1px solid rgba(var(--acento-rgb),.25);border-radius:12px;padding:14px 16px;font-size:12px;line-height:1.55;color:#1D1D1B;margin-bottom:16px',
           )}
         >
           {app.errorDatos}
@@ -314,7 +314,7 @@ function TarjetaCarpeta({ carpeta }: { carpeta: Carpeta }) {
             <button
               onClick={() => app.nuevaCreatividad(carpeta.id)}
               style={sx(
-                "display:flex;align-items:center;gap:6px;background:#D71029;color:#fff;border:none;border-radius:9px;padding:8px 13px;font-family:'Mulish';font-weight:600;font-size:12px;cursor:pointer",
+                "display:flex;align-items:center;gap:6px;background:var(--acento);color:#fff;border:none;border-radius:9px;padding:8px 13px;font-family:'Mulish';font-weight:600;font-size:12px;cursor:pointer",
               )}
             >
               + Nueva creatividad
@@ -512,12 +512,12 @@ function TabMarca() {
           "width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:#fff;border:1px solid rgba(29,29,27,.12);border-radius:12px;padding:13px 16px;margin-bottom:16px;font-family:'Mulish';cursor:pointer",
         )}
       >
-        <span style={sx('width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#D71029,#f26d84);flex:none')} />
+        <span style={sx('width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--acento),var(--acento-2));flex:none')} />
         <span style={sx('font-size:12.5px;color:#1D1D1B;line-height:1.5')}>
           <strong>Este centro hereda la identidad{DE_CLIENTE}.</strong> Paleta, tipografía y reglas de cumplimiento
           son comunes a todos los centros.
         </span>
-        <span style={sx('margin-left:auto;font-size:12px;font-weight:700;color:#D71029;flex:none')}>
+        <span style={sx('margin-left:auto;font-size:12px;font-weight:700;color:var(--acento);flex:none')}>
           Ver {CLIENTE.cliente ? `Marca ${CLIENTE.cliente}` : 'Marca'} →
         </span>
       </button>

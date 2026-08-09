@@ -10,6 +10,24 @@ import logoRibera from '../assets/logo-ribera-cropped.png'
  * El cliente activo se elige con la variable de entorno `VITE_CLIENTE`
  * (por defecto `ribera`, para que el despliegue actual de Ribera no cambie).
  */
+/**
+ * Tokens de color del «chrome» (la interfaz, no las piezas). Se aplican como
+ * variables CSS en tiempo de arranque, así un único build sirve para cualquier
+ * cliente y no hay ningún color de marca incrustado en los componentes.
+ */
+export interface Tema {
+  /** Color de marca principal (botones, acentos, banda de las piezas). */
+  acento: string
+  /** Componentes RGB del acento («r,g,b») para bordes/sombras translúcidos. */
+  acentoRgb: string
+  /** Variante clara del acento (segundo tono de los degradados sólidos). */
+  acento2: string
+  /** Tres tonos suaves para los degradados de fondo (hero, cabeceras). */
+  suave1: string
+  suave2: string
+  suave3: string
+}
+
 export interface ClienteConfig {
   id: string
   /** Marca del producto (chrome): «Claudia by VidasPrime». */
@@ -25,8 +43,30 @@ export interface ClienteConfig {
   tipografia: string
   paleta: MarcaColor[]
   reglas: MarcaRegla[]
+  /** Colores del chrome de la interfaz. */
+  tema: Tema
   /** Dominio para el placeholder del correo en el login. */
   dominioEmail: string
+}
+
+// Tema Ribera: el rojo corporativo y sus degradados cálidos (sin cambios).
+const TEMA_RIBERA: Tema = {
+  acento: '#D71029',
+  acentoRgb: '215,16,41',
+  acento2: '#f26d84',
+  suave1: '#FDE8DE',
+  suave2: '#f7dede',
+  suave3: '#f0c3ca',
+}
+
+// Tema Claudia Studio (marca blanca): azul y degradados azules suaves.
+const TEMA_VIDASPRIME: Tema = {
+  acento: '#1F6FD6',
+  acentoRgb: '31,111,214',
+  acento2: '#6AA6EC',
+  suave1: '#EAF2FB',
+  suave2: '#DCEAF7',
+  suave3: '#C7E0F3',
 }
 
 const RIBERA: ClienteConfig = {
@@ -40,6 +80,7 @@ const RIBERA: ClienteConfig = {
   tipografia: TIPOGRAFIA,
   paleta: PALETA_POR_DEFECTO,
   reglas: REGLAS_POR_DEFECTO,
+  tema: TEMA_RIBERA,
   dominioEmail: 'riberasalud.es',
 }
 
@@ -55,6 +96,7 @@ const VIDASPRIME: ClienteConfig = {
   tipografia: TIPOGRAFIA,
   paleta: PALETA_POR_DEFECTO,
   reglas: REGLAS_POR_DEFECTO,
+  tema: TEMA_VIDASPRIME,
   dominioEmail: 'tuempresa.com',
 }
 
@@ -78,3 +120,21 @@ export const TITULO = CLIENTE.cliente ? `${CLIENTE.producto} · ${CLIENTE.client
 export const DESCRIPCION = CLIENTE.cliente
   ? `Producción de contenido para las redes de los centros de ${CLIENTE.cliente}.`
   : 'Producción de contenido de marca para redes sociales, con criterio de dirección de arte.'
+
+/** Tokens de color del cliente activo (para composición de piezas en JS). */
+export const TEMA = CLIENTE.tema
+
+/**
+ * Vuelca el tema del cliente en variables CSS del documento, para que el chrome
+ * (definido con `var(--acento)`, `var(--suave-1)`…) tome el color de marca sin
+ * que ningún componente lleve el color incrustado. Se llama una vez al arrancar.
+ */
+export function aplicarTema(): void {
+  const r = document.documentElement.style
+  r.setProperty('--acento', TEMA.acento)
+  r.setProperty('--acento-rgb', TEMA.acentoRgb)
+  r.setProperty('--acento-2', TEMA.acento2)
+  r.setProperty('--suave-1', TEMA.suave1)
+  r.setProperty('--suave-2', TEMA.suave2)
+  r.setProperty('--suave-3', TEMA.suave3)
+}

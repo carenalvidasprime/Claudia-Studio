@@ -1,4 +1,14 @@
 /* Base portada literalmente del prototipo (bloque <helmet> de Claudia Ribera.dc.html). */
+/* Tokens de tema (valores por defecto = Ribera). `aplicarTema()` los sobrescribe
+   en tiempo de arranque con el tema del cliente del despliegue. */
+:root {
+  --acento: #D71029;
+  --acento-rgb: 215,16,41;
+  --acento-2: #f26d84;
+  --suave-1: #FDE8DE;
+  --suave-2: #f7dede;
+  --suave-3: #f0c3ca;
+}
 * { box-sizing: border-box; }
 body {
   margin: 0;
@@ -31,12 +41,12 @@ textarea:focus, button:focus, input:focus, select:focus { outline: none; }
 .hv-menu-item:hover { background: #f4f4f4; }
 .hv-border:hover { border-color: rgba(23, 25, 31, .22); }
 .hv-border-soft:hover { border-color: rgba(23, 25, 31, .28); }
-.hv-border-red:hover { border-color: #D71029; }
-.hv-newfolder:hover { border-color: #D71029; color: #D71029; }
+.hv-border-red:hover { border-color: var(--acento); }
+.hv-newfolder:hover { border-color: var(--acento); color: var(--acento); }
 .hv-crumb:hover { color: #17191f; }
 .hv-retouch:hover { background: #fff; border-color: rgba(23, 25, 31, .14); }
 .hv-situacion:hover {
-  border-color: var(--sit-color, #D71029);
+  border-color: var(--sit-color, var(--acento));
   box-shadow: 0 10px 24px -14px rgba(23, 25, 31, .28);
   transform: translateY(-2px);
 }

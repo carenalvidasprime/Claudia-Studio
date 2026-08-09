@@ -49,7 +49,7 @@ export function Copiloto() {
       <button
         onClick={() => setAbierto(true)}
         style={sx(
-          "position:fixed;bottom:22px;right:22px;z-index:60;display:flex;align-items:center;gap:9px;background:#D71029;color:#fff;border:none;border-radius:30px;padding:13px 18px;font-family:'Mulish';font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 12px 30px rgba(215,16,41,.34)",
+          "position:fixed;bottom:22px;right:22px;z-index:60;display:flex;align-items:center;gap:9px;background:var(--acento);color:#fff;border:none;border-radius:30px;padding:13px 18px;font-family:'Mulish';font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 12px 30px rgba(var(--acento-rgb),.34)",
         )}
       >
         <span style={sx('font-size:15px')}>✦</span> Pregunta a Claudia
@@ -66,7 +66,7 @@ export function Copiloto() {
       <div style={sx('display:flex;align-items:center;gap:10px;padding:15px 16px;border-bottom:1px solid rgba(29,29,27,.08)')}>
         <div
           style={sx(
-            'width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#D71029,#f26d84);display:grid;place-items:center;color:#fff;font-size:15px;flex:none',
+            'width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--acento),var(--acento-2));display:grid;place-items:center;color:#fff;font-size:15px;flex:none',
           )}
         >
           ✦
@@ -87,7 +87,7 @@ export function Copiloto() {
         {!chatConfigurado && (
           <div
             style={sx(
-              'background:#FDE8DE;border:1px solid rgba(215,16,41,.25);border-radius:11px;padding:12px;font-size:11.5px;line-height:1.55;color:#1D1D1B',
+              'background:var(--suave-1);border:1px solid rgba(var(--acento-rgb),.25);border-radius:11px;padding:12px;font-size:11.5px;line-height:1.55;color:#1D1D1B',
             )}
           >
             El copiloto todavía no está conectado. Falta el webhook <strong>claudia-chat</strong> en n8n y la variable{' '}
@@ -123,7 +123,7 @@ export function Copiloto() {
           >
             <div
               style={sx(
-                (m.role === 'user' ? 'background:#D71029;color:#fff' : 'background:#f2f2f2;color:#1D1D1B') +
+                (m.role === 'user' ? 'background:var(--acento);color:#fff' : 'background:#f2f2f2;color:#1D1D1B') +
                   ';max-width:80%;padding:10px 13px;border-radius:14px;font-size:12.5px;line-height:1.5;white-space:pre-wrap',
               )}
             >
@@ -159,7 +159,7 @@ export function Copiloto() {
         <button
           onClick={() => void preguntar()}
           style={sx(
-            "background:#D71029;color:#fff;border:none;border-radius:11px;padding:10px 14px;font-family:'Mulish';font-weight:700;font-size:12.5px;cursor:pointer;flex:none",
+            "background:var(--acento);color:#fff;border:none;border-radius:11px;padding:10px 14px;font-family:'Mulish';font-weight:700;font-size:12.5px;cursor:pointer;flex:none",
           )}
         >
           Enviar

@@ -58,7 +58,7 @@ export function Gateway() {
       <div style={sx('display:grid;grid-template-columns:repeat(3,1fr);gap:14px')}>
         {tarjeta(
           '✦',
-          '#FDE8DE',
+          'var(--suave-1)',
           'Partir de una situación',
           'Elige un tipo de contenido (testimonio, evento, hito clínico…) y Claudia lo prepara con su criterio.',
           () => app.ir('situaciones'),
@@ -150,7 +150,7 @@ export function Situaciones() {
                 )}
               >
                 <span>{meta}</span>
-                {s.requiere_consentimiento && <span style={sx('color:#D71029')}>· CONSENTIMIENTO</span>}
+                {s.requiere_consentimiento && <span style={sx('color:var(--acento)')}>· CONSENTIMIENTO</span>}
               </div>
             </button>
           )

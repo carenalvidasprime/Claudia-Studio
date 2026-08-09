@@ -23,7 +23,7 @@ function Panel({ tono, children }: { tono: 'aviso' | 'neutro'; children: ReactNo
     <div
       style={sx(
         tono === 'aviso'
-          ? 'background:#FDE8DE;border:1px solid rgba(215,16,41,.25);border-radius:14px;padding:22px'
+          ? 'background:var(--suave-1);border:1px solid rgba(var(--acento-rgb),.25);border-radius:14px;padding:22px'
           : 'background:#fff;border:1px solid rgba(23,25,31,.1);border-radius:14px;padding:22px',
       )}
     >
@@ -52,8 +52,8 @@ function Casilla({
     >
       <span
         style={sx(
-          'width:18px;height:18px;border-radius:5px;border:1.5px solid #D71029;display:grid;place-items:center;flex:none;' +
-            (marcada ? 'background:#D71029;color:#fff' : 'background:#fff'),
+          'width:18px;height:18px;border-radius:5px;border:1.5px solid var(--acento);display:grid;place-items:center;flex:none;' +
+            (marcada ? 'background:var(--acento);color:#fff' : 'background:#fff'),
         )}
       >
         {marcada ? '✓' : ''}
@@ -79,7 +79,7 @@ function Continuar({
       style={sx(
         "margin-top:18px;width:100%;border-radius:10px;padding:13px;font-family:'Mulish';font-weight:600;font-size:13px;",
         habilitado
-          ? 'background:#D71029;color:#fff;border:none;cursor:pointer'
+          ? 'background:var(--acento);color:#fff;border:none;cursor:pointer'
           : 'background:rgba(23,25,31,.12);color:rgba(23,25,31,.4);border:none;cursor:not-allowed',
       )}
     >
@@ -174,7 +174,7 @@ export function PasoColabPersonas() {
         {b.personas === 'Aparecen menores' && (
           <div
             style={sx(
-              'background:#FDE8DE;border:1px solid rgba(215,16,41,.25);border-radius:9px;padding:12px;margin-top:10px;font-size:11.5px;line-height:1.6;color:#1D1D1B',
+              'background:var(--suave-1);border:1px solid rgba(var(--acento-rgb),.25);border-radius:9px;padding:12px;margin-top:10px;font-size:11.5px;line-height:1.6;color:#1D1D1B',
             )}
           >
             <strong>Los menores requieren permiso familiar por escrito.</strong> Sin él deben ir de espaldas, en grupo
@@ -202,7 +202,7 @@ export function PasoColabEntorno() {
         {b.entorno === 'En instalaciones del hospital' && (
           <div
             style={sx(
-              'background:#FDE8DE;border:1px solid rgba(215,16,41,.25);border-radius:9px;padding:12px;margin-top:12px;font-size:11.5px;line-height:1.6;color:#1D1D1B',
+              'background:var(--suave-1);border:1px solid rgba(var(--acento-rgb),.25);border-radius:9px;padding:12px;margin-top:12px;font-size:11.5px;line-height:1.6;color:#1D1D1B',
             )}
           >
             <strong>Cuidar el fondo:</strong> sin otros pacientes visibles, sin puertas de consulta con nombres, sin

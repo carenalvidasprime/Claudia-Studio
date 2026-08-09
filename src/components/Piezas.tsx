@@ -48,7 +48,7 @@ export function MarcaOverlay({
       {url && plantilla === 'franja' && (hayCopy || conLogo) && (
         <div
           style={sx(
-            `position:absolute;left:0;right:0;bottom:0;background:#D71029;display:flex;align-items:center;gap:${grande ? '14px' : '8px'};padding:${grande ? '16px 18px' : '9px 10px'}`,
+            `position:absolute;left:0;right:0;bottom:0;background:var(--acento);display:flex;align-items:center;gap:${grande ? '14px' : '8px'};padding:${grande ? '16px 18px' : '9px 10px'}`,
           )}
         >
           {hayCopy && (
@@ -97,7 +97,7 @@ export function MarcaOverlay({
                 `position:absolute;left:${grande ? '20px' : '13px'};right:${conLogo ? (grande ? '96px' : '54px') : grande ? '20px' : '13px'};bottom:${grande ? '18px' : '12px'}`,
               )}
             >
-              <div style={sx(`width:${grande ? '34px' : '24px'};height:${grande ? '4px' : '3px'};border-radius:2px;background:#D71029;margin-bottom:${grande ? '10px' : '7px'}`)} />
+              <div style={sx(`width:${grande ? '34px' : '24px'};height:${grande ? '4px' : '3px'};border-radius:2px;background:var(--acento);margin-bottom:${grande ? '10px' : '7px'}`)} />
               <div
                 style={sx(
                   `font-family:'Mulish';font-weight:800;font-size:${grande ? '23px' : '14px'};line-height:1.2;color:#fff;letter-spacing:-.01em;text-shadow:0 1px 12px rgba(0,0,0,.35)`,

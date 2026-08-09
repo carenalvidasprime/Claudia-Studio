@@ -92,7 +92,7 @@ export function Sidebar() {
 
       <div style={sx('margin-top:auto;display:flex;flex-direction:column;gap:12px')}>
         <div style={sx('display:flex;align-items:center;gap:9px;padding:2px')}>
-          <div style={sx('width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#D71029,#f26d84);flex:none')} />
+          <div style={sx('width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--acento),var(--acento-2));flex:none')} />
           <div style={sx('line-height:1.25;min-width:0')}>
             <div style={sx('font-size:12.5px;font-weight:600')}>{CLIENTE.cuenta}</div>
             <div

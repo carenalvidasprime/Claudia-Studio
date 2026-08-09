@@ -7,19 +7,19 @@ import type { Estado } from './types'
 
 export const seg = (active: boolean): string =>
   active
-    ? 'display:inline-flex;align-items:center;gap:6px;background:#D71029;color:#fff;border:1px solid #17191f;border-radius:8px;padding:6px 10px;font-family:Mulish;font-weight:500;font-size:11.5px;cursor:pointer'
+    ? 'display:inline-flex;align-items:center;gap:6px;background:var(--acento);color:#fff;border:1px solid #17191f;border-radius:8px;padding:6px 10px;font-family:Mulish;font-weight:500;font-size:11.5px;cursor:pointer'
     : 'display:inline-flex;align-items:center;gap:6px;background:#fff;color:rgba(23,25,31,.65);border:1px solid rgba(23,25,31,.12);border-radius:8px;padding:6px 10px;font-family:Mulish;font-weight:500;font-size:11.5px;cursor:pointer'
 
 export const pill = (active: boolean): string =>
   active
-    ? 'background:#D71029;color:#fff;border:1px solid #17191f;border-radius:20px;padding:6px 13px;font-family:Mulish;font-weight:500;font-size:11.5px;cursor:pointer'
+    ? 'background:var(--acento);color:#fff;border:1px solid #17191f;border-radius:20px;padding:6px 13px;font-family:Mulish;font-weight:500;font-size:11.5px;cursor:pointer'
     : 'background:#fff;color:rgba(23,25,31,.6);border:1px solid rgba(23,25,31,.12);border-radius:20px;padding:6px 13px;font-family:Mulish;font-weight:500;font-size:11.5px;cursor:pointer'
 
 export const outCard = (active: boolean): string => {
   const base =
     'display:flex;flex-direction:column;width:190px;text-align:left;border-radius:11px;padding:11px 13px;font-family:Mulish;cursor:pointer;'
   return active
-    ? base + 'background:#D71029;color:#fff;border:1px solid #17191f'
+    ? base + 'background:var(--acento);color:#fff;border:1px solid #17191f'
     : base + 'background:#fff;color:#17191f;border:1px solid rgba(23,25,31,.12)'
 }
 

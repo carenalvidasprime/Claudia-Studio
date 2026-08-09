@@ -75,7 +75,7 @@ export function Estudio() {
                 style={sx(
                   "display:flex;flex-direction:column;align-items:flex-start;gap:1px;border-radius:9px;padding:7px 9px;cursor:pointer;font-family:'Mulish'",
                   activo
-                    ? 'background:#D71029;border:1px solid #D71029;color:#fff'
+                    ? 'background:var(--acento);border:1px solid var(--acento);color:#fff'
                     : 'background:#f4f4f4;border:1px solid rgba(23,25,31,.1);color:#17191f',
                 )}
               >
@@ -172,7 +172,7 @@ export function Estudio() {
           onClick={() => void app.generar()}
           disabled={app.generando}
           style={sx(
-            "margin-top:12px;width:100%;background:#D71029;color:#fff;border:none;border-radius:11px;padding:13px;font-family:'Mulish';font-weight:600;font-size:13.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px",
+            "margin-top:12px;width:100%;background:var(--acento);color:#fff;border:none;border-radius:11px;padding:13px;font-family:'Mulish';font-weight:600;font-size:13.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px",
             app.generando && 'opacity:.65;cursor:progress',
           )}
         >
@@ -198,7 +198,7 @@ export function Estudio() {
         {app.errorGeneracion && (
           <div
             style={sx(
-              'background:#FDE8DE;border:1px solid rgba(215,16,41,.28);border-radius:12px;padding:14px 16px;font-size:12.5px;line-height:1.6;color:#1D1D1B;margin-bottom:16px',
+              'background:var(--suave-1);border:1px solid rgba(var(--acento-rgb),.28);border-radius:12px;padding:14px 16px;font-size:12.5px;line-height:1.6;color:#1D1D1B;margin-bottom:16px',
             )}
           >
             {app.errorGeneracion}
@@ -247,7 +247,7 @@ export function Estudio() {
                 <button
                   onClick={() => app.ir('exportar')}
                   style={sx(
-                    "background:#D71029;color:#fff;border:none;border-radius:9px;padding:8px 13px;font-family:'Mulish';font-weight:600;font-size:12px;cursor:pointer",
+                    "background:var(--acento);color:#fff;border:none;border-radius:9px;padding:8px 13px;font-family:'Mulish';font-weight:600;font-size:12px;cursor:pointer",
                   )}
                 >
                   Publicar →
@@ -308,7 +308,7 @@ export function Estudio() {
                       }}
                       style={sx(
                         sel
-                          ? 'position:absolute;top:8px;right:8px;width:23px;height:23px;border-radius:50%;border:none;background:#D71029;color:#fff;font-size:12px;cursor:pointer'
+                          ? 'position:absolute;top:8px;right:8px;width:23px;height:23px;border-radius:50%;border:none;background:var(--acento);color:#fff;font-size:12px;cursor:pointer'
                           : 'position:absolute;top:8px;right:8px;width:23px;height:23px;border-radius:50%;border:1.5px solid rgba(255,255,255,.92);background:rgba(23,25,31,.32);color:#fff;font-size:12px;cursor:pointer',
                       )}
                     >
@@ -362,7 +362,7 @@ function ResumenSituacion() {
     return (
       <div
         style={sx(
-          'display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#FDE8DE;border:1px solid rgba(215,16,41,.2);border-radius:9px;padding:8px 11px;margin-bottom:14px;font-size:10.5px;color:#1D1D1B',
+          'display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--suave-1);border:1px solid rgba(var(--acento-rgb),.2);border-radius:9px;padding:8px 11px;margin-bottom:14px;font-size:10.5px;color:#1D1D1B',
         )}
       >
         <span style={sx(`${b.consentimiento ? 'color:oklch(0.5 0.11 155)' : 'color:oklch(0.55 0.16 40)'};font-weight:600`)}>
@@ -436,7 +436,7 @@ function PanelCriterio() {
           {criterio.si}
         </div>
         <div style={sx('font-size:10.5px;line-height:1.45;color:rgba(29,29,27,.75)')}>
-          <strong style={sx('color:#D71029')}>Qué no</strong>
+          <strong style={sx('color:var(--acento)')}>Qué no</strong>
           <br />
           {criterio.no}
         </div>
