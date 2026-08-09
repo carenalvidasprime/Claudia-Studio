@@ -1,0 +1,155 @@
+{
+  "name": "Claudia Studio (marca blanca) - Generar imagen",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "claudia-vidasprime",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "14123a0c-54b6-4c10-852b-6ce544e53094",
+      "name": "Webhook",
+      "webhookId": "c9f1a2b3-4d5e-6f70-8a90-1b2c3d4e5f60"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Construye la petición a Gemini (Nano Banana) y prepara los datos de la fila.\n// Si llega body.referenciaBase64, se adjunta como imagen -> edición imagen-a-imagen.\nconst body = ($input.first().json.body) || {};\nconst pieza = body.pieza || {};\nconst ctx = body.contexto || {};\nconst marca = ctx.marca || {};\nconst centro = ctx.centro || {};\nconst linea = ctx.linea || {};\nconst situacion = ctx.situacion || {};\nconst brief = pieza.brief || {};\nconst dir = brief.direccion || {};\nconst refB64 = body.referenciaBase64 || null;\nconst refMime = body.referenciaMime || 'image/png';\n\nconst paleta = Array.isArray(marca.paleta)\n  ? marca.paleta.map(c => (c && c.nombre ? c.nombre + ' (' + c.hex + ')' : c)).filter(Boolean).join(', ')\n  : '';\nconst reglas = Array.isArray(marca.reglas) ? marca.reglas.map(r => '- ' + r).join('\\n') : '';\nconst ratio = brief.ratio || '1:1';\n\nconst promptFinal = [\n  pieza.prompt || 'Imagen corporativa del sector salud, sobria y profesional, sin texto.',\n  refB64 ? 'Reinterpreta y mejora la imagen de referencia manteniendo su concepto y su sujeto principal; varia el encuadre, la luz o el entorno, pero conserva la idea central.' : '',\n  'Identidad de marca: territorio \"' + (marca.territorio || 'Salud Responsable') + '\".',\n  paleta ? 'Paleta de color de marca: ' + paleta + '.' : '',\n  centro.nombre ? 'Contexto: ' + centro.nombre + (centro.ciudad ? ' (' + centro.ciudad + ')' : '') + '.' : '',\n  linea.nombre ? 'Linea: ' + linea.nombre + '.' : '',\n  situacion.nombre ? 'Situacion: ' + situacion.nombre + '.' : '',\n  dir.estilo ? 'Estilo: ' + dir.estilo + '.' : '',\n  'Relacion de aspecto ' + ratio + '.',\n  'IMPORTANTE: la imagen no debe incluir ningun texto, palabra, letra, logotipo ni marca de agua.',\n  reglas ? 'Reglas de cumplimiento:\\n' + reglas : '',\n  pieza.notas_compliance ? 'Compliance: ' + pieza.notas_compliance : '',\n].filter(Boolean).join('\\n');\n\nconst parts = [{ text: promptFinal }];\nif (refB64) parts.push({ inline_data: { mime_type: refMime, data: refB64 } });\nconst geminiBody = JSON.stringify({ contents: [{ parts: parts }] });\n\nreturn [{\n  json: {\n    geminiBody: geminiBody,\n    storagePath: 'piezas/' + Date.now() + '-' + Math.floor(Math.random() * 1000000) + '.png',\n    titulo: pieza.titulo || 'Pieza generada',\n    centro_id: pieza.centro_id != null ? pieza.centro_id : null,\n    carpeta_id: pieza.carpeta_id != null ? pieza.carpeta_id : null,\n    situacion_id: pieza.situacion_id != null ? pieza.situacion_id : null,\n    linea_id: pieza.linea_id != null ? pieza.linea_id : null,\n    estado: pieza.estado || 'borrador',\n    fecha_publicacion: pieza.fecha_publicacion != null ? pieza.fecha_publicacion : null,\n    canal: pieza.canal != null ? pieza.canal : null,\n    consentimiento_ok: pieza.consentimiento_ok != null ? pieza.consentimiento_ok : false,\n    notas_compliance: pieza.notas_compliance != null ? pieza.notas_compliance : null,\n    promptOriginal: pieza.prompt != null ? pieza.prompt : null,\n    brief: brief,\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0],
+      "id": "0b1c2d3e-1111-4a11-9b11-aaaaaaaaaaaa",
+      "name": "Preparar datos"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.geminiBody }}",
+        "options": { "timeout": 120000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [440, 0],
+      "id": "5e567a74-73cc-4e79-a9aa-1f0db6db3ecc",
+      "name": "Generar imagen"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "aa11bb22-cc33-dd44-ee55-ff6677889900",
+              "name": "base64",
+              "value": "={{ ($json.candidates?.[0]?.content?.parts || []).map(p => (p.inlineData || p.inline_data || {}).data).filter(Boolean)[0] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [660, 0],
+      "id": "b2c3d4e5-2222-4b22-9c22-bbbbbbbbbbbb",
+      "name": "Extraer imagen"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "base64",
+        "options": { "fileName": "pieza.png", "mimeType": "image/png" }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [880, 0],
+      "id": "c3d4e5f6-3333-4c33-9d33-cccccccccccc",
+      "name": "A binario"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://oloetwfcwosxvqwcfthe.supabase.co/storage/v1/object/{{ $('Preparar datos').item.json.storagePath }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1100, 0],
+      "id": "6fa64b4a-435a-4652-922d-8f2f1bdd27a7",
+      "name": "Subir imagen",
+      "credentials": {
+        "supabaseApi": { "id": "PENDIENTE_TU_CREDENCIAL", "name": "Supabase Marca Blanca" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oloetwfcwosxvqwcfthe.supabase.co/rest/v1/piezas",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Prefer", "value": "return=representation" },
+            { "name": "Accept", "value": "application/vnd.pgrst.object+json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ titulo: $('Preparar datos').item.json.titulo, centro_id: $('Preparar datos').item.json.centro_id, carpeta_id: $('Preparar datos').item.json.carpeta_id, situacion_id: $('Preparar datos').item.json.situacion_id, linea_id: $('Preparar datos').item.json.linea_id, estado: $('Preparar datos').item.json.estado, fecha_publicacion: $('Preparar datos').item.json.fecha_publicacion, canal: $('Preparar datos').item.json.canal, consentimiento_ok: $('Preparar datos').item.json.consentimiento_ok, notas_compliance: $('Preparar datos').item.json.notas_compliance, prompt: $('Preparar datos').item.json.promptOriginal, brief: $('Preparar datos').item.json.brief, imagen_url: 'https://oloetwfcwosxvqwcfthe.supabase.co/storage/v1/object/public/' + $('Preparar datos').item.json.storagePath }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1320, 0],
+      "id": "a1313e81-69a0-4a84-a0f7-bb080ba72d20",
+      "name": "Crear fila",
+      "credentials": {
+        "supabaseApi": { "id": "PENDIENTE_TU_CREDENCIAL", "name": "Supabase Marca Blanca" }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"ok\": true, \"pieza_id\": $json.id, \"imagen_url\": $json.imagen_url } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1540, 0],
+      "id": "d4e5f6a7-4444-4d44-9e44-dddddddddddd",
+      "name": "Responder"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Preparar datos", "type": "main", "index": 0 }]] },
+    "Preparar datos": { "main": [[{ "node": "Generar imagen", "type": "main", "index": 0 }]] },
+    "Generar imagen": { "main": [[{ "node": "Extraer imagen", "type": "main", "index": 0 }]] },
+    "Extraer imagen": { "main": [[{ "node": "A binario", "type": "main", "index": 0 }]] },
+    "A binario": { "main": [[{ "node": "Subir imagen", "type": "main", "index": 0 }]] },
+    "Subir imagen": { "main": [[{ "node": "Crear fila", "type": "main", "index": 0 }]] },
+    "Crear fila": { "main": [[{ "node": "Responder", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "binaryMode": "separate" },
+  "meta": { "templateCredsSetupCompleted": true, "instanceId": "be20fad46fec302075ccb7387442981cf4d56b0249a910c0a186b0aea0db8f2e" },
+  "tags": []
+}
