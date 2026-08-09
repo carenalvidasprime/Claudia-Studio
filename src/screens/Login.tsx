@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { sx } from '../lib/sx'
 import { Flecha, Lockup } from '../components/Logos'
+import { CLIENTE, DE_CLIENTE } from '../lib/cliente'
 import { useApp } from '../store'
 
 export function Login() {
@@ -35,7 +36,7 @@ export function Login() {
       >
         <Lockup variante="login" />
         <div style={sx('font-size:33px;font-weight:500;letter-spacing:-.02em;line-height:1.22;max-width:470px;margin-top:auto')}>
-          Contenido para las redes de los centros de Ribera, generado con IA
+          Contenido para las redes de los centros{DE_CLIENTE}, generado con IA
         </div>
         <Flecha size={44} style="position:absolute;right:46px;bottom:46px" />
       </div>
@@ -44,7 +45,7 @@ export function Login() {
         <form onSubmit={enviar} style={sx('width:min(100%,320px)')}>
           <div style={sx('font-size:20px;font-weight:600')}>Inicia sesión</div>
           <div style={sx('font-size:12.5px;color:rgba(23,25,31,.5);margin-top:5px;margin-bottom:22px')}>
-            Acceso del equipo de comunicación · Grupo Ribera
+            Acceso del equipo de comunicación · {CLIENTE.cuenta}
           </div>
 
           <div style={sx('font-size:11.5px;font-weight:500;color:rgba(23,25,31,.62);margin-bottom:6px')}>Correo</div>
@@ -54,7 +55,7 @@ export function Login() {
             autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="nombre@riberasalud.es"
+            placeholder={`nombre@${CLIENTE.dominioEmail}`}
             style={sx(campo, 'margin-bottom:14px')}
           />
 

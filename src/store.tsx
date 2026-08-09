@@ -925,6 +925,6 @@ export function notasCompliance(b: Borrador, situacion: Situacion | null): strin
     if (b.fondoLibre) partes.push('Fondo libre de pantallas con datos clínicos.')
     if (b.sinPacientes) partes.push('Sin pacientes identificables en el plano.')
   }
-  partes.push('Marca Ribera aplicada · sin promesas de curación · sin superlativos no verificables · tono Salud Responsable.')
+  partes.push('Marca aplicada · sin promesas de curación · sin superlativos no verificables · tono Salud Responsable.')
   return partes.join(' ')
 }

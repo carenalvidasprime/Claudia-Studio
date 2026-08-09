@@ -1,4 +1,4 @@
-import ribera from '../assets/logo-ribera-cropped.png'
+import { CLIENTE } from './cliente'
 import type { Pieza } from './types'
 
 /**
@@ -115,8 +115,8 @@ export async function componerPiezaPNG(opciones: {
   let logoH = 0
   let logoW = 0
   let margenChip = 0
-  if (mostrarLogo) {
-    logo = await cargarImagen(ribera)
+  if (mostrarLogo && CLIENTE.logoPiezas) {
+    logo = await cargarImagen(CLIENTE.logoPiezas)
     logoH = Math.round(W * 0.05)
     logoW = Math.round(logoH * (logo.width / logo.height))
     margenChip = Math.round(logoH * 0.5)
@@ -126,7 +126,7 @@ export async function componerPiezaPNG(opciones: {
 
   if (plantilla === 'franja') {
     // Banda de color corporativo con el copy (izquierda) y el logo (derecha).
-    const maxAncho = W - pad * 2 - (mostrarLogo ? chipW + pad : 0)
+    const maxAncho = W - pad * 2 - (logo ? chipW + pad : 0)
     const lineas = hayCopy ? envolver(ctx, copy!.trim(), maxAncho) : []
     const alturaTexto = lineas.length * lh
     const bandaH = Math.max(alturaTexto, chipH) + pad * 2
@@ -155,7 +155,7 @@ export async function componerPiezaPNG(opciones: {
       ctx.fillStyle = grad
       ctx.fillRect(0, Math.round(H * 0.36), W, H - Math.round(H * 0.36))
 
-      const maxAncho = W - pad * 2 - (mostrarLogo ? chipW + pad * 0.5 : 0)
+      const maxAncho = W - pad * 2 - (logo ? chipW + pad * 0.5 : 0)
       const lineas = envolver(ctx, copy!.trim(), maxAncho)
       const baseY = H - pad
       const alturaBloque = (lineas.length - 1) * lh
@@ -220,7 +220,8 @@ export async function componerPiezaSVG(opciones: {
   const [W, H] = RESOLUCION[ratio ?? '1:1'] ?? RESOLUCION['1:1']
   const pad = Math.round(W * 0.055)
   const fondoData = await comoDataURL(url)
-  const logoData = mostrarLogo ? await comoDataURL(ribera) : ''
+  const conLogo = !!(mostrarLogo && CLIENTE.logoPiezas)
+  const logoData = conLogo ? await comoDataURL(CLIENTE.logoPiezas!) : ''
   const hayCopy = !!copy && copy.trim().length > 0
 
   // Medir para envolver el copy con la misma tipografía y tamaño que el PNG.
@@ -235,8 +236,8 @@ export async function componerPiezaSVG(opciones: {
   let logoH = 0
   let logoW = 0
   let margenChip = 0
-  if (mostrarLogo) {
-    const img = await cargarImagen(ribera)
+  if (conLogo) {
+    const img = await cargarImagen(CLIENTE.logoPiezas!)
     logoH = Math.round(W * 0.05)
     logoW = Math.round(logoH * (img.width / img.height))
     margenChip = Math.round(logoH * 0.5)
@@ -254,7 +255,7 @@ export async function componerPiezaSVG(opciones: {
   )
 
   if (plantilla === 'franja') {
-    const maxAncho = W - pad * 2 - (mostrarLogo ? chipW + pad : 0)
+    const maxAncho = W - pad * 2 - (conLogo ? chipW + pad : 0)
     const lineas = hayCopy ? envolver(medidor, copy!.trim(), maxAncho) : []
     const alturaTexto = lineas.length * lh
     const bandaH = Math.max(alturaTexto, chipH) + pad * 2
@@ -267,11 +268,11 @@ export async function componerPiezaSVG(opciones: {
         .join('')
       capas.push(`<text font-family="Mulish, sans-serif" font-weight="800" font-size="${fs}" fill="#ffffff">${tspans}</text>`)
     }
-    if (mostrarLogo) capas.push(chip(W - pad - chipW, Math.round(bandaY + (bandaH - chipH) / 2)))
+    if (conLogo) capas.push(chip(W - pad - chipW, Math.round(bandaY + (bandaH - chipH) / 2)))
   } else {
     if (hayCopy) {
       capas.push(`<rect x="0" y="0" width="${W}" height="${H}" fill="url(#scrim)"/>`)
-      const maxAncho = W - pad * 2 - (mostrarLogo ? chipW + pad * 0.5 : 0)
+      const maxAncho = W - pad * 2 - (conLogo ? chipW + pad * 0.5 : 0)
       const lineas = envolver(medidor, copy!.trim(), maxAncho)
       const baseY = H - pad
       const primeraY = baseY - (lineas.length - 1) * lh
@@ -284,7 +285,7 @@ export async function componerPiezaSVG(opciones: {
         .join('')
       capas.push(`<text font-family="Mulish, sans-serif" font-weight="800" font-size="${fs}" fill="#ffffff">${tspans}</text>`)
     }
-    if (mostrarLogo) capas.push(chip(W - pad - chipW, H - pad - chipH))
+    if (conLogo) capas.push(chip(W - pad - chipW, H - pad - chipH))
   }
 
   return (

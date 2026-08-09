@@ -110,7 +110,7 @@ export function Detalle() {
               app.avisar(mensajeError(error), 'error')
             }
           }}
-          placeholder="Texto que aparece encima de la imagen, con el logo de Ribera. Se guarda al salir del campo."
+          placeholder="Texto que aparece encima de la imagen, con el logo. Se guarda al salir del campo."
           style={sx(
             "width:100%;min-height:60px;resize:vertical;border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:11px;font-family:'Mulish';font-size:12.5px;line-height:1.5;background:#fff;color:#17191f;margin-bottom:18px",
           )}

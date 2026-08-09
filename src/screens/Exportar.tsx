@@ -126,7 +126,7 @@ export function Exportar() {
           ))}
 
           <div style={sx('font-size:10.5px;color:rgba(23,25,31,.45);line-height:1.5;margin-bottom:12px')}>
-            La descarga compone cada pieza con su marca (logo de Ribera + mensaje) en un archivo listo para publicar. El
+            La descarga compone cada pieza con su marca (logo + mensaje) en un archivo listo para publicar. El
             PNG es la pieza final; el SVG es editable (capas sueltas) para retocar en Figma o Illustrator.
           </div>
 

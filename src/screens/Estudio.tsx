@@ -36,7 +36,7 @@ export function Estudio() {
   const requiereConsentimiento = !!situacion?.requiere_consentimiento || mencionaPersonas
 
   const checks = [
-    { label: 'Marca Ribera aplicada', sub: 'Paleta, tipografía y territorio en el prompt', icono: '✓', estilo: VERDE },
+    { label: 'Marca aplicada', sub: 'Paleta, tipografía y territorio en el prompt', icono: '✓', estilo: VERDE },
     { label: 'Sin promesas de curación', sub: 'Sin resultados clínicos garantizados', icono: '✓', estilo: VERDE },
     { label: 'Sin superlativos no verificables', sub: 'Sin «el mejor» o «único» sin dato', icono: '✓', estilo: VERDE },
     { label: 'Tono Salud Responsable', sub: 'Ética, cuidado y compromiso', icono: '✓', estilo: VERDE },
@@ -122,7 +122,7 @@ export function Estudio() {
           ))}
         </div>
         <div style={sx('font-size:10px;color:rgba(23,25,31,.45);margin-top:6px;line-height:1.5')}>
-          {b.marca ? 'Se compone el logo de Ribera y el mensaje sobre la imagen.' : 'Se entrega la foto limpia, sin logo ni texto.'}
+          {b.marca ? 'Se compone el logo y el mensaje sobre la imagen.' : 'Se entrega la foto limpia, sin logo ni texto.'}
         </div>
 
         {b.marca && (

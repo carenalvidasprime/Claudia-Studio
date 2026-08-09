@@ -1,13 +1,12 @@
 import { sx } from '../lib/sx'
-import ribera from '../assets/logo-ribera-cropped.png'
+import { CLIENTE } from '../lib/cliente'
 import vidasprimeTrim from '../assets/logo-vidasprime-black-trim.png'
 import vidasprime from '../assets/logo-vidasprime-black.png'
 
 /**
- * Lockup «Claudia by VidasPrime | ribera».
- *
- * Proporciones cerradas tras varias iteraciones en el prototipo: «by VidasPrime»
- * nunca debe rebasar el ancho de «Claudia», y ambos logos comparten eje vertical.
+ * Lockup del producto «Claudia by VidasPrime», con el logo del cliente al lado
+ * si el despliegue lo tiene (Ribera). En la base de marca blanca no hay logo de
+ * cliente y se muestra solo «Claudia by VidasPrime».
  */
 export function Lockup({ variante }: { variante: 'login' | 'sidebar' }) {
   const login = variante === 'login'
@@ -36,8 +35,16 @@ export function Lockup({ variante }: { variante: 'login' | 'sidebar' }) {
           />
         </div>
       </div>
-      <span style={sx(`width:1.5px;height:${login ? '44px' : '30px'};background:rgba(29,29,27,.14)`)} />
-      <img src={ribera} alt="Ribera" style={sx(`height:${login ? '42px' : '22px'};width:auto;display:block`)} />
+      {CLIENTE.logoPiezas && (
+        <>
+          <span style={sx(`width:1.5px;height:${login ? '44px' : '30px'};background:rgba(29,29,27,.14)`)} />
+          <img
+            src={CLIENTE.logoPiezas}
+            alt={CLIENTE.cliente ?? 'Cliente'}
+            style={sx(`height:${login ? '42px' : '22px'};width:auto;display:block`)}
+          />
+        </>
+      )}
     </div>
   )
 }

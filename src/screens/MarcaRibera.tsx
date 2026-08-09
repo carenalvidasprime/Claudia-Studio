@@ -150,7 +150,7 @@ export function MarcaRibera() {
       <div style={sx('font-size:13px;font-weight:700;margin-bottom:10px')}>Tipografía</div>
       <div style={sx('background:#fff;border:1px solid rgba(29,29,27,.1);border-radius:12px;padding:18px 20px;margin-bottom:24px')}>
         <div style={sx("font-family:'Mulish';font-weight:800;font-size:26px;letter-spacing:-.01em")}>
-          {TIPOGRAFIA} — la voz visual de Ribera
+          {TIPOGRAFIA} — la voz visual de marca
         </div>
         <div style={sx("font-family:'Mulish';font-weight:400;font-size:13px;color:#706F6F;margin-top:6px")}>
           Sans serif, cercana y de fácil lectura. Titulares en bold/extrabold, cuerpo en regular/light.

@@ -98,7 +98,7 @@ export function Copiloto() {
           <>
             <div style={sx('font-size:12.5px;color:#706F6F;line-height:1.55')}>
               Hola, soy Claudia. Te ayudo a redactar el encargo, propongo copys y titulares por red y reviso que todo
-              respete el tono <strong>Salud Responsable</strong> de Ribera. Prueba:
+              respete el tono <strong>Salud Responsable</strong>. Prueba:
             </div>
             <div style={sx('display:flex;flex-direction:column;gap:7px;margin-top:4px')}>
               {SUGERENCIAS.map((s) => (

@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { sx } from '../lib/sx'
 import { colorDeCentro, hueDeCentro, pill, plural, trama } from '../lib/ui'
 import { Flecha } from '../components/Logos'
+import { CLIENTE, DE_CLIENTE } from '../lib/cliente'
 import { useApp } from '../store'
 import type { Centro, Hub } from '../lib/types'
 
@@ -41,7 +42,7 @@ export function Dashboard() {
       <div style={sx('display:grid;grid-template-columns:1.5fr 1fr;border-radius:16px;overflow:hidden;margin-bottom:22px;min-height:172px')}>
         <div style={sx('background:linear-gradient(155deg,#fafafa 35%,#FDE8DE);padding:28px 30px;position:relative')}>
           <div style={sx('font-size:25px;font-weight:500;letter-spacing:-.02em;line-height:1.25')}>
-            Una marca. Todos los centros de Ribera.
+            Una marca. Todos los centros{DE_CLIENTE}.
             <br />
             Cada pieza, coherente.
           </div>
@@ -54,7 +55,7 @@ export function Dashboard() {
         >
           <Flecha style="position:absolute;top:24px;right:30px" />
           <div style={sx('font-size:12px;color:rgba(23,25,31,.65);text-align:right;line-height:1.5;max-width:220px')}>
-            Piezas listas para publicar, con la identidad de Ribera aplicada y el rigor de Salud Responsable en cada una.
+            Piezas listas para publicar, con la identidad{DE_CLIENTE} aplicada y el rigor de {CLIENTE.territorio} en cada una.
           </div>
         </div>
       </div>
@@ -143,7 +144,7 @@ function TarjetaCentro({ centro }: { centro: Centro }) {
   const carpetas = app.carpetas.filter((c) => String(c.centro_id) === String(centro.id))
   const piezas = app.piezasDeCentro(centro.id)
 
-  const detalle = [centro.tipo, centro.ciudad].filter(Boolean).join(' · ') || 'Centro del Grupo Ribera'
+  const detalle = [centro.tipo, centro.ciudad].filter(Boolean).join(' · ') || `Centro${DE_CLIENTE}`
   const cuenta = carpetas.length
     ? `${plural(carpetas.length, 'carpeta', 'carpetas')} · ${plural(piezas.length, 'pieza', 'piezas')}`
     : piezas.length

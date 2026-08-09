@@ -8,6 +8,7 @@ import * as api from '../lib/api'
 import { mensajeError } from '../lib/supabase'
 import { useApp } from '../store'
 import { TERRITORIO, TIPOGRAFIA } from '../lib/marca'
+import { CLIENTE, DE_CLIENTE } from '../lib/cliente'
 
 export function CentroScreen() {
   const app = useApp()
@@ -513,10 +514,12 @@ function TabMarca() {
       >
         <span style={sx('width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#D71029,#f26d84);flex:none')} />
         <span style={sx('font-size:12.5px;color:#1D1D1B;line-height:1.5')}>
-          <strong>Este centro hereda la identidad de Grupo Ribera.</strong> Paleta, tipografía y reglas de cumplimiento
+          <strong>Este centro hereda la identidad{DE_CLIENTE}.</strong> Paleta, tipografía y reglas de cumplimiento
           son comunes a todos los centros.
         </span>
-        <span style={sx('margin-left:auto;font-size:12px;font-weight:700;color:#D71029;flex:none')}>Ver Marca Ribera →</span>
+        <span style={sx('margin-left:auto;font-size:12px;font-weight:700;color:#D71029;flex:none')}>
+          Ver {CLIENTE.cliente ? `Marca ${CLIENTE.cliente}` : 'Marca'} →
+        </span>
       </button>
 
       <div style={sx('display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:14px')}>
@@ -531,7 +534,7 @@ function TabMarca() {
       <p style={sx('font-size:11.5px;color:rgba(23,25,31,.45);margin:18px 0 0;line-height:1.6;max-width:620px')}>
         Los datos del centro se leen de la tabla <strong>centros</strong> de Supabase y no se editan desde aquí. Para
         personalizaciones por centro —logo propio, colores locales o tono específico— harían falta columnas nuevas en esa
-        tabla; hoy toda la identidad se hereda de Marca Ribera.
+        tabla; hoy toda la identidad se hereda de la Marca.
       </p>
     </>
   )

@@ -1,5 +1,6 @@
 import { sx } from '../lib/sx'
 import { navBtn, navDot } from '../lib/ui'
+import { CLIENTE } from '../lib/cliente'
 import { useApp, type Pantalla } from '../store'
 import { Lockup } from './Logos'
 
@@ -70,7 +71,7 @@ export function Sidebar() {
   }))
 
   const marca = [
-    { nombre: 'Marca Ribera', activo: app.pantalla === 'marcaRibera', ir: () => app.ir('marcaRibera') },
+    { nombre: CLIENTE.cliente ? `Marca ${CLIENTE.cliente}` : 'Marca', activo: app.pantalla === 'marcaRibera', ir: () => app.ir('marcaRibera') },
   ]
 
   const correo = app.sesion?.user.email ?? ''
@@ -93,7 +94,7 @@ export function Sidebar() {
         <div style={sx('display:flex;align-items:center;gap:9px;padding:2px')}>
           <div style={sx('width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#D71029,#f26d84);flex:none')} />
           <div style={sx('line-height:1.25;min-width:0')}>
-            <div style={sx('font-size:12.5px;font-weight:600')}>Grupo Ribera</div>
+            <div style={sx('font-size:12.5px;font-weight:600')}>{CLIENTE.cuenta}</div>
             <div
               style={sx(
                 'font-size:10.5px;color:rgba(23,25,31,.45);overflow:hidden;text-overflow:ellipsis;white-space:nowrap',

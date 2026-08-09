@@ -1,14 +1,14 @@
 import { sx } from '../lib/sx'
 import { ratioToCss } from '../lib/ui'
-import ribera from '../assets/logo-ribera-cropped.png'
+import { CLIENTE } from '../lib/cliente'
 
 /**
  * Capa de marca sobre la imagen generada.
  *
  * La IA produce solo la fotografía de fondo (limpia, sin texto ni logos). Aquí,
- * en el frontend y con los assets reales, se compone la identidad de Ribera
+ * en el frontend y con los assets reales, se compone la identidad del cliente
  * ENCIMA: logo real, mensaje/copy en Mulish y un acento de color corporativo.
- * Así el logo nunca es inventado y el texto es siempre legible y correcto.
+ * El logo sale de la configuración del cliente; en marca blanca no hay logo.
  */
 export function MarcaOverlay({
   url,
@@ -32,6 +32,7 @@ export function MarcaOverlay({
 }) {
   const base = `aspect-ratio:${ratioToCss(ratio)};border-radius:${radio};position:relative;overflow:hidden;background:#eef0f1`
   const hayCopy = !!copy && copy.trim().length > 0
+  const conLogo = !!(mostrarLogo && CLIENTE.logoPiezas)
 
   return (
     <div style={sx(base)}>
@@ -44,7 +45,7 @@ export function MarcaOverlay({
       )}
 
       {/* Plantilla FRANJA: banda de color corporativo con el copy y el logo. */}
-      {url && plantilla === 'franja' && (hayCopy || mostrarLogo) && (
+      {url && plantilla === 'franja' && (hayCopy || conLogo) && (
         <div
           style={sx(
             `position:absolute;left:0;right:0;bottom:0;background:#D71029;display:flex;align-items:center;gap:${grande ? '14px' : '8px'};padding:${grande ? '16px 18px' : '9px 10px'}`,
@@ -59,13 +60,13 @@ export function MarcaOverlay({
               {copy}
             </div>
           )}
-          {mostrarLogo && (
+          {conLogo && (
             <div
               style={sx(
                 `flex:none;background:#fff;border-radius:${grande ? '8px' : '5px'};padding:${grande ? '6px 9px' : '3px 5px'};display:flex;align-items:center`,
               )}
             >
-              <img src={ribera} alt="Ribera" style={sx(`height:${grande ? '20px' : '11px'};width:auto;display:block`)} />
+              <img src={CLIENTE.logoPiezas!} alt={CLIENTE.cliente ?? ''} style={sx(`height:${grande ? '20px' : '11px'};width:auto;display:block`)} />
             </div>
           )}
         </div>
@@ -81,19 +82,19 @@ export function MarcaOverlay({
               )}
             />
           )}
-          {mostrarLogo && (
+          {conLogo && (
             <div
               style={sx(
                 `position:absolute;bottom:${grande ? '16px' : '9px'};right:${grande ? '16px' : '9px'};background:#fff;border-radius:${grande ? '9px' : '6px'};padding:${grande ? '6px 10px' : '4px 6px'};display:flex;align-items:center;box-shadow:0 3px 12px rgba(0,0,0,.25)`,
               )}
             >
-              <img src={ribera} alt="Ribera" style={sx(`height:${grande ? '20px' : '12px'};width:auto;display:block`)} />
+              <img src={CLIENTE.logoPiezas!} alt={CLIENTE.cliente ?? ''} style={sx(`height:${grande ? '20px' : '12px'};width:auto;display:block`)} />
             </div>
           )}
           {hayCopy && (
             <div
               style={sx(
-                `position:absolute;left:${grande ? '20px' : '13px'};right:${mostrarLogo ? (grande ? '96px' : '54px') : grande ? '20px' : '13px'};bottom:${grande ? '18px' : '12px'}`,
+                `position:absolute;left:${grande ? '20px' : '13px'};right:${conLogo ? (grande ? '96px' : '54px') : grande ? '20px' : '13px'};bottom:${grande ? '18px' : '12px'}`,
               )}
             >
               <div style={sx(`width:${grande ? '34px' : '24px'};height:${grande ? '4px' : '3px'};border-radius:2px;background:#D71029;margin-bottom:${grande ? '10px' : '7px'}`)} />

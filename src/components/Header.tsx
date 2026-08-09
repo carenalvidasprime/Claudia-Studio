@@ -1,11 +1,12 @@
 import { Fragment } from 'react'
 import { sx } from '../lib/sx'
+import { CLIENTE } from '../lib/cliente'
 import { useApp, type Pantalla } from '../store'
 
 const TITULOS: Record<Pantalla, string> = {
   dashboard: 'Tus centros',
   calendario: 'Calendario editorial',
-  marcaRibera: 'Marca Ribera',
+  marcaRibera: CLIENTE.cliente ? `Marca ${CLIENTE.cliente}` : 'Marca',
   centro: '',
   gateway: 'Nueva creatividad',
   situaciones: 'Elige una situación',
