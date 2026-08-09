@@ -776,20 +776,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // Una llamada a n8n por variante: el workflow genera una imagen por llamada,
     // así conseguimos las N variantes que pide el brief sin depender de que n8n
-    // itere por dentro. Se lanzan en paralelo y luego se relee Supabase.
+    // itere por dentro. Se lanzan EN SERIE (una tras otra, con un respiro entre
+    // ellas): el modelo de imagen de Google limita las peticiones simultáneas y
+    // en paralelo las rechaza con «too many requests». En serie son fiables.
     const nVariantes = Math.min(Math.max(brief.variantes ?? 1, 1), 6)
     const payloadUno: PayloadGenerar = {
       ...payload,
       pieza: { ...payload.pieza, brief: { ...payload.pieza.brief, variantes: 1 } },
     }
+    const espera = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
     const desde = new Date().toISOString()
     setSt((p) => ({ ...p, generando: true, errorGeneracion: null, resultados: [], seleccion: {}, favoritas: {} }))
 
     try {
-      const respuestas = await Promise.allSettled(
-        Array.from({ length: nVariantes }, () => generarPieza(payloadUno)),
-      )
+      const respuestas: PromiseSettledResult<Awaited<ReturnType<typeof generarPieza>>>[] = []
+      for (let i = 0; i < nVariantes; i++) {
+        if (i > 0) await espera(1500)
+        try {
+          respuestas.push({ status: 'fulfilled', value: await generarPieza(payloadUno) })
+        } catch (error) {
+          respuestas.push({ status: 'rejected', reason: error })
+        }
+      }
       const algunaOk = respuestas.some((r) => r.status === 'fulfilled' && r.value.ok !== false)
 
       // Si todas fallan, propaga el primer error para mostrarlo en el estudio.
