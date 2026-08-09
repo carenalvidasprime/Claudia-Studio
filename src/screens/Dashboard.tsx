@@ -64,7 +64,8 @@ export function Dashboard() {
       <div style={sx('display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap')}>
         <div style={sx('font-size:14.5px;font-weight:600')}>Centros</div>
         <div style={sx('font-size:11.5px;color:rgba(23,25,31,.45)')}>
-          {plural(app.centros.length, 'centro', 'centros')} · {plural(app.hubs.length, 'hub', 'hubs')} · {DEMO ? 'datos demo' : 'datos de Supabase'}
+          {plural(app.centros.length, 'centro', 'centros')}
+          {app.hubs.length > 0 && ` · ${plural(app.hubs.length, 'hub', 'hubs')}`} · {DEMO ? 'datos demo' : 'datos de Supabase'}
         </div>
       </div>
 
@@ -121,13 +122,16 @@ export function Dashboard() {
 
       {grupos.map((g) => (
         <div key={g.hub ? String(g.hub.id) : 'sin-hub'} style={sx('margin-bottom:22px')}>
-          <div
-            style={sx(
-              "font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.09em;color:rgba(23,25,31,.45);font-weight:600;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(23,25,31,.08)",
-            )}
-          >
-            {g.hub ? g.hub.nombre : 'Sin asignar'}
-          </div>
+          {/* Sin hubs configurados: lista plana, sin cabecera de grupo. */}
+          {(g.hub || app.hubs.length > 0) && (
+            <div
+              style={sx(
+                "font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.09em;color:rgba(23,25,31,.45);font-weight:600;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(23,25,31,.08)",
+              )}
+            >
+              {g.hub ? g.hub.nombre : 'Sin asignar'}
+            </div>
+          )}
           <div style={sx('display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px')}>
             {g.centros.map((c) => (
               <TarjetaCentro key={String(c.id)} centro={c} />

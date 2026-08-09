@@ -16,17 +16,17 @@ export const DEMO_SESION = {
   user: { id: 'demo', email: 'demo@claudia.studio' },
 } as unknown as Session
 
-export const DEMO_HUBS: Hub[] = [
-  { id: 'h1', clave: 'norte', nombre: 'Zona Norte' },
-  { id: 'h2', clave: 'centro', nombre: 'Zona Centro' },
-  { id: 'h3', clave: 'sur', nombre: 'Zona Sur' },
-]
+/**
+ * Los hubs (agrupaciones de centros) son opcionales. Un proyecto genérico no
+ * los usa, así que la demo no incluye ninguno y los centros salen sin agrupar.
+ */
+export const DEMO_HUBS: Hub[] = []
 
 export const DEMO_CENTROS: Centro[] = [
-  { id: 'c1', nombre: 'Hospital Demo Norte', ciudad: 'Bilbao', hub_id: 'h1', tipo: 'Hospital' },
-  { id: 'c2', nombre: 'Clínica Demo Centro', ciudad: 'Madrid', hub_id: 'h2', tipo: 'Clínica' },
-  { id: 'c3', nombre: 'Centro Médico Demo', ciudad: 'Valencia', hub_id: 'h2', tipo: 'Centro médico' },
-  { id: 'c4', nombre: 'Hospital Demo Sur', ciudad: 'Sevilla', hub_id: 'h3', tipo: 'Hospital' },
+  { id: 'c1', nombre: 'Hospital Demo', ciudad: 'Bilbao', hub_id: null, tipo: 'Hospital' },
+  { id: 'c2', nombre: 'Clínica Demo', ciudad: 'Madrid', hub_id: null, tipo: 'Clínica' },
+  { id: 'c3', nombre: 'Centro Médico Demo', ciudad: 'Valencia', hub_id: null, tipo: 'Centro médico' },
+  { id: 'c4', nombre: 'Consulta Demo', ciudad: 'Sevilla', hub_id: null, tipo: 'Consulta' },
 ]
 
 export const DEMO_LINEAS: Linea[] = [

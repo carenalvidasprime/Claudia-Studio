@@ -146,23 +146,21 @@ create policy "piezas_bucket_select_auth" on storage.objects
 -- ===========================================================================
 -- Semilla DEMO genérica (sin datos de ningún cliente). Bórrala y mete los
 -- datos reales del cliente cuando corresponda.
+--
+-- Nota sobre HUBS: los hubs (agrupaciones de centros, p. ej. zonas) son
+-- OPCIONALES. Un proyecto genérico normalmente no los necesita, así que la
+-- semilla NO crea ninguno y los centros quedan sin agrupar. Si un cliente sí
+-- usa agrupaciones, basta con insertar filas en «hubs» y asignar «hub_id» a
+-- sus centros; la app los agrupará automáticamente.
 -- ===========================================================================
-insert into public.hubs (clave, nombre)
-select v.clave, v.nombre from (values
-  ('norte',  'Zona Norte'),
-  ('centro', 'Zona Centro'),
-  ('sur',    'Zona Sur')
-) as v(clave, nombre)
-where not exists (select 1 from public.hubs);
-
 insert into public.centros (nombre, ciudad, hub_id, tipo)
-select v.nombre, v.ciudad, (select id from public.hubs where clave = v.hub), v.tipo
+select v.nombre, v.ciudad, null, v.tipo
 from (values
-  ('Hospital Demo Norte',  'Bilbao',   'norte',  'Hospital'),
-  ('Clínica Demo Centro',  'Madrid',   'centro', 'Clínica'),
-  ('Centro Médico Demo',   'Valencia', 'centro', 'Centro médico'),
-  ('Hospital Demo Sur',    'Sevilla',  'sur',    'Hospital')
-) as v(nombre, ciudad, hub, tipo)
+  ('Hospital Demo',        'Bilbao',   'Hospital'),
+  ('Clínica Demo',         'Madrid',   'Clínica'),
+  ('Centro Médico Demo',   'Valencia', 'Centro médico'),
+  ('Consulta Demo',        'Sevilla',  'Consulta')
+) as v(nombre, ciudad, tipo)
 where not exists (select 1 from public.centros);
 
 insert into public.lineas (clave, nombre, descripcion)
