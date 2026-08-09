@@ -67,3 +67,14 @@ export const CLIENTE: ClienteConfig = CONFIGS[activo] ?? RIBERA
 
 /** Nombre para el sufijo de textos: « de Ribera» o «» en marca blanca. */
 export const DE_CLIENTE = CLIENTE.cliente ? ` de ${CLIENTE.cliente}` : ''
+
+/**
+ * Título de la pestaña del navegador. Con cliente: «Claudia · Ribera».
+ * En marca blanca (sin cliente): «Claudia Studio».
+ */
+export const TITULO = CLIENTE.cliente ? `${CLIENTE.producto} · ${CLIENTE.cliente}` : `${CLIENTE.producto} Studio`
+
+/** Descripción (meta) según el cliente activo. */
+export const DESCRIPCION = CLIENTE.cliente
+  ? `Producción de contenido para las redes de los centros de ${CLIENTE.cliente}.`
+  : 'Producción de contenido de marca para redes sociales, con criterio de dirección de arte.'
