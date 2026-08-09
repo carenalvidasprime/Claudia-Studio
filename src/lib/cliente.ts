@@ -45,6 +45,8 @@ export interface ClienteConfig {
   reglas: MarcaRegla[]
   /** Colores del chrome de la interfaz. */
   tema: Tema
+  /** Ruta del favicon (icono de la pestaña) de este cliente. */
+  favicon: string
   /** Dominio para el placeholder del correo en el login. */
   dominioEmail: string
 }
@@ -81,6 +83,7 @@ const RIBERA: ClienteConfig = {
   paleta: PALETA_POR_DEFECTO,
   reglas: REGLAS_POR_DEFECTO,
   tema: TEMA_RIBERA,
+  favicon: '/favicon.png',
   dominioEmail: 'riberasalud.es',
 }
 
@@ -97,6 +100,7 @@ const VIDASPRIME: ClienteConfig = {
   paleta: PALETA_POR_DEFECTO,
   reglas: REGLAS_POR_DEFECTO,
   tema: TEMA_VIDASPRIME,
+  favicon: '/favicon-vidasprime.png',
   dominioEmail: 'tuempresa.com',
 }
 
@@ -137,4 +141,6 @@ export function aplicarTema(): void {
   r.setProperty('--suave-1', TEMA.suave1)
   r.setProperty('--suave-2', TEMA.suave2)
   r.setProperty('--suave-3', TEMA.suave3)
+  const icono = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+  if (icono) icono.href = CLIENTE.favicon
 }
