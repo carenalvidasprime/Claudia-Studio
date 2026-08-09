@@ -3,6 +3,7 @@ import { sx } from '../lib/sx'
 import { colorDeCentro, hueDeCentro, pill, plural, trama } from '../lib/ui'
 import { Flecha } from '../components/Logos'
 import { CLIENTE, DE_CLIENTE } from '../lib/cliente'
+import { DEMO } from '../lib/demo'
 import { useApp } from '../store'
 import type { Centro, Hub } from '../lib/types'
 
@@ -63,7 +64,7 @@ export function Dashboard() {
       <div style={sx('display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap')}>
         <div style={sx('font-size:14.5px;font-weight:600')}>Centros</div>
         <div style={sx('font-size:11.5px;color:rgba(23,25,31,.45)')}>
-          {plural(app.centros.length, 'centro', 'centros')} · {plural(app.hubs.length, 'hub', 'hubs')} · datos de Supabase
+          {plural(app.centros.length, 'centro', 'centros')} · {plural(app.hubs.length, 'hub', 'hubs')} · {DEMO ? 'datos demo' : 'datos de Supabase'}
         </div>
       </div>
 

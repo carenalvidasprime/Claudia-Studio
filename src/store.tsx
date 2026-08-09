@@ -13,6 +13,16 @@ import { supabase, supabaseConfigurado, mensajeError } from './lib/supabase'
 import * as api from './lib/api'
 import { generarPieza, generarConfigurado, type PayloadGenerar } from './lib/n8n'
 import { presentacionDe, PALETA_POR_DEFECTO, REGLAS_POR_DEFECTO, TERRITORIO, TIPOGRAFIA } from './lib/marca'
+import {
+  DEMO,
+  DEMO_CARPETAS,
+  DEMO_CENTROS,
+  DEMO_HUBS,
+  DEMO_LINEAS,
+  DEMO_PIEZAS,
+  DEMO_SESION,
+  DEMO_SITUACIONES,
+} from './lib/demo'
 import type {
   Brief,
   Carpeta,
@@ -331,6 +341,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // --- Sesión ---------------------------------------------------------------
   useEffect(() => {
+    if (DEMO) {
+      // Marca blanca sin backend: entra directo con una sesión demo.
+      setSt((p) => ({ ...p, sesion: DEMO_SESION, comprobandoSesion: false }))
+      return
+    }
     if (!supabaseConfigurado) {
       setSt((p) => ({
         ...p,
@@ -356,6 +371,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const recargar = useCallback(async () => {
     setSt((p) => ({ ...p, cargandoDatos: true, errorDatos: null }))
+    if (DEMO) {
+      // Datos genéricos incorporados: ni Supabase ni n8n.
+      setSt((p) => ({
+        ...p,
+        hubs: DEMO_HUBS,
+        centros: DEMO_CENTROS,
+        lineas: DEMO_LINEAS,
+        situaciones: DEMO_SITUACIONES,
+        carpetas: DEMO_CARPETAS,
+        piezas: DEMO_PIEZAS,
+        paleta: PALETA_POR_DEFECTO,
+        reglas: REGLAS_POR_DEFECTO,
+        marcaEditable: false,
+        cargandoDatos: false,
+        errorDatos: null,
+      }))
+      return
+    }
     try {
       const [catalogos, piezas, marca] = await Promise.all([
         api.cargarCatalogos(),
