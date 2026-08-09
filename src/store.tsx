@@ -13,6 +13,7 @@ import { supabase, supabaseConfigurado, mensajeError } from './lib/supabase'
 import * as api from './lib/api'
 import { generarPieza, generarConfigurado, type PayloadGenerar } from './lib/n8n'
 import { presentacionDe, PALETA_POR_DEFECTO, REGLAS_POR_DEFECTO, TERRITORIO, TIPOGRAFIA } from './lib/marca'
+import { CLIENTE } from './lib/cliente'
 import {
   DEMO,
   DEMO_CARPETAS,
@@ -256,6 +257,50 @@ const ESTADO_INICIAL: Estado_ = {
   aviso: null,
 }
 
+// --- Persistencia ligera en el navegador ---------------------------------
+// Guardamos SOLO la navegación y el borrador (no los datos, que se releen de
+// Supabase, ni el estado transitorio de UI). Así recargar la página no borra
+// lo que el usuario había empezado. La clave incluye el cliente para no mezclar
+// borradores entre despliegues.
+const CLAVE_PERSISTENCIA = `claudia:estado:${CLIENTE.id}`
+const CAMPOS_PERSISTENTES = [
+  'pantalla',
+  'hubFiltro',
+  'centroId',
+  'carpetaId',
+  'piezaId',
+  'origen',
+  'centroTab',
+  'borrador',
+  'resultados',
+  'seleccion',
+  'favoritas',
+  'filtroResultados',
+] as const
+
+function cargarPersistido(): Partial<Estado_> {
+  try {
+    const raw = localStorage.getItem(CLAVE_PERSISTENCIA)
+    if (!raw) return {}
+    const obj = JSON.parse(raw) as Record<string, unknown>
+    const out: Record<string, unknown> = {}
+    for (const k of CAMPOS_PERSISTENTES) if (k in obj) out[k] = obj[k]
+    return out as Partial<Estado_>
+  } catch {
+    return {}
+  }
+}
+
+function guardarPersistido(st: Estado_): void {
+  try {
+    const sub: Record<string, unknown> = {}
+    for (const k of CAMPOS_PERSISTENTES) sub[k] = st[k]
+    localStorage.setItem(CLAVE_PERSISTENCIA, JSON.stringify(sub))
+  } catch {
+    /* almacenamiento no disponible: seguimos sin persistir */
+  }
+}
+
 type Parche = Partial<Estado_> | ((prev: Estado_) => Partial<Estado_>)
 
 interface Contexto extends Estado_ {
@@ -310,7 +355,7 @@ export function useApp(): Contexto {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [st, setSt] = useState<Estado_>(ESTADO_INICIAL)
+  const [st, setSt] = useState<Estado_>(() => ({ ...ESTADO_INICIAL, ...cargarPersistido() }))
   const timerAviso = useRef<number | undefined>(undefined)
   const accionModal = useRef<Modal['confirmar'] | null>(null)
 
@@ -422,6 +467,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (st.sesion) void recargar()
   }, [st.sesion, recargar])
+
+  // Persiste navegación + borrador para que recargar no borre lo empezado.
+  useEffect(() => {
+    guardarPersistido(st)
+  }, [
+    st.pantalla,
+    st.hubFiltro,
+    st.centroId,
+    st.carpetaId,
+    st.piezaId,
+    st.origen,
+    st.centroTab,
+    st.borrador,
+    st.resultados,
+    st.seleccion,
+    st.favoritas,
+    st.filtroResultados,
+  ])
 
   const entrar = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
