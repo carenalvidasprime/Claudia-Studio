@@ -39,6 +39,7 @@ export interface PayloadGenerar {
     situacion: Situacion | null
     marca: {
       territorio: string
+      tono?: string
       tipografia: string
       paleta: { hex: string; nombre: string }[]
       reglas: string[]

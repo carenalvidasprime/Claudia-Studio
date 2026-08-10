@@ -80,7 +80,7 @@ export function Header() {
       segs = [{ label: 'CALENDARIO' }]
       break
     case 'marcaRibera':
-      segs = [{ label: 'MARCA RIBERA' }]
+      segs = [{ label: (CLIENTE.cliente ? `MARCA ${CLIENTE.cliente}` : 'MARCA').toUpperCase() }]
       break
     case 'centro':
       segs = [segDash, { label: (centro?.nombre ?? 'CENTRO').toUpperCase() }]

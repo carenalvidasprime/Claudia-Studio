@@ -1,4 +1,5 @@
 import { CLIENTE } from './cliente'
+import { marcaActiva } from './brand'
 import type { Pieza } from './types'
 
 /**
@@ -115,8 +116,9 @@ export async function componerPiezaPNG(opciones: {
   let logoH = 0
   let logoW = 0
   let margenChip = 0
-  if (mostrarLogo && CLIENTE.logoPiezas) {
-    logo = await cargarImagen(CLIENTE.logoPiezas)
+  const logoUrl = marcaActiva().logoUrl
+  if (mostrarLogo && logoUrl) {
+    logo = await cargarImagen(logoUrl, /^https?:/.test(logoUrl))
     logoH = Math.round(W * 0.05)
     logoW = Math.round(logoH * (logo.width / logo.height))
     margenChip = Math.round(logoH * 0.5)
@@ -220,8 +222,9 @@ export async function componerPiezaSVG(opciones: {
   const [W, H] = RESOLUCION[ratio ?? '1:1'] ?? RESOLUCION['1:1']
   const pad = Math.round(W * 0.055)
   const fondoData = await comoDataURL(url)
-  const conLogo = !!(mostrarLogo && CLIENTE.logoPiezas)
-  const logoData = conLogo ? await comoDataURL(CLIENTE.logoPiezas!) : ''
+  const logoUrl = marcaActiva().logoUrl
+  const conLogo = !!(mostrarLogo && logoUrl)
+  const logoData = conLogo ? await comoDataURL(logoUrl!) : ''
   const hayCopy = !!copy && copy.trim().length > 0
 
   // Medir para envolver el copy con la misma tipografía y tamaño que el PNG.
@@ -237,7 +240,7 @@ export async function componerPiezaSVG(opciones: {
   let logoW = 0
   let margenChip = 0
   if (conLogo) {
-    const img = await cargarImagen(CLIENTE.logoPiezas!)
+    const img = await cargarImagen(logoUrl!, /^https?:/.test(logoUrl!))
     logoH = Math.round(W * 0.05)
     logoW = Math.round(logoH * (img.width / img.height))
     margenChip = Math.round(logoH * 0.5)

@@ -85,6 +85,16 @@ create table if not exists public.marca_reglas (
   orden  int
 );
 
+-- Identidad del Brand Kit (singleton: una sola fila). Logo, territorio, tono de
+-- voz y tipografía editables desde la propia app.
+create table if not exists public.marca_config (
+  id          bigint generated always as identity primary key,
+  logo_url    text,
+  territorio  text,
+  tono_voz    text,
+  tipografia  text
+);
+
 -- --- RLS --------------------------------------------------------------------
 alter table public.hubs         enable row level security;
 alter table public.centros      enable row level security;
@@ -94,6 +104,7 @@ alter table public.carpetas     enable row level security;
 alter table public.piezas       enable row level security;
 alter table public.marca_paleta enable row level security;
 alter table public.marca_reglas enable row level security;
+alter table public.marca_config enable row level security;
 
 -- Catálogos: lectura para el equipo autenticado.
 drop policy if exists "hubs_select_auth" on public.hubs;
@@ -130,6 +141,8 @@ drop policy if exists "marca_paleta_all_auth" on public.marca_paleta;
 create policy "marca_paleta_all_auth" on public.marca_paleta for all to authenticated using (true) with check (true);
 drop policy if exists "marca_reglas_all_auth" on public.marca_reglas;
 create policy "marca_reglas_all_auth" on public.marca_reglas for all to authenticated using (true) with check (true);
+drop policy if exists "marca_config_all_auth" on public.marca_config;
+create policy "marca_config_all_auth" on public.marca_config for all to authenticated using (true) with check (true);
 
 -- --- Storage: bucket público «piezas» ---------------------------------------
 insert into storage.buckets (id, name, public)

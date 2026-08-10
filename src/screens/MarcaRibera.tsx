@@ -1,5 +1,6 @@
+import { useRef, useState } from 'react'
 import { sx } from '../lib/sx'
-import { TERRITORIO, TERRITORIO_DESC, TIPOGRAFIA, normalizarHex } from '../lib/marca'
+import { normalizarHex } from '../lib/marca'
 import * as api from '../lib/api'
 import { mensajeError } from '../lib/supabase'
 import { useApp } from '../store'
@@ -55,21 +56,7 @@ export function MarcaRibera() {
 
   return (
     <section className="fade" style={sx('padding:28px 32px 60px;max-width:900px')}>
-      <div style={sx('background:linear-gradient(155deg,#fafafa 35%,var(--suave-1));border-radius:16px;padding:26px 28px;margin-bottom:22px')}>
-        <div
-          style={sx(
-            "font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.09em;color:rgba(29,29,27,.5);margin-bottom:8px",
-          )}
-        >
-          TERRITORIO DE MARCA
-        </div>
-        <div style={sx('font-size:23px;font-weight:500;letter-spacing:-.02em;max-width:520px;line-height:1.3')}>
-          {TERRITORIO}
-        </div>
-        <div style={sx('font-size:12.5px;color:#706F6F;margin-top:8px;max-width:560px;line-height:1.55')}>
-          {TERRITORIO_DESC}
-        </div>
-      </div>
+      <Identidad />
 
       {!editable && (
         <div
@@ -77,8 +64,9 @@ export function MarcaRibera() {
             'background:#fff;border:1px solid rgba(23,25,31,.12);border-radius:12px;padding:14px 16px;font-size:12px;line-height:1.6;color:#1D1D1B;margin-bottom:22px',
           )}
         >
-          Modo lectura: la paleta y las reglas se muestran con los valores del brandbook. Para poder añadirlas y
-          quitarlas desde aquí, ejecuta <code>supabase/02_marca.sql</code> y vuelve a cargar.
+          Modo lectura: la identidad, la paleta y las reglas se muestran con los valores por defecto. Para poder
+          editarlas desde aquí, ejecuta <code>supabase/00_esquema_completo.sql</code> (crea la tabla{' '}
+          <code>marca_config</code>) y vuelve a cargar.
         </div>
       )}
 
@@ -150,7 +138,7 @@ export function MarcaRibera() {
       <div style={sx('font-size:13px;font-weight:700;margin-bottom:10px')}>Tipografía</div>
       <div style={sx('background:#fff;border:1px solid rgba(29,29,27,.1);border-radius:12px;padding:18px 20px;margin-bottom:24px')}>
         <div style={sx("font-family:'Mulish';font-weight:800;font-size:26px;letter-spacing:-.01em")}>
-          {TIPOGRAFIA} — la voz visual de marca
+          {app.marcaConfig.tipografia} — la voz visual de marca
         </div>
         <div style={sx("font-family:'Mulish';font-weight:400;font-size:13px;color:#706F6F;margin-top:6px")}>
           Sans serif, cercana y de fácil lectura. Titulares en bold/extrabold, cuerpo en regular/light.
@@ -232,5 +220,156 @@ export function MarcaRibera() {
         ))}
       </div>
     </section>
+  )
+}
+
+const monoRotulo =
+  "font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.09em;color:rgba(29,29,27,.5);margin-bottom:8px"
+const etiqueta = 'font-size:11px;font-weight:700;color:#1D1D1B;margin-bottom:6px'
+const inputBase =
+  "width:100%;border:1px solid rgba(23,25,31,.14);border-radius:10px;padding:10px 12px;font-family:'Mulish';font-size:13px;background:#fff;color:#17191f"
+
+/**
+ * Identidad del Brand Kit: logo, territorio y tono de voz. Editable cuando la
+ * tabla `marca_config` existe; en modo lectura muestra los valores por defecto.
+ */
+function Identidad() {
+  const app = useApp()
+  const cfg = app.marcaConfig
+  const editable = app.marcaEditable
+  const input = useRef<HTMLInputElement>(null)
+  const [subiendo, setSubiendo] = useState(false)
+
+  const guardar = async (cambios: Parameters<typeof api.guardarMarcaConfig>[0]) => {
+    try {
+      await api.guardarMarcaConfig(cambios)
+      await app.recargar()
+      app.avisar('Marca actualizada ✓')
+    } catch (error) {
+      app.avisar(mensajeError(error), 'error')
+    }
+  }
+
+  const subirLogo = async (archivo: File) => {
+    setSubiendo(true)
+    try {
+      const url = await api.subirLogoMarca(archivo)
+      await guardar({ logo_url: url })
+    } catch (error) {
+      app.avisar(mensajeError(error), 'error')
+    } finally {
+      setSubiendo(false)
+    }
+  }
+
+  return (
+    <div style={sx('background:linear-gradient(155deg,#fafafa 35%,var(--suave-1));border-radius:16px;padding:24px 26px;margin-bottom:18px')}>
+      <div style={sx(monoRotulo)}>IDENTIDAD DE MARCA</div>
+      <div style={sx('display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap;margin-top:12px')}>
+        {/* Logo */}
+        <div style={sx('flex:none')}>
+          <div style={sx(etiqueta)}>Logo</div>
+          <div
+            onClick={() => editable && input.current?.click()}
+            style={sx(
+              'width:132px;height:92px;border-radius:12px;display:grid;place-items:center;background:#fff;border:1px solid rgba(23,25,31,.12);overflow:hidden;padding:12px',
+              editable && 'cursor:pointer',
+            )}
+          >
+            {subiendo ? (
+              <span style={sx('font-size:11px;color:rgba(23,25,31,.5)')}>Subiendo…</span>
+            ) : cfg.logoUrl ? (
+              <img src={cfg.logoUrl} alt="Logo" style={sx('max-width:100%;max-height:100%;object-fit:contain;display:block')} />
+            ) : (
+              <span style={sx('font-size:11px;color:rgba(23,25,31,.4);text-align:center;line-height:1.4')}>
+                {editable ? 'Subir logo' : 'Sin logo'}
+              </span>
+            )}
+          </div>
+          {editable && (
+            <div style={sx('display:flex;gap:10px;margin-top:6px')}>
+              <button
+                onClick={() => input.current?.click()}
+                style={sx("background:none;border:none;padding:0;font-family:'Mulish';font-size:11px;color:var(--acento);font-weight:700;cursor:pointer")}
+              >
+                {cfg.logoUrl ? 'Cambiar' : 'Subir'}
+              </button>
+              {cfg.logoUrl && (
+                <button
+                  onClick={() => void guardar({ logo_url: null })}
+                  style={sx("background:none;border:none;padding:0;font-family:'Mulish';font-size:11px;color:rgba(23,25,31,.5);cursor:pointer")}
+                >
+                  Quitar
+                </button>
+              )}
+            </div>
+          )}
+          <input
+            ref={input}
+            type="file"
+            accept="image/png,image/svg+xml,image/jpeg,image/webp"
+            style={sx('display:none')}
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              e.target.value = ''
+              if (f) void subirLogo(f)
+            }}
+          />
+        </div>
+
+        {/* Territorio + tono */}
+        <div style={sx('flex:1;min-width:240px')}>
+          <div style={sx(etiqueta)}>Territorio de marca</div>
+          {editable ? (
+            <input
+              key={cfg.territorio}
+              defaultValue={cfg.territorio}
+              placeholder="La idea que define la marca (p. ej. «Cercanía y confianza»)"
+              onBlur={(e) => {
+                const territorio = e.target.value.trim()
+                if (territorio && territorio !== cfg.territorio) void guardar({ territorio })
+              }}
+              style={sx(inputBase)}
+            />
+          ) : (
+            <div style={sx('font-size:19px;font-weight:500;letter-spacing:-.01em;color:#1D1D1B')}>{cfg.territorio}</div>
+          )}
+
+          <div style={sx(etiqueta, 'margin-top:16px')}>Tono de voz</div>
+          {editable ? (
+            <textarea
+              key={cfg.tonoVoz}
+              defaultValue={cfg.tonoVoz}
+              placeholder="Cómo habla la marca: cercana, profesional, directa… La IA lo usará al redactar."
+              onBlur={(e) => {
+                const tono_voz = e.target.value
+                if (tono_voz !== cfg.tonoVoz) void guardar({ tono_voz })
+              }}
+              style={sx(inputBase, 'min-height:64px;resize:vertical;line-height:1.5')}
+            />
+          ) : (
+            <div style={sx('font-size:12.5px;color:#706F6F;line-height:1.55')}>
+              {cfg.tonoVoz || 'Aún sin definir. Describe cómo habla la marca para que la IA lo respete.'}
+            </div>
+          )}
+
+          <div style={sx(etiqueta, 'margin-top:16px')}>Tipografía</div>
+          {editable ? (
+            <input
+              key={cfg.tipografia}
+              defaultValue={cfg.tipografia}
+              placeholder="Nombre de la tipografía de marca"
+              onBlur={(e) => {
+                const tipografia = e.target.value.trim()
+                if (tipografia && tipografia !== cfg.tipografia) void guardar({ tipografia })
+              }}
+              style={sx(inputBase)}
+            />
+          ) : (
+            <div style={sx('font-size:12.5px;color:#706F6F')}>{cfg.tipografia}</div>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }

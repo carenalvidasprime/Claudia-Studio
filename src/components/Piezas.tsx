@@ -1,6 +1,7 @@
 import { sx } from '../lib/sx'
 import { ratioToCss } from '../lib/ui'
 import { CLIENTE } from '../lib/cliente'
+import { useApp } from '../store'
 
 /**
  * Capa de marca sobre la imagen generada.
@@ -30,9 +31,11 @@ export function MarcaOverlay({
   plantilla?: 'editorial' | 'franja'
   extra?: React.ReactNode
 }) {
+  const app = useApp()
+  const logoUrl = app.marcaConfig.logoUrl
   const base = `aspect-ratio:${ratioToCss(ratio)};border-radius:${radio};position:relative;overflow:hidden;background:#eef0f1`
   const hayCopy = !!copy && copy.trim().length > 0
-  const conLogo = !!(mostrarLogo && CLIENTE.logoPiezas)
+  const conLogo = !!(mostrarLogo && logoUrl)
 
   return (
     <div style={sx(base)}>
@@ -66,7 +69,7 @@ export function MarcaOverlay({
                 `flex:none;background:#fff;border-radius:${grande ? '8px' : '5px'};padding:${grande ? '6px 9px' : '3px 5px'};display:flex;align-items:center`,
               )}
             >
-              <img src={CLIENTE.logoPiezas!} alt={CLIENTE.cliente ?? ''} style={sx(`height:${grande ? '20px' : '11px'};width:auto;display:block`)} />
+              <img src={logoUrl!} alt={CLIENTE.cliente ?? ''} style={sx(`height:${grande ? '20px' : '11px'};width:auto;display:block`)} />
             </div>
           )}
         </div>
@@ -88,7 +91,7 @@ export function MarcaOverlay({
                 `position:absolute;bottom:${grande ? '16px' : '9px'};right:${grande ? '16px' : '9px'};background:#fff;border-radius:${grande ? '9px' : '6px'};padding:${grande ? '6px 10px' : '4px 6px'};display:flex;align-items:center;box-shadow:0 3px 12px rgba(0,0,0,.25)`,
               )}
             >
-              <img src={CLIENTE.logoPiezas!} alt={CLIENTE.cliente ?? ''} style={sx(`height:${grande ? '20px' : '12px'};width:auto;display:block`)} />
+              <img src={logoUrl!} alt={CLIENTE.cliente ?? ''} style={sx(`height:${grande ? '20px' : '12px'};width:auto;display:block`)} />
             </div>
           )}
           {hayCopy && (

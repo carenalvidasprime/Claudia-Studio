@@ -1,4 +1,5 @@
 import { supabase, esEsquemaIncompleto } from './supabase'
+import type { MarcaConfigRow } from './brand'
 import type {
   Carpeta,
   Centro,
@@ -115,12 +116,30 @@ export async function subirMaterial(archivo: File): Promise<{ url: string; nombr
 }
 
 /**
- * Tablas opcionales de marca. Si no existen, se devuelve `null` para que la
- * pantalla caiga en los valores del brandbook en modo lectura.
+ * Sube el logo de marca al bucket «piezas», bajo `marca/`. Devuelve la URL
+ * pública para guardarla en el Brand Kit (`marca_config.logo_url`).
+ */
+export async function subirLogoMarca(archivo: File): Promise<string> {
+  const limpio = archivo.name.replace(/[^a-zA-Z0-9._-]+/g, '-')
+  const ruta = `marca/logo-${Date.now()}-${limpio}`
+  const { error } = await supabase.storage.from('piezas').upload(ruta, archivo, {
+    cacheControl: '3600',
+    upsert: false,
+    contentType: archivo.type || undefined,
+  })
+  if (error) throw error
+  const { data } = supabase.storage.from('piezas').getPublicUrl(ruta)
+  return data.publicUrl
+}
+
+/**
+ * Tablas opcionales de marca (Brand Kit). Si no existen, se devuelve `null`
+ * para que la pantalla caiga en los valores por defecto en modo lectura.
  */
 export async function cargarMarca(): Promise<{
   paleta: MarcaColor[]
   reglas: MarcaRegla[]
+  config: MarcaConfigRow | null
 } | null> {
   try {
     const [paleta, reglas] = await Promise.all([
@@ -129,13 +148,36 @@ export async function cargarMarca(): Promise<{
     ])
     if (paleta.error) throw paleta.error
     if (reglas.error) throw reglas.error
+    // La tabla de identidad es aún más opcional: si no existe, seguimos con las
+    // otras dos y la identidad se queda en los valores por defecto.
+    let config: MarcaConfigRow | null = null
+    const c = await supabase.from('marca_config').select('*').limit(1).maybeSingle()
+    if (!c.error) config = (c.data as MarcaConfigRow | null) ?? null
+    else if (!esEsquemaIncompleto(c.error)) throw c.error
     return {
       paleta: (paleta.data ?? []) as MarcaColor[],
       reglas: (reglas.data ?? []) as MarcaRegla[],
+      config,
     }
   } catch (error) {
     if (esEsquemaIncompleto(error)) return null
     throw error
+  }
+}
+
+/**
+ * Guarda (crea o actualiza) la identidad de marca. La tabla es un singleton:
+ * hay como mucho una fila. Si ya existe se actualiza; si no, se inserta.
+ */
+export async function guardarMarcaConfig(cambios: Partial<MarcaConfigRow>): Promise<void> {
+  const existente = await supabase.from('marca_config').select('id').limit(1).maybeSingle()
+  if (existente.error) throw existente.error
+  if (existente.data) {
+    const { error } = await supabase.from('marca_config').update(cambios).eq('id', (existente.data as { id: Id }).id)
+    if (error) throw error
+  } else {
+    const { error } = await supabase.from('marca_config').insert(cambios)
+    if (error) throw error
   }
 }
 

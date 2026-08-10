@@ -12,8 +12,9 @@ import type { Session } from '@supabase/supabase-js'
 import { supabase, supabaseConfigurado, mensajeError } from './lib/supabase'
 import * as api from './lib/api'
 import { generarPieza, generarConfigurado, type PayloadGenerar } from './lib/n8n'
-import { presentacionDe, PALETA_POR_DEFECTO, REGLAS_POR_DEFECTO, TIPOGRAFIA } from './lib/marca'
+import { presentacionDe, PALETA_POR_DEFECTO, REGLAS_POR_DEFECTO } from './lib/marca'
 import { CLIENTE } from './lib/cliente'
+import { MARCA_POR_DEFECTO, desdeFila, fijarMarca, type MarcaConfig } from './lib/brand'
 import {
   DEMO,
   DEMO_CARPETAS,
@@ -160,6 +161,7 @@ interface Estado_ {
   piezas: Pieza[]
   paleta: MarcaColor[]
   reglas: MarcaRegla[]
+  marcaConfig: MarcaConfig
   marcaEditable: boolean
 
   cargandoDatos: boolean
@@ -218,6 +220,7 @@ const ESTADO_INICIAL: Estado_ = {
   piezas: [],
   paleta: PALETA_POR_DEFECTO,
   reglas: REGLAS_POR_DEFECTO,
+  marcaConfig: MARCA_POR_DEFECTO,
   marcaEditable: false,
   cargandoDatos: false,
   errorDatos: null,
@@ -428,10 +431,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         piezas: DEMO_PIEZAS,
         paleta: PALETA_POR_DEFECTO,
         reglas: REGLAS_POR_DEFECTO,
+        marcaConfig: MARCA_POR_DEFECTO,
         marcaEditable: false,
         cargandoDatos: false,
         errorDatos: null,
       }))
+      fijarMarca(MARCA_POR_DEFECTO)
       return
     }
     try {
@@ -448,6 +453,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         errorCarpetas =
           'Falta la tabla «carpetas». Ejecuta supabase/01_carpetas.sql para poder organizar las piezas en carpetas.'
       }
+      const marcaConfig = desdeFila(marca?.config ?? null)
+      fijarMarca(marcaConfig)
       setSt((p) => ({
         ...p,
         ...catalogos,
@@ -455,6 +462,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         piezas,
         paleta: marca?.paleta.length ? marca.paleta : PALETA_POR_DEFECTO,
         reglas: marca?.reglas.length ? marca.reglas : REGLAS_POR_DEFECTO,
+        marcaConfig,
         marcaEditable: marca !== null,
         cargandoDatos: false,
         errorDatos: errorCarpetas,
@@ -829,8 +837,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         linea,
         situacion,
         marca: {
-          territorio: CLIENTE.territorio,
-          tipografia: TIPOGRAFIA,
+          territorio: st.marcaConfig.territorio,
+          tono: st.marcaConfig.tonoVoz,
+          tipografia: st.marcaConfig.tipografia,
           paleta: st.paleta.map((c) => ({ hex: c.hex, nombre: c.nombre })),
           reglas: st.reglas.map((r) => r.texto),
         },
