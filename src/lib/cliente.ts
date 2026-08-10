@@ -95,7 +95,7 @@ const VIDASPRIME: ClienteConfig = {
   cuenta: 'Claudia Studio',
   cliente: null,
   logoPiezas: null,
-  territorio: TERRITORIO,
+  territorio: 'Comunicación de marca',
   tipografia: TIPOGRAFIA,
   paleta: PALETA_POR_DEFECTO,
   reglas: REGLAS_POR_DEFECTO,

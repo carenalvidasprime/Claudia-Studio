@@ -30,9 +30,10 @@ export const DEMO_CENTROS: Centro[] = [
 ]
 
 export const DEMO_LINEAS: Linea[] = [
-  { id: 'l1', clave: 'prevencion', nombre: 'Prevención y salud', descripcion: 'Consejos de prevención y hábitos saludables.' },
-  { id: 'l2', clave: 'servicios', nombre: 'Servicios y especialidades', descripcion: 'Difusión de servicios, unidades y especialidades.' },
-  { id: 'l3', clave: 'comunidad', nombre: 'Comunidad y compromiso', descripcion: 'Vínculo del centro con su comunidad.' },
+  { id: 'l1', clave: 'novedades', nombre: 'Novedades y lanzamientos', descripcion: 'Nuevos productos, servicios o anuncios.' },
+  { id: 'l2', clave: 'promociones', nombre: 'Promociones y ofertas', descripcion: 'Campañas comerciales y ofertas.' },
+  { id: 'l3', clave: 'marca', nombre: 'Marca y valores', descripcion: 'Identidad, propósito y cultura.' },
+  { id: 'l4', clave: 'comunidad', nombre: 'Comunidad', descripcion: 'Vínculo con la audiencia y el entorno.' },
 ]
 
 export const DEMO_SITUACIONES: Situacion[] = [

@@ -12,7 +12,7 @@ import type { Session } from '@supabase/supabase-js'
 import { supabase, supabaseConfigurado, mensajeError } from './lib/supabase'
 import * as api from './lib/api'
 import { generarPieza, generarConfigurado, type PayloadGenerar } from './lib/n8n'
-import { presentacionDe, PALETA_POR_DEFECTO, REGLAS_POR_DEFECTO, TERRITORIO, TIPOGRAFIA } from './lib/marca'
+import { presentacionDe, PALETA_POR_DEFECTO, REGLAS_POR_DEFECTO, TIPOGRAFIA } from './lib/marca'
 import { CLIENTE } from './lib/cliente'
 import {
   DEMO,
@@ -707,8 +707,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ...p,
         carpetaId,
         piezaId: null,
-        origen: null,
-        pantalla: 'gateway',
+        origen: 'scratch',
+        pantalla: 'estudio',
         resultados: [],
         seleccion: {},
         favoritas: {},
@@ -829,7 +829,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         linea,
         situacion,
         marca: {
-          territorio: TERRITORIO,
+          territorio: CLIENTE.territorio,
           tipografia: TIPOGRAFIA,
           paleta: st.paleta.map((c) => ({ hex: c.hex, nombre: c.nombre })),
           reglas: st.reglas.map((r) => r.texto),

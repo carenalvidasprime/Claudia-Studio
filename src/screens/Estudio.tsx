@@ -1,8 +1,7 @@
 import { useRef, useState } from 'react'
 import { sx } from '../lib/sx'
-import { colorDeCentro, objInline, pill, ratioToCss, seg } from '../lib/ui'
-import { CRITERIOS } from '../lib/marca'
-import { IconoAnimacion, MarcaOverlay } from '../components/Piezas'
+import { colorDeCentro, pill, ratioToCss, seg } from '../lib/ui'
+import { MarcaOverlay } from '../components/Piezas'
 import * as api from '../lib/api'
 import { mensajeError } from '../lib/supabase'
 import { useApp } from '../store'
@@ -10,53 +9,26 @@ import { FORMATOS, type Pieza } from '../lib/types'
 
 const rotulo =
   "font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.09em;color:rgba(23,25,31,.4);margin-bottom:9px"
-
-const VERDE = 'display:grid;place-items:center;flex:none;width:20px;height:20px;border-radius:50%;background:oklch(0.62 0.13 155);color:#fff;font-size:11px;font-weight:700'
-const AMBAR = 'display:grid;place-items:center;flex:none;width:20px;height:20px;border-radius:50%;background:oklch(0.75 0.15 70);color:#fff;font-size:11px;font-weight:700'
+const campo =
+  "width:100%;border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:11px;font-family:'Mulish';font-size:12.5px;line-height:1.5;background:#fff;color:#17191f"
 
 export function Estudio() {
   const app = useApp()
   const b = app.borrador
   const centro = app.centroActual
-  const situacion = app.situacionDe(b.situacionId)
-  const linea = app.lineaDe(b.lineaId)
-  const esAnimacion = b.formato === 'Animación'
 
   const resultados = app.resultados
     .map((id) => app.piezas.find((p) => p.id === id))
     .filter(Boolean) as Pieza[]
   const visibles = app.filtroResultados === 'Favoritas' ? resultados.filter((p) => app.favoritas[p.id]) : resultados
   const seleccionadas = Object.keys(app.seleccion).filter((k) => app.seleccion[k]).length
-
-  // Sin acentos ni mayúsculas, para que «Testimonio» y «testimonío» detecten igual.
-  const normaliza = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-  const mencionaPersonas = /paciente|testimonio|historia real|persona real|caso real/.test(
-    normaliza(`${b.texto} ${b.prompt}`),
-  )
-  const requiereConsentimiento = !!situacion?.requiere_consentimiento || mencionaPersonas
-
-  const checks = [
-    { label: 'Marca aplicada', sub: 'Paleta, tipografía y territorio en el prompt', icono: '✓', estilo: VERDE },
-    { label: 'Sin promesas de curación', sub: 'Sin resultados clínicos garantizados', icono: '✓', estilo: VERDE },
-    { label: 'Sin superlativos no verificables', sub: 'Sin «el mejor» o «único» sin dato', icono: '✓', estilo: VERDE },
-    { label: 'Tono Salud Responsable', sub: 'Ética, cuidado y compromiso', icono: '✓', estilo: VERDE },
-    requiereConsentimiento
-      ? b.consentimiento
-        ? { label: 'Consentimiento de paciente', sub: 'Firmado y confirmado en el flujo', icono: '✓', estilo: VERDE }
-        : {
-            label: 'Consentimiento de paciente',
-            sub: 'Verifica el consentimiento firmado antes de publicar',
-            icono: '⚠',
-            estilo: AMBAR,
-          }
-      : { label: 'Consentimiento de paciente', sub: 'No aplica', icono: '✓', estilo: VERDE },
-  ]
+  const puedeGenerar = b.prompt.trim().length > 0 && !app.generando
 
   return (
-    <section className="fade" style={sx('display:grid;grid-template-columns:314px 1fr;height:calc(100vh - 64px)')}>
+    <section className="fade" style={sx('display:grid;grid-template-columns:344px 1fr;height:calc(100vh - 64px)')}>
+      {/* ---- Panel de trabajo (izquierda) ---- */}
       <div style={sx('border-right:1px solid rgba(23,25,31,.08);background:#fff;overflow-y:auto;padding:20px 18px')}>
-        <div style={sx(rotulo)}>CENTRO</div>
-        <div style={sx('display:flex;align-items:center;gap:9px;background:#f4f4f4;border-radius:10px;padding:10px 11px;margin-bottom:14px')}>
+        <div style={sx('display:flex;align-items:center;gap:9px;background:#f4f4f4;border-radius:10px;padding:10px 11px;margin-bottom:18px')}>
           <div style={sx(`width:26px;height:26px;border-radius:7px;background:${centro ? colorDeCentro(centro.id) : '#DEDEDE'};flex:none`)} />
           <div style={sx('line-height:1.2;min-width:0')}>
             <div style={sx('font-size:12.5px;font-weight:600')}>{centro?.nombre ?? '—'}</div>
@@ -64,8 +36,24 @@ export function Estudio() {
           </div>
         </div>
 
-        <div style={sx(rotulo)}>RED SOCIAL Y FORMATO</div>
-        <div style={sx('display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px')}>
+        <div style={sx(rotulo)}>TÍTULO</div>
+        <input
+          value={b.titulo}
+          onChange={(e) => app.setBorrador({ titulo: e.target.value })}
+          placeholder="Nombre de esta creatividad"
+          style={sx(campo, 'margin-bottom:18px')}
+        />
+
+        <div style={sx(rotulo)}>QUÉ QUIERES CREAR</div>
+        <textarea
+          value={b.prompt}
+          onChange={(e) => app.setBorrador({ prompt: e.target.value, texto: e.target.value })}
+          placeholder="Describe la imagen: la escena, el sujeto, el tono y el mensaje. Cuanto más concreto, mejor."
+          style={sx(campo, 'min-height:110px;resize:vertical')}
+        />
+
+        <div style={sx(rotulo, 'margin:20px 0 9px')}>RED SOCIAL Y FORMATO</div>
+        <div style={sx('display:flex;flex-wrap:wrap;gap:6px')}>
           {FORMATOS.map((f) => {
             const activo = b.redFormato === f.id
             return (
@@ -87,26 +75,36 @@ export function Estudio() {
             )
           })}
         </div>
-        <div style={sx('display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:14px')}>
-          <span style={sx(objInline(b.objetivo))}>{b.objetivo}</span>
-          {linea && <span style={sx('font-size:10.5px;color:rgba(23,25,31,.55)')}>· {linea.nombre}</span>}
+
+        <div style={sx(rotulo, 'margin:20px 0 9px')}>OBJETIVO</div>
+        <div style={sx('display:flex;gap:5px')}>
+          {(['Orgánico', 'Promoción'] as const).map((o) => (
+            <button key={o} onClick={() => app.setBorrador({ objetivo: o })} style={sx(seg(b.objetivo === o), 'flex:1')}>
+              {o}
+            </button>
+          ))}
         </div>
 
-        <ResumenSituacion />
-        <PanelCriterio />
+        {app.lineas.length > 0 && (
+          <>
+            <div style={sx(rotulo, 'margin:20px 0 9px')}>LÍNEA (OPCIONAL)</div>
+            <div style={sx('display:flex;flex-wrap:wrap;gap:5px')}>
+              {app.lineas.map((l) => (
+                <button
+                  key={String(l.id)}
+                  title={l.descripcion ?? undefined}
+                  onClick={() => app.setBorrador({ lineaId: String(b.lineaId) === String(l.id) ? null : l.id })}
+                  style={sx(pill(String(b.lineaId) === String(l.id)))}
+                >
+                  {l.nombre}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
-        <div style={sx(rotulo)}>FOTO BASE</div>
+        <div style={sx(rotulo, 'margin:20px 0 9px')}>FOTO BASE (OPCIONAL)</div>
         <FotoBase />
-
-        <div style={sx(rotulo, 'margin:20px 0 9px')}>DESCRIPCIÓN</div>
-        <textarea
-          value={b.prompt}
-          onChange={(e) => app.setBorrador({ prompt: e.target.value })}
-          placeholder="Instrucción concreta para el modelo de imagen."
-          style={sx(
-            "width:100%;min-height:80px;resize:vertical;border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:11px;font-family:'Mulish';font-size:12.5px;line-height:1.55;background:#fff;color:#17191f",
-          )}
-        />
 
         <div style={sx(rotulo, 'margin:20px 0 9px')}>MARCA</div>
         <div style={sx('display:flex;gap:5px')}>
@@ -132,9 +130,7 @@ export function Estudio() {
               value={b.copy}
               onChange={(e) => app.setBorrador({ copy: e.target.value })}
               placeholder="Texto que aparecerá encima de la imagen. Déjalo vacío para solo logo."
-              style={sx(
-                "width:100%;min-height:56px;resize:vertical;border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:11px;font-family:'Mulish';font-size:12.5px;line-height:1.5;background:#fff;color:#17191f",
-              )}
+              style={sx(campo, 'min-height:56px;resize:vertical')}
             />
 
             <div style={sx(rotulo, 'margin:16px 0 9px')}>PLANTILLA DE MARCA</div>
@@ -157,7 +153,17 @@ export function Estudio() {
           </>
         )}
 
-        <div style={sx('margin-top:15px;display:flex;align-items:center;gap:10px')}>
+        <div style={sx(rotulo, 'margin:20px 0 9px')}>FECHA DE PUBLICACIÓN (OPCIONAL)</div>
+        <input
+          type="date"
+          value={b.fechaPublicacion}
+          onChange={(e) => app.setBorrador({ fechaPublicacion: e.target.value })}
+          style={sx(
+            "border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:9px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;background:#fff;color:#17191f",
+          )}
+        />
+
+        <div style={sx('margin-top:22px;display:flex;align-items:center;gap:10px')}>
           <div style={sx('font-size:11.5px;font-weight:500;color:rgba(23,25,31,.62)')}>Variantes</div>
           <div style={sx('display:flex;gap:5px;margin-left:auto')}>
             {[2, 4, 6].map((n) => (
@@ -170,30 +176,22 @@ export function Estudio() {
 
         <button
           onClick={() => void app.generar()}
-          disabled={app.generando}
+          disabled={!puedeGenerar}
           style={sx(
             "margin-top:12px;width:100%;background:var(--acento);color:#fff;border:none;border-radius:11px;padding:13px;font-family:'Mulish';font-weight:600;font-size:13.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px",
-            app.generando && 'opacity:.65;cursor:progress',
+            !puedeGenerar && 'opacity:.5;cursor:not-allowed',
           )}
         >
-          <span style={sx('width:6px;height:6px;border-radius:50%;background:#f0607a')} />
-          {app.generando ? 'Generando…' : esAnimacion ? 'Generar animación' : 'Generar'}
+          {app.generando ? 'Generando…' : 'Generar'}
         </button>
-
-        <div style={sx(rotulo, 'margin:20px 0 9px')}>CUMPLIMIENTO</div>
-        <div style={sx('background:#f4f4f4;border-radius:10px;padding:4px 2px')}>
-          {checks.map((c) => (
-            <div key={c.label} style={sx('display:flex;align-items:center;gap:9px;padding:8px 11px')}>
-              <span style={sx(c.estilo)}>{c.icono}</span>
-              <div style={sx('line-height:1.25')}>
-                <div style={sx('font-size:11.5px;font-weight:500;color:#17191f')}>{c.label}</div>
-                <div style={sx('font-size:10px;color:rgba(23,25,31,.48)')}>{c.sub}</div>
-              </div>
-            </div>
-          ))}
-        </div>
+        {!b.prompt.trim() && !app.generando && (
+          <div style={sx('font-size:10px;color:rgba(23,25,31,.45);margin-top:7px;text-align:center')}>
+            Describe qué quieres crear para poder generar.
+          </div>
+        )}
       </div>
 
+      {/* ---- Lienzo de resultados (derecha) ---- */}
       <div style={sx('overflow-y:auto;padding:22px 28px')}>
         {app.errorGeneracion && (
           <div
@@ -227,7 +225,7 @@ export function Estudio() {
                   'width:14px;height:14px;border:2px solid rgba(23,25,31,.2);border-top-color:#17191f;border-radius:50%;animation:spin .7s linear infinite',
                 )}
               />
-              n8n está produciendo la pieza…
+              Generando las variantes…
             </div>
           </>
         )}
@@ -277,16 +275,13 @@ export function Estudio() {
                         mostrarLogo={app.borrador.marca}
                         plantilla={app.borrador.plantilla}
                         extra={
-                          <>
-                            <span
-                              style={sx(
-                                "position:absolute;top:8px;left:50%;transform:translateX(-50%);background:rgba(23,25,31,.72);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:9px;padding:3px 6px;border-radius:5px",
-                              )}
-                            >
-                              V{i + 1}
-                            </span>
-                            {esAnimacion && <IconoAnimacion tam={28} />}
-                          </>
+                          <span
+                            style={sx(
+                              "position:absolute;top:8px;left:50%;transform:translateX(-50%);background:rgba(23,25,31,.72);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:9px;padding:3px 6px;border-radius:5px",
+                            )}
+                          >
+                            V{i + 1}
+                          </span>
                         }
                       />
                     </div>
@@ -340,115 +335,15 @@ export function Estudio() {
               ◍
             </div>
             <div style={sx('font-size:14.5px;font-weight:600;color:rgba(23,25,31,.66)')}>
-              Ajusta el encargo y pulsa {esAnimacion ? 'Generar animación' : 'Generar'}
+              Describe qué quieres y pulsa Generar
             </div>
             <div style={sx('font-size:12px;margin-top:6px;max-width:360px;line-height:1.55')}>
-              n8n producirá la pieza, la subirá al bucket y creará su fila. Aparecerá aquí en cuanto termine.
+              Claudia producirá las variantes con la identidad de marca aplicada. Aparecerán aquí en cuanto estén listas.
             </div>
           </div>
         )}
       </div>
     </section>
-  )
-}
-
-function ResumenSituacion() {
-  const app = useApp()
-  const b = app.borrador
-  const clave = b.situacionClave
-  if (!clave) return null
-
-  if (clave === 'testimonio') {
-    return (
-      <div
-        style={sx(
-          'display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--suave-1);border:1px solid rgba(var(--acento-rgb),.2);border-radius:9px;padding:8px 11px;margin-bottom:14px;font-size:10.5px;color:#1D1D1B',
-        )}
-      >
-        <span style={sx(`${b.consentimiento ? 'color:oklch(0.5 0.11 155)' : 'color:oklch(0.55 0.16 40)'};font-weight:600`)}>
-          {b.consentimiento ? '✓ Consentimiento firmado' : '⚠ Consentimiento pendiente'}
-        </span>
-        <span style={sx('color:rgba(29,29,27,.35)')}>·</span>
-        <span>
-          Exposición: <strong>{b.exposicion}</strong>
-        </span>
-      </div>
-    )
-  }
-
-  if (clave === 'colaboracion') {
-    return (
-      <div
-        style={sx(
-          'display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#f4f4f4;border:1px solid rgba(23,25,31,.12);border-radius:9px;padding:8px 11px;margin-bottom:14px;font-size:10.5px;color:#1D1D1B',
-        )}
-      >
-        <span>
-          Personas: <strong>{b.personas ?? '—'}</strong>
-        </span>
-        <span style={sx('color:rgba(29,29,27,.35)')}>·</span>
-        <span>
-          Entorno: <strong>{b.entorno ?? '—'}</strong>
-        </span>
-      </div>
-    )
-  }
-
-  if (clave === 'hito') {
-    return (
-      <div
-        style={sx(
-          'display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#f4f4f4;border:1px solid rgba(23,25,31,.12);border-radius:9px;padding:8px 11px;margin-bottom:14px;font-size:10.5px;color:#1D1D1B',
-        )}
-      >
-        <span>{b.validadoPorProfesional ? '✓ Validado por profesional' : '⚠ Validación pendiente'}</span>
-        <span style={sx('color:rgba(29,29,27,.35)')}>·</span>
-        <span>{b.fondoLibre && b.sinPacientes ? '✓ Entorno confirmado' : '⚠ Entorno sin confirmar'}</span>
-      </div>
-    )
-  }
-
-  return null
-}
-
-function PanelCriterio() {
-  const app = useApp()
-  const clave = app.borrador.situacionClave
-  const criterio = clave ? CRITERIOS[clave] : null
-  if (!criterio) return null
-
-  return (
-    <div style={sx('background:#f4f4f4;border-radius:10px;padding:11px 12px;margin-bottom:14px')}>
-      <div
-        style={sx(
-          "font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.09em;color:rgba(23,25,31,.4);margin-bottom:8px",
-        )}
-      >
-        {criterio.titulo}
-      </div>
-      <div style={sx('font-size:11px;line-height:1.5;color:#1D1D1B;margin-bottom:7px')}>
-        <strong>El ángulo:</strong> {criterio.angulo}
-      </div>
-      <div style={sx('display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:7px')}>
-        <div style={sx('font-size:10.5px;line-height:1.45;color:rgba(29,29,27,.75)')}>
-          <strong style={sx('color:oklch(0.5 0.11 155)')}>Qué sí</strong>
-          <br />
-          {criterio.si}
-        </div>
-        <div style={sx('font-size:10.5px;line-height:1.45;color:rgba(29,29,27,.75)')}>
-          <strong style={sx('color:var(--acento)')}>Qué no</strong>
-          <br />
-          {criterio.no}
-        </div>
-      </div>
-      <div
-        style={sx(
-          'font-size:10px;line-height:1.45;color:rgba(29,29,27,.55);border-top:1px solid rgba(29,29,27,.1);padding-top:7px',
-        )}
-      >
-        Cumplimiento: {criterio.cumplimiento}
-      </div>
-    </div>
   )
 }
 
@@ -476,7 +371,7 @@ function FotoBase() {
       <div
         onClick={() => input.current?.click()}
         style={sx(
-          'height:104px;border-radius:11px;display:grid;place-items:center;cursor:pointer;padding:12px;',
+          'height:96px;border-radius:11px;display:grid;place-items:center;cursor:pointer;padding:12px;',
           material
             ? 'border:1.5px dashed oklch(0.62 0.1 155);background:oklch(0.97 0.02 155)'
             : 'border:1.5px dashed rgba(23,25,31,.2);background:#fafbfb',
@@ -492,12 +387,12 @@ function FotoBase() {
           >
             {material.nombre}
             <br />
-            <span style={sx('color:oklch(0.55 0.12 155);font-weight:600')}>✓ foto real cargada</span>
+            <span style={sx('color:oklch(0.55 0.12 155);font-weight:600')}>✓ foto cargada</span>
           </div>
         ) : (
           <div style={sx('text-align:center')}>
             <div style={sx('font-size:19px;color:rgba(23,25,31,.3)')}>↑</div>
-            <div style={sx('font-size:11.5px;font-weight:600;margin-top:5px')}>Sube una foto real</div>
+            <div style={sx('font-size:11.5px;font-weight:600;margin-top:5px')}>Sube una foto para mejorarla</div>
             <div style={sx('font-size:10.5px;color:rgba(23,25,31,.42);margin-top:2px')}>o genera desde cero</div>
           </div>
         )}

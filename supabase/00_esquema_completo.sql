@@ -165,20 +165,16 @@ where not exists (select 1 from public.centros);
 
 insert into public.lineas (clave, nombre, descripcion)
 select v.clave, v.nombre, v.descripcion from (values
-  ('prevencion', 'Prevención y salud',          'Consejos de prevención y hábitos saludables.'),
-  ('servicios',  'Servicios y especialidades',  'Difusión de servicios, unidades y especialidades.'),
-  ('comunidad',  'Comunidad y compromiso',      'Vínculo del centro con su comunidad.')
+  ('novedades',   'Novedades y lanzamientos', 'Nuevos productos, servicios o anuncios.'),
+  ('promociones', 'Promociones y ofertas',    'Campañas comerciales y ofertas.'),
+  ('marca',       'Marca y valores',          'Identidad, propósito y cultura.'),
+  ('comunidad',   'Comunidad',                'Vínculo con la audiencia y el entorno.')
 ) as v(clave, nombre, descripcion)
 where not exists (select 1 from public.lineas);
 
-insert into public.situaciones (clave, nombre, requiere_consentimiento)
-select v.clave, v.nombre, v.req from (values
-  ('testimonio',   'Testimonio de paciente',           true),
-  ('hito',         'Hito clínico o nueva tecnología',  false),
-  ('colaboracion', 'Colaboración con la comunidad',    false),
-  ('efemeride',    'Día mundial / efeméride',          false)
-) as v(clave, nombre, req)
-where not exists (select 1 from public.situaciones);
+-- (Las «situaciones» eran un concepto específico del proyecto original; la app
+-- ya no las usa. Se deja la tabla vacía; si algún cliente las necesita, se
+-- pueden sembrar aquí.)
 
 insert into public.marca_paleta (hex, nombre, orden)
 select v.hex, v.nombre, v.orden from (values
@@ -193,9 +189,9 @@ where not exists (select 1 from public.marca_paleta);
 
 insert into public.marca_reglas (texto, orden)
 select v.texto, v.orden from (values
-  ('Nunca prometer resultados clínicos, curas o porcentajes de éxito no verificados.', 1),
-  ('Fotos de pacientes solo con consentimiento firmado, representados con dignidad y respeto.', 2),
-  ('Evitar aspecto de banco de imágenes: fotos propias, fondos planos, colores suaves.', 3),
-  ('Todo contenido debe respetar el territorio Salud Responsable: ética, cuidado y compromiso.', 4)
+  ('Usar siempre la paleta y la tipografía de marca; nada de estilos ajenos.', 1),
+  ('Evitar aspecto de banco de imágenes: fotografía propia, natural y coherente.', 2),
+  ('No prometer resultados ni usar superlativos sin respaldo («el mejor», «único»…).', 3),
+  ('Mensajes claros, honestos y respetuosos con la audiencia.', 4)
 ) as v(texto, orden)
 where not exists (select 1 from public.marca_reglas);

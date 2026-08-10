@@ -9,19 +9,9 @@ import { Dashboard } from './screens/Dashboard'
 import { CentroScreen } from './screens/Centro'
 import { Calendario } from './screens/Calendario'
 import { MarcaRibera } from './screens/MarcaRibera'
-import { Gateway, Situaciones } from './screens/Entrada'
-import { Brief } from './screens/Brief'
 import { Estudio } from './screens/Estudio'
 import { Detalle } from './screens/Detalle'
 import { Exportar } from './screens/Exportar'
-import {
-  PasoColabEntorno,
-  PasoColabPersonas,
-  PasoHitoEntorno,
-  PasoHitoValidacion,
-  PasoTestConsent,
-  PasoTestExposicion,
-} from './screens/Pasos'
 
 function Pantalla() {
   const app = useApp()
@@ -34,24 +24,18 @@ function Pantalla() {
       return <MarcaRibera />
     case 'centro':
       return <CentroScreen />
+    // Flujo antiguo (gateway/situaciones/pasos/brief) retirado: ahora se crea
+    // directamente en el estudio. Se mantienen los casos por si queda estado
+    // persistido apuntando a ellos, pero todos resuelven al estudio único.
     case 'gateway':
-      return <Gateway />
     case 'situaciones':
-      return <Situaciones />
     case 'pasoTestConsent':
-      return <PasoTestConsent />
     case 'pasoTestExposicion':
-      return <PasoTestExposicion />
     case 'pasoColabPersonas':
-      return <PasoColabPersonas />
     case 'pasoColabEntorno':
-      return <PasoColabEntorno />
     case 'pasoHitoValidacion':
-      return <PasoHitoValidacion />
     case 'pasoHitoEntorno':
-      return <PasoHitoEntorno />
     case 'brief':
-      return <Brief />
     case 'estudio':
       return <Estudio />
     case 'detalle':
