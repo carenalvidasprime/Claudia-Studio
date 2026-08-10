@@ -82,7 +82,11 @@ export function Sidebar() {
         'background:#fff;border-right:1px solid rgba(23,25,31,.08);display:flex;flex-direction:column;padding:20px 14px;gap:22px;overflow-y:auto',
       )}
     >
-      <div style={sx('padding:2px 6px')}>
+      <div
+        onClick={() => app.set({ hubFiltro: null, pantalla: 'dashboard' })}
+        title="Ir al inicio"
+        style={sx('padding:2px 6px;cursor:pointer')}
+      >
         <Lockup variante="sidebar" />
       </div>
 
