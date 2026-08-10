@@ -30,8 +30,10 @@ export interface Tema {
 
 export interface ClienteConfig {
   id: string
-  /** Marca del producto (chrome): «Claudia by VidasPrime». */
+  /** Nombre del producto, con más peso visual (p. ej. «Claudia»). */
   producto: string
+  /** Segunda palabra del nombre, secundaria (p. ej. «Studio»). Vacío = sin ella. */
+  productoSufijo?: string
   proveedor: string
   /** Texto de la «cuenta» en la barra lateral. */
   cuenta: string
@@ -91,6 +93,7 @@ const RIBERA: ClienteConfig = {
 const VIDASPRIME: ClienteConfig = {
   id: 'vidasprime',
   producto: 'Claudia',
+  productoSufijo: 'Studio',
   proveedor: 'VidasPrime',
   cuenta: 'Claudia Studio',
   cliente: null,

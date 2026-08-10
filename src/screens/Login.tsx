@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { sx } from '../lib/sx'
 import { Flecha, Lockup } from '../components/Logos'
+import { OrbIA } from '../components/OrbIA'
 import { CLIENTE, DE_CLIENTE } from '../lib/cliente'
 import { useApp } from '../store'
 
@@ -35,8 +36,13 @@ export function Login() {
         )}
       >
         <Lockup variante="login" />
-        <div style={sx('font-size:33px;font-weight:500;letter-spacing:-.02em;line-height:1.22;max-width:470px;margin-top:auto')}>
-          Contenido para las redes de los centros{DE_CLIENTE}, generado con IA
+        <div style={sx('flex:1;display:grid;place-items:center;min-height:0')}>
+          <OrbIA size={248} />
+        </div>
+        <div style={sx('font-size:33px;font-weight:500;letter-spacing:-.02em;line-height:1.22;max-width:470px')}>
+          {DE_CLIENTE
+            ? `Contenido para las redes de los centros${DE_CLIENTE}, generado con IA`
+            : 'Contenido de marca para tus redes, generado con IA'}
         </div>
         <Flecha size={44} style="position:absolute;right:46px;bottom:46px" />
       </div>

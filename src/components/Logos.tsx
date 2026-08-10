@@ -13,12 +13,23 @@ export function Lockup({ variante }: { variante: 'login' | 'sidebar' }) {
   return (
     <div style={sx('display:flex;align-items:center;gap:' + (login ? '20px' : '14px'))}>
       <div style={sx('display:flex;flex-direction:column;gap:' + (login ? '5px' : '3px'))}>
-        <span
-          style={sx(
-            `font-family:'Poppins';font-size:${login ? '30px' : '19px'};font-weight:800;letter-spacing:-.02em;color:#1D1D1B;line-height:1`,
+        <span style={sx('display:flex;align-items:baseline;gap:' + (login ? '8px' : '5px'))}>
+          <span
+            style={sx(
+              `font-family:'Poppins';font-size:${login ? '30px' : '19px'};font-weight:800;letter-spacing:-.02em;color:#1D1D1B;line-height:1`,
+            )}
+          >
+            {CLIENTE.producto}
+          </span>
+          {CLIENTE.productoSufijo && (
+            <span
+              style={sx(
+                `font-family:'Poppins';font-size:${login ? '19px' : '13px'};font-weight:400;letter-spacing:-.01em;color:rgba(29,29,27,.5);line-height:1`,
+              )}
+            >
+              {CLIENTE.productoSufijo}
+            </span>
           )}
-        >
-          Claudia
         </span>
         <div style={sx('display:flex;align-items:center;gap:4px')}>
           <span
