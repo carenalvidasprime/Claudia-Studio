@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { sx } from '../lib/sx'
 import { Flecha, Lockup } from '../components/Logos'
 import { OrbIA } from '../components/OrbIA'
+import { OrbMorph } from '../components/OrbMorph'
 import { CLIENTE, DE_CLIENTE } from '../lib/cliente'
 import { useApp } from '../store'
 
@@ -37,7 +38,7 @@ export function Login() {
       >
         <Lockup variante="login" />
         <div style={sx('flex:1;display:grid;place-items:center;min-height:0')}>
-          <OrbIA size={248} />
+          {CLIENTE.cliente ? <OrbIA size={248} /> : <OrbMorph size={264} />}
         </div>
         <div style={sx('font-size:33px;font-weight:500;letter-spacing:-.02em;line-height:1.22;max-width:470px')}>
           {DE_CLIENTE
