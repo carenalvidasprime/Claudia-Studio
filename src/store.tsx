@@ -11,7 +11,7 @@ import {
 import type { Session } from '@supabase/supabase-js'
 import { supabase, supabaseConfigurado, mensajeError } from './lib/supabase'
 import * as api from './lib/api'
-import { generarPieza, generarConfigurado, type PayloadGenerar } from './lib/n8n'
+import { generarPieza, generarConfigurado, generarCopy, copyConfigurado, type PayloadGenerar } from './lib/n8n'
 import { presentacionDe, PALETA_POR_DEFECTO, REGLAS_POR_DEFECTO } from './lib/marca'
 import { CLIENTE } from './lib/cliente'
 import { MARCA_POR_DEFECTO, desdeFila, fijarMarca, type MarcaConfig } from './lib/brand'
@@ -325,6 +325,8 @@ interface Contexto extends Estado_ {
   nuevaCreatividad: (carpetaId: Id) => void
   elegirSituacion: (s: Situacion) => void
   generar: () => Promise<void>
+  generarTextoPost: (piezaId: string) => Promise<void>
+  copyDisponible: boolean
   aprobarPieza: (id: string) => Promise<void>
   ponerEstado: (id: string, estado: Estado) => Promise<void>
   ponerFecha: (id: string, fecha: string) => Promise<void>
@@ -915,6 +917,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [st.centros, st.centroId, st.borrador, st.situaciones, st.lineas, st.hubs, st.paleta, st.reglas, st.carpetaId, st.piezaId, avisar])
 
+  // Redacta el texto del post (caption + hashtags) con la IA, en el tono de voz
+  // de la marca. n8n devuelve el texto; la app lo guarda en la pieza.
+  const generarTextoPost = useCallback(
+    async (piezaId: string) => {
+      const pieza = st.piezas.find((p) => p.id === piezaId)
+      if (!pieza) return
+      const centro = st.centros.find((c) => String(c.id) === String(pieza.centro_id))
+      const linea = st.lineas.find((l) => String(l.id) === String(pieza.linea_id))
+      const r = await generarCopy({
+        pieza_id: piezaId,
+        red: pieza.canal ?? 'Instagram',
+        descripcion: pieza.prompt ?? pieza.brief?.texto ?? pieza.titulo,
+        cliente: CLIENTE.cliente ?? '',
+        marca: {
+          territorio: st.marcaConfig.territorio,
+          tono: st.marcaConfig.tonoVoz,
+          reglas: st.reglas.map((rg) => rg.texto),
+        },
+        contexto: { centro: centro?.nombre ?? '', linea: linea?.nombre ?? '' },
+      })
+      if (!r.ok) throw new Error(r.error ?? 'No se pudo redactar el texto.')
+      const cambios = { copy_texto: r.copy_texto ?? null, hashtags: r.hashtags ?? null }
+      await api.actualizarPieza(piezaId, cambios)
+      setSt((s) => ({ ...s, piezas: s.piezas.map((x) => (x.id === piezaId ? { ...x, ...cambios } : x)) }))
+    },
+    [st.piezas, st.centros, st.lineas, st.marcaConfig, st.reglas],
+  )
+
   const ponerEstado = useCallback(
     async (id: string, estado: Estado) => {
       const anterior = st.piezas.find((p) => p.id === id)?.estado
@@ -1012,6 +1042,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     piezasDeCarpeta,
     piezasDeCentro,
     generarDisponible: generarConfigurado,
+    generarTextoPost,
+    copyDisponible: copyConfigurado,
   }
 
   return <Ctx.Provider value={valor}>{children}</Ctx.Provider>

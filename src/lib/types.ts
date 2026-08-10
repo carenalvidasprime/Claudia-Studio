@@ -112,6 +112,10 @@ export interface Pieza {
   imagen_url: string | null
   consentimiento_ok: boolean | null
   notas_compliance: string | null
+  /** Texto del post (caption) que acompaña a la imagen al publicar. */
+  copy_texto?: string | null
+  /** Hashtags sugeridos para el post. */
+  hashtags?: string | null
 }
 
 /** Tablas opcionales de marca (`supabase/02_marca.sql`). */

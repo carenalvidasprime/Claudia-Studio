@@ -1,0 +1,82 @@
+{
+  "name": "Claudia Studio - Texto del post",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "claudia-copy",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "a1a1a1a1-1111-4a11-9b11-c0py0000aaaa",
+      "name": "Webhook",
+      "webhookId": "d7e8f9a0-b1c2-4d3e-8f40-c0py11112222"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Construye el prompt de redaccion a partir del brief y el tono de marca.\nconst b = ($input.first().json.body) || {};\nconst marca = b.marca || {};\nconst ctx = b.contexto || {};\nconst reglas = Array.isArray(marca.reglas) ? marca.reglas.map(r => '- ' + r).join('\\n') : '';\n\nconst prompt = [\n  'Eres redactor de redes sociales. Escribe el texto de UN post para ' + (b.red || 'Instagram') + ', en espanol.',\n  b.cliente ? 'Marca: ' + b.cliente + '.' : '',\n  marca.territorio ? 'Territorio de marca: ' + marca.territorio + '.' : '',\n  marca.tono ? 'Tono de voz: ' + marca.tono + '.' : '',\n  b.descripcion ? 'La creatividad trata de: ' + b.descripcion + '.' : '',\n  ctx.centro ? 'Contexto: ' + ctx.centro + (ctx.linea ? ' (' + ctx.linea + ')' : '') + '.' : '',\n  reglas ? 'Respeta estas reglas:\\n' + reglas : '',\n  'Devuelve SOLO un objeto JSON valido con dos claves: \"caption\" (el texto del post, 1-3 frases, sin hashtags dentro) y \"hashtags\" (una cadena con 3 a 6 hashtags separados por espacios). Nada mas.'\n].filter(Boolean).join('\\n');\n\nconst geminiBody = JSON.stringify({\n  contents: [{ parts: [{ text: prompt }] }],\n  generationConfig: { temperature: 0.9, responseMimeType: 'application/json' }\n});\n\nreturn [{ json: { geminiBody } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0],
+      "id": "b2b2b2b2-2222-4b22-9c22-c0py0000bbbb",
+      "name": "Preparar prompt"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.geminiBody }}",
+        "options": { "timeout": 45000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [440, 0],
+      "id": "c3c3c3c3-3333-4c33-9d33-c0py0000cccc",
+      "name": "Redactar"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extrae el JSON que devuelve Gemini y lo normaliza a copy_texto + hashtags.\nconst j = $input.first().json;\nconst text = ((j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || [])\n  .map(p => p.text).filter(Boolean).join('');\nlet caption = '';\nlet hashtags = '';\ntry {\n  const o = JSON.parse(text);\n  caption = o.caption || o.copy_texto || '';\n  hashtags = o.hashtags || '';\n  if (Array.isArray(hashtags)) hashtags = hashtags.join(' ');\n} catch (e) {\n  caption = text;\n}\nreturn [{ json: { ok: true, copy_texto: caption, hashtags: hashtags } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 0],
+      "id": "d4d4d4d4-4444-4d44-9e44-c0py0000dddd",
+      "name": "Extraer texto"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"ok\": true, \"copy_texto\": $json.copy_texto, \"hashtags\": $json.hashtags } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [880, 0],
+      "id": "e5e5e5e5-5555-4e55-9f55-c0py0000eeee",
+      "name": "Responder"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Preparar prompt", "type": "main", "index": 0 }]] },
+    "Preparar prompt": { "main": [[{ "node": "Redactar", "type": "main", "index": 0 }]] },
+    "Redactar": { "main": [[{ "node": "Extraer texto", "type": "main", "index": 0 }]] },
+    "Extraer texto": { "main": [[{ "node": "Responder", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": []
+}

@@ -24,9 +24,44 @@ export function Detalle() {
   const pieza = app.piezaActual
   const b = app.borrador
   const [descargando, setDescargando] = useState(false)
+  const [generandoTexto, setGenerandoTexto] = useState(false)
   if (!pieza) return null
 
   const esAnimacion = b.formato === 'Animación'
+
+  const setCampo = (campo: 'copy_texto' | 'hashtags', valor: string) =>
+    app.set((s) => ({ piezas: s.piezas.map((x) => (x.id === pieza.id ? { ...x, [campo]: valor } : x)) }))
+
+  const guardarCampo = async (campo: 'copy_texto' | 'hashtags', valor: string) => {
+    try {
+      await api.actualizarPieza(pieza.id, { [campo]: valor })
+    } catch (error) {
+      app.avisar(mensajeError(error), 'error')
+    }
+  }
+
+  const generarTexto = async () => {
+    setGenerandoTexto(true)
+    try {
+      await app.generarTextoPost(pieza.id)
+      app.avisar('Texto del post redactado ✓')
+    } catch (error) {
+      app.avisar(mensajeError(error), 'error')
+    } finally {
+      setGenerandoTexto(false)
+    }
+  }
+
+  const copiarTexto = async () => {
+    const t = [pieza.copy_texto, pieza.hashtags].filter(Boolean).join('\n\n')
+    if (!t) return
+    try {
+      await navigator.clipboard.writeText(t)
+      app.avisar('Texto copiado ✓')
+    } catch {
+      app.avisar('No se pudo copiar. Cópialo a mano.', 'error')
+    }
+  }
 
   const descargar = async (formato: 'png' | 'svg') => {
     setDescargando(true)
@@ -115,6 +150,55 @@ export function Detalle() {
             "width:100%;min-height:60px;resize:vertical;border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:11px;font-family:'Mulish';font-size:12.5px;line-height:1.5;background:#fff;color:#17191f;margin-bottom:18px",
           )}
         />
+
+        <div style={sx('display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px')}>
+          <div style={sx("font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.09em;color:rgba(23,25,31,.4)")}>
+            TEXTO DEL POST
+          </div>
+          <button
+            onClick={() => void generarTexto()}
+            disabled={!app.copyDisponible || generandoTexto}
+            title={
+              app.copyDisponible
+                ? 'Redacta el texto con IA, en el tono de la marca'
+                : 'Disponible cuando configures el flujo de texto en n8n (VITE_N8N_COPY_URL).'
+            }
+            style={sx(
+              "display:inline-flex;align-items:center;gap:5px;background:none;border:none;padding:0;font-family:'Mulish';font-weight:700;font-size:11px;color:var(--acento);cursor:pointer",
+              (!app.copyDisponible || generandoTexto) && 'opacity:.45;cursor:not-allowed',
+            )}
+          >
+            ✦ {generandoTexto ? 'Redactando…' : 'Generar con IA'}
+          </button>
+        </div>
+        <textarea
+          value={pieza.copy_texto ?? ''}
+          onChange={(e) => setCampo('copy_texto', e.target.value)}
+          onBlur={(e) => void guardarCampo('copy_texto', e.target.value)}
+          placeholder="El texto que acompaña al post. Escríbelo o genéralo con IA."
+          style={sx(
+            "width:100%;min-height:96px;resize:vertical;border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:11px;font-family:'Mulish';font-size:12.5px;line-height:1.55;background:#fff;color:#17191f;margin-bottom:8px",
+          )}
+        />
+        <input
+          value={pieza.hashtags ?? ''}
+          onChange={(e) => setCampo('hashtags', e.target.value)}
+          onBlur={(e) => void guardarCampo('hashtags', e.target.value)}
+          placeholder="#hashtags del post"
+          style={sx(
+            "width:100%;border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:9px 11px;font-family:'Mulish';font-size:12px;color:var(--acento);background:#fff;margin-bottom:8px",
+          )}
+        />
+        <button
+          onClick={() => void copiarTexto()}
+          disabled={!pieza.copy_texto && !pieza.hashtags}
+          style={sx(
+            "width:100%;background:#f4f4f4;border:1px solid rgba(23,25,31,.1);border-radius:9px;padding:9px;font-family:'Mulish';font-weight:600;font-size:11.5px;cursor:pointer;color:#17191f;margin-bottom:18px",
+            !pieza.copy_texto && !pieza.hashtags && 'opacity:.5;cursor:not-allowed',
+          )}
+        >
+          ⧉ Copiar texto del post
+        </button>
 
         <div
           style={sx(

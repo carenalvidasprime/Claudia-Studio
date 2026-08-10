@@ -2,6 +2,7 @@ import type { Brief, Centro, Hub, Id, Linea, Situacion } from './types'
 
 const URL_GENERAR = import.meta.env.VITE_N8N_GENERAR_URL as string | undefined
 const URL_CHAT = import.meta.env.VITE_N8N_CHAT_URL as string | undefined
+const URL_COPY = import.meta.env.VITE_N8N_COPY_URL as string | undefined
 
 export const generarConfigurado = Boolean(URL_GENERAR)
 export const chatConfigurado = Boolean(URL_CHAT)
@@ -109,6 +110,53 @@ export async function generarPieza(payload: PayloadGenerar): Promise<RespuestaGe
     ok: dato.ok !== false,
     pieza_id: typeof dato.pieza_id === 'string' ? dato.pieza_id : undefined,
     imagen_url: typeof dato.imagen_url === 'string' ? dato.imagen_url : undefined,
+  }
+}
+
+/** Datos que la app envía a n8n para redactar el texto del post. */
+export interface PayloadCopy {
+  pieza_id: string
+  red: string
+  descripcion: string
+  cliente: string
+  marca: {
+    territorio: string
+    tono: string
+    reglas: string[]
+  }
+  contexto: {
+    centro: string
+    linea: string
+  }
+}
+
+export interface RespuestaCopy {
+  ok: boolean
+  copy_texto?: string
+  hashtags?: string
+  error?: string
+}
+
+export const copyConfigurado = Boolean(URL_COPY)
+
+/**
+ * Redacta el texto del post (caption + hashtags) con la IA, en el tono de voz
+ * de la marca. n8n solo genera el texto y lo devuelve; la app lo guarda en la
+ * pieza (así el workflow de copy no necesita credenciales de Supabase).
+ * Contrato en `n8n/claudia-copy.md`.
+ */
+export async function generarCopy(payload: PayloadCopy): Promise<RespuestaCopy> {
+  if (!URL_COPY) {
+    throw new Error('Falta configurar VITE_N8N_COPY_URL para redactar el texto con IA.')
+  }
+  const bruto = await postJson(URL_COPY, payload, 60_000)
+  const dato = (Array.isArray(bruto) ? bruto[0] : bruto) as Record<string, unknown> | undefined
+  if (!dato) return { ok: false, error: 'n8n no devolvió texto.' }
+  if (dato.error) return { ok: false, error: String(dato.error) }
+  return {
+    ok: dato.ok !== false,
+    copy_texto: typeof dato.copy_texto === 'string' ? dato.copy_texto : undefined,
+    hashtags: typeof dato.hashtags === 'string' ? dato.hashtags : undefined,
   }
 }
 
