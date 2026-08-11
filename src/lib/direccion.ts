@@ -16,6 +16,23 @@ export interface DireccionOpts {
   tono: string
   paleta: MarcaColor[]
   reglas: string[]
+  /** Grado de cambio en modo remezclar; ausente = creación desde cero. */
+  variacion?: 'sutil' | 'media' | 'atrevida'
+}
+
+// Contrato fijo que la IA debe respetar SIEMPRE (no depende de las reglas del
+// cliente): realismo, sin exageraciones ni promesas, y nada de texto/logos.
+const CONTRATO = [
+  'Realista y creíble: nada de exageraciones, montajes irreales ni estética artificial.',
+  'No inventes datos, cifras, marcas, premios ni promesas de resultados.',
+  'La imagen NO debe contener ningún texto, palabra, letra, número, logotipo ni marca de agua.',
+  'Deja las esquinas y un margen despejados (espacio negativo) para superponer el logo y un titular después.',
+]
+
+const VARIACION: Record<string, string> = {
+  sutil: 'Cambios SUTILES: mantén el mismo sujeto, encuadre y composición; varía solo matices de luz o detalles menores. Debe parecerse mucho al original.',
+  media: 'Conserva el sujeto y la idea central; varía el encuadre, la luz o el entorno de forma moderada.',
+  atrevida: 'Conserva el sujeto y el mensaje, pero reinterpreta con libertad el entorno, el encuadre y la luz.',
 }
 
 const COMPOSICION: Record<string, string> = {
@@ -41,7 +58,10 @@ export function construirPromptImagen(o: DireccionOpts): string {
     .join(', ')
 
   const partes = [
-    'Fotografía editorial profesional y realista, no aspecto de banco de imágenes.',
+    o.variacion
+      ? 'Variación de una imagen de referencia.'
+      : 'Fotografía editorial profesional y realista, no aspecto de banco de imágenes.',
+    o.variacion ? VARIACION[o.variacion] : '',
     o.intencion ? `Objetivo del post: ${o.intencion}.` : '',
     o.tipoPost ? TIPO_DIR[o.tipoPost] ?? `${o.tipoPost}.` : '',
     COMPOSICION[o.ratio] ?? '',
@@ -51,8 +71,7 @@ export function construirPromptImagen(o: DireccionOpts): string {
     o.tono.trim() ? `Sensación acorde a un tono ${o.tono.trim()}.` : '',
     o.reglas.length ? `Respeta estas reglas de marca: ${o.reglas.join(' ')}` : '',
     o.ajuste.trim() ? `Ajuste pedido: ${o.ajuste.trim()}.` : '',
-    'Deja las esquinas y un margen despejados (espacio negativo) para superponer el logo y un titular después.',
-    'MUY IMPORTANTE: la imagen no debe contener ningún texto, palabra, letra, número, logotipo, emblema ni marca de agua.',
+    ...CONTRATO,
   ]
   return partes.filter(Boolean).join(' ')
 }

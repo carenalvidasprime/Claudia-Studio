@@ -91,6 +91,8 @@ export interface Borrador {
   ajuste: string
   /** Concepto que propone el director de arte (IA); se muestra editable. */
   concepto: string
+  /** Grado de cambio al remezclar una imagen. */
+  variacion: 'sutil' | 'media' | 'atrevida'
   estilo: string
   iluminacion: string
   encuadre: string
@@ -128,6 +130,7 @@ export const BORRADOR_INICIAL: Borrador = {
   tipoPost: '',
   ajuste: '',
   concepto: '',
+  variacion: 'media',
   estilo: 'Editorial',
   iluminacion: 'Natural',
   encuadre: 'Medio',
@@ -829,6 +832,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Capa 2 · Director de arte (IA): de la intención + el Brand Kit obtiene el
     // prompt de imagen dirigido, el concepto y el copy. Si no está configurado o
     // falla, se cae a la heurística de la Capa 1 (nunca bloquea la generación).
+    const referenciaUrl = opts?.referenciaUrl ?? b.material?.url ?? null
     let promptImagen = construirPromptImagen({
       intencion,
       tipoPost: b.tipoPost,
@@ -838,10 +842,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       tono: st.marcaConfig.tonoVoz,
       paleta: st.paleta,
       reglas: st.reglas.map((r) => r.texto),
+      variacion: referenciaUrl ? b.variacion : undefined,
     })
     // En modo remezclar (hay imagen de referencia) NO llamamos al director: se
     // mantiene el concepto original y solo se varía la imagen.
-    const referenciaUrl = opts?.referenciaUrl ?? b.material?.url ?? null
     let dirCopy: { copy_texto: string | null; hashtags: string | null } | null = null
     if (directorConfigurado && !referenciaUrl) {
       setSt((p) => ({ ...p, generando: true, errorGeneracion: null, borrador: { ...p.borrador, concepto: '' } }))

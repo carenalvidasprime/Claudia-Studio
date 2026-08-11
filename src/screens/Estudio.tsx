@@ -132,6 +132,28 @@ export function Estudio() {
               </>
             )}
 
+            <div style={sx(rotulo, 'margin:20px 0 9px')}>GRADO DE VARIACIÓN</div>
+            <div style={sx('display:flex;gap:5px')}>
+              {(
+                [
+                  ['sutil', 'Sutil'],
+                  ['media', 'Media'],
+                  ['atrevida', 'Atrevida'],
+                ] as const
+              ).map(([val, label]) => (
+                <button key={val} onClick={() => app.setBorrador({ variacion: val })} style={sx(seg(b.variacion === val), 'flex:1')}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div style={sx('font-size:10px;color:rgba(23,25,31,.45);margin-top:6px;line-height:1.5')}>
+              {b.variacion === 'sutil'
+                ? 'Casi idéntica: solo cambian matices.'
+                : b.variacion === 'atrevida'
+                  ? 'Mismo sujeto y mensaje, pero reinterpreta con libertad.'
+                  : 'Mismo sujeto e idea; varía encuadre, luz o entorno.'}
+            </div>
+
             <div style={sx(rotulo, 'margin:20px 0 9px')}>¿ALGÚN CAMBIO? (OPCIONAL)</div>
             <input
               value={b.ajuste}
@@ -140,7 +162,7 @@ export function Estudio() {
               style={sx(campo)}
             />
             <div style={sx('font-size:10px;color:rgba(23,25,31,.42);margin-top:6px;line-height:1.5')}>
-              Crea versiones parecidas a la imagen de partida. El texto y el logo se mantienen.
+              El texto y el logo se mantienen (viven en la capa de marca, no en la imagen).
             </div>
           </>
         )}
