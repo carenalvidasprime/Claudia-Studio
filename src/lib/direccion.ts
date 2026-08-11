@@ -30,9 +30,12 @@ const CONTRATO = [
 ]
 
 const VARIACION: Record<string, string> = {
-  sutil: 'Cambios SUTILES: mantén el mismo sujeto, encuadre y composición; varía solo matices de luz o detalles menores. Debe parecerse mucho al original.',
-  media: 'Conserva el sujeto y la idea central; varía el encuadre, la luz o el entorno de forma moderada.',
-  atrevida: 'Conserva el sujeto y el mensaje, pero reinterpreta con libertad el entorno, el encuadre y la luz.',
+  sutil:
+    'Cambia MUY POCO respecto a la imagen de referencia: mismo sujeto, mismo encuadre y misma composición. Varía únicamente matices de luz o detalles menores. El resultado debe parecerse muchísimo al original.',
+  media:
+    'Mantén el sujeto y la idea central de la imagen de referencia. Cambia de forma clara y controlada UNA de estas cosas: el encuadre, la luz o el entorno.',
+  atrevida:
+    'Mantén solo el sujeto principal y el mensaje de la imagen de referencia. Reinterpreta con libertad el encuadre, la luz y el entorno.',
 }
 
 const COMPOSICION: Record<string, string> = {
@@ -52,16 +55,28 @@ const TIPO_DIR: Record<string, string> = {
 }
 
 export function construirPromptImagen(o: DireccionOpts): string {
+  // MODO REMEZCLAR (imagen-a-imagen): el prompt debe ser MAGRO y mandarlo el
+  // grado de variación. Meter aquí todo el briefing editorial (paleta,
+  // territorio, composición…) pelea con la imagen de referencia y produce
+  // híbridos raros: la referencia ya aporta escena, composición y color.
+  if (o.variacion) {
+    const partes = [
+      'Trabaja a partir de la imagen de referencia adjunta.',
+      VARIACION[o.variacion],
+      o.ajuste.trim() ? `Cambio concreto pedido: ${o.ajuste.trim()}.` : '',
+      'No añadas ningún texto, letra, número, logotipo ni marca de agua. Deja las esquinas y un margen despejados para superponer la marca después.',
+    ]
+    return partes.filter(Boolean).join(' ')
+  }
+
+  // MODO CREAR (desde una idea): briefing editorial completo.
   const colores = o.paleta
     .slice(0, 4)
     .map((c) => `${c.nombre} (${c.hex})`)
     .join(', ')
 
   const partes = [
-    o.variacion
-      ? 'Variación de una imagen de referencia.'
-      : 'Fotografía editorial profesional y realista, no aspecto de banco de imágenes.',
-    o.variacion ? VARIACION[o.variacion] : '',
+    'Fotografía editorial profesional y realista, no aspecto de banco de imágenes.',
     o.intencion ? `Objetivo del post: ${o.intencion}.` : '',
     o.tipoPost ? TIPO_DIR[o.tipoPost] ?? `${o.tipoPost}.` : '',
     COMPOSICION[o.ratio] ?? '',
