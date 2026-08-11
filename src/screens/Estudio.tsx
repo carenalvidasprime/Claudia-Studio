@@ -26,7 +26,19 @@ export function Estudio() {
     .filter(Boolean) as Pieza[]
   const visibles = app.filtroResultados === 'Favoritas' ? resultados.filter((p) => app.favoritas[p.id]) : resultados
   const seleccionadas = Object.keys(app.seleccion).filter((k) => app.seleccion[k]).length
-  const puedeGenerar = b.prompt.trim().length > 0 && !app.generando
+
+  const [modo, setModo] = useState<'crear' | 'remezclar'>('crear')
+  const cambiarModo = (m: 'crear' | 'remezclar') => {
+    setModo(m)
+    if (m === 'crear') app.setBorrador({ material: null }) // Crear parte de una idea, no de una imagen.
+  }
+  const listo = modo === 'remezclar' ? !!b.material : b.prompt.trim().length > 0
+  const puedeGenerar = listo && !app.generando
+
+  // Piezas recientes del centro con imagen, para remezclar sin subir nada.
+  const recientes = (centro ? app.piezasDeCentro(centro.id) : [])
+    .filter((p) => p.imagen_url)
+    .slice(0, 8)
 
   return (
     <section className="fade" style={sx('display:grid;grid-template-columns:352px 1fr;height:calc(100vh - 64px)')}>
@@ -40,29 +52,98 @@ export function Estudio() {
           </div>
         </div>
 
-        <div style={sx(rotulo)}>¿QUÉ QUIERES COMUNICAR?</div>
-        <textarea
-          value={b.prompt}
-          onChange={(e) => app.setBorrador({ prompt: e.target.value, texto: e.target.value })}
-          placeholder="En una frase, en tu idioma. Ej: «anunciar nuestra nueva unidad de fisioterapia» o «felicitar el Día de la Madre»."
-          style={sx(campo, 'min-height:104px;resize:vertical')}
-        />
-        <div style={sx('font-size:10px;color:rgba(23,25,31,.42);margin-top:6px;line-height:1.5')}>
-          Cuéntale la idea. Claudia se encarga de la dirección de arte.
+        {/* Modo: Crear (desde una idea) o Remezclar (desde una imagen) */}
+        <div style={sx('display:flex;gap:5px;background:#f4f4f4;border-radius:10px;padding:4px;margin-bottom:18px')}>
+          {(
+            [
+              ['crear', 'Crear', 'desde una idea'],
+              ['remezclar', 'Remezclar', 'desde una imagen'],
+            ] as const
+          ).map(([val, label, sub]) => {
+            const on = modo === val
+            return (
+              <button
+                key={val}
+                onClick={() => cambiarModo(val)}
+                style={sx(
+                  "flex:1;border:none;border-radius:8px;padding:8px 6px;cursor:pointer;font-family:'Mulish';line-height:1.15;text-align:center",
+                  on ? 'background:#fff;box-shadow:0 1px 3px rgba(23,25,31,.12)' : 'background:none',
+                )}
+              >
+                <div style={sx(`font-size:12.5px;font-weight:700;color:${on ? '#17191f' : 'rgba(23,25,31,.55)'}`)}>{label}</div>
+                <div style={sx(`font-size:9.5px;color:${on ? 'rgba(23,25,31,.5)' : 'rgba(23,25,31,.4)'}`)}>{sub}</div>
+              </button>
+            )
+          })}
         </div>
 
-        <div style={sx(rotulo, 'margin:20px 0 9px')}>TIPO (OPCIONAL)</div>
-        <div style={sx('display:flex;flex-wrap:wrap;gap:5px')}>
-          {TIPOS.map((t) => (
-            <button
-              key={t}
-              onClick={() => app.setBorrador({ tipoPost: b.tipoPost === t ? '' : t })}
-              style={sx(pill(b.tipoPost === t))}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
+        {modo === 'crear' && (
+          <>
+            <div style={sx(rotulo)}>¿QUÉ QUIERES COMUNICAR?</div>
+            <textarea
+              value={b.prompt}
+              onChange={(e) => app.setBorrador({ prompt: e.target.value, texto: e.target.value })}
+              placeholder="En una frase, en tu idioma. Ej: «anunciar nuestra nueva unidad de fisioterapia» o «felicitar el Día de la Madre»."
+              style={sx(campo, 'min-height:104px;resize:vertical')}
+            />
+            <div style={sx('font-size:10px;color:rgba(23,25,31,.42);margin-top:6px;line-height:1.5')}>
+              Cuéntale la idea. Claudia se encarga de la dirección de arte.
+            </div>
+
+            <div style={sx(rotulo, 'margin:20px 0 9px')}>TIPO (OPCIONAL)</div>
+            <div style={sx('display:flex;flex-wrap:wrap;gap:5px')}>
+              {TIPOS.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => app.setBorrador({ tipoPost: b.tipoPost === t ? '' : t })}
+                  style={sx(pill(b.tipoPost === t))}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {modo === 'remezclar' && (
+          <>
+            <div style={sx(rotulo)}>IMAGEN DE PARTIDA</div>
+            <FotoBase />
+            {recientes.length > 0 && (
+              <>
+                <div style={sx('font-size:10px;color:rgba(23,25,31,.45);margin:12px 0 7px')}>o elige una pieza reciente:</div>
+                <div style={sx('display:flex;gap:7px;flex-wrap:wrap')}>
+                  {recientes.map((p) => {
+                    const sel = b.material?.url === p.imagen_url
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => app.setBorrador({ material: { url: p.imagen_url as string, nombre: p.titulo } })}
+                        style={sx(
+                          'width:52px;height:52px;border-radius:9px;overflow:hidden;padding:0;cursor:pointer;background:#eee',
+                          sel ? 'outline:2.5px solid var(--acento);outline-offset:-1px;border:none' : 'border:1px solid rgba(23,25,31,.12)',
+                        )}
+                      >
+                        <img src={p.imagen_url as string} alt={p.titulo} style={sx('width:100%;height:100%;object-fit:cover;display:block')} />
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
+            )}
+
+            <div style={sx(rotulo, 'margin:20px 0 9px')}>¿ALGÚN CAMBIO? (OPCIONAL)</div>
+            <input
+              value={b.ajuste}
+              onChange={(e) => app.setBorrador({ ajuste: e.target.value })}
+              placeholder="p. ej. «en exteriores», «más luminoso», «otro fondo»"
+              style={sx(campo)}
+            />
+            <div style={sx('font-size:10px;color:rgba(23,25,31,.42);margin-top:6px;line-height:1.5')}>
+              Crea versiones parecidas a la imagen de partida. El texto y el logo se mantienen.
+            </div>
+          </>
+        )}
 
         <div style={sx(rotulo, 'margin:20px 0 9px')}>RED SOCIAL Y FORMATO</div>
         <div style={sx('display:flex;flex-wrap:wrap;gap:6px')}>
@@ -87,9 +168,6 @@ export function Estudio() {
             )
           })}
         </div>
-
-        <div style={sx(rotulo, 'margin:20px 0 9px')}>FOTO BASE (OPCIONAL)</div>
-        <FotoBase />
 
         <div style={sx(rotulo, 'margin:20px 0 9px')}>MARCA</div>
         <div style={sx('display:flex;gap:5px')}>
@@ -127,11 +205,11 @@ export function Estudio() {
             !puedeGenerar && 'opacity:.5;cursor:not-allowed',
           )}
         >
-          {app.generando ? 'Generando…' : 'Generar'}
+          {app.generando ? 'Generando…' : modo === 'remezclar' ? 'Generar variaciones' : 'Generar'}
         </button>
-        {!b.prompt.trim() && !app.generando && (
+        {!listo && !app.generando && (
           <div style={sx('font-size:10px;color:rgba(23,25,31,.45);margin-top:7px;text-align:center')}>
-            Escribe qué quieres comunicar para generar.
+            {modo === 'remezclar' ? 'Sube o elige una imagen de partida.' : 'Escribe qué quieres comunicar para generar.'}
           </div>
         )}
       </div>

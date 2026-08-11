@@ -632,34 +632,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const volver = useCallback(() => {
     setSt((p) => {
+      // Flujo actual: dashboard → centro → estudio → detalle/exportar. Los pasos
+      // antiguos (gateway/situaciones/brief) están retirados y vuelven al centro.
       const destino: Record<Pantalla, Pantalla> = {
         dashboard: 'dashboard',
         calendario: 'dashboard',
         marcaRibera: 'dashboard',
         centro: 'dashboard',
-        gateway: 'centro',
-        situaciones: 'gateway',
-        pasoTestConsent: 'situaciones',
-        pasoTestExposicion: 'pasoTestConsent',
-        pasoColabPersonas: 'situaciones',
-        pasoColabEntorno: 'pasoColabPersonas',
-        pasoHitoValidacion: 'situaciones',
-        pasoHitoEntorno: 'pasoHitoValidacion',
-        brief: 'gateway',
         estudio: 'centro',
         detalle: 'estudio',
         exportar: 'estudio',
-      }
-      if (p.pantalla === 'estudio') {
-        const porOrigen: Record<string, Pantalla> = {
-          testimonio: 'pasoTestExposicion',
-          colaboracion: 'pasoColabEntorno',
-          hito: 'pasoHitoEntorno',
-          situacionDirecta: 'situaciones',
-          scratch: 'brief',
-          centro: 'centro',
-        }
-        return { ...p, pantalla: porOrigen[p.origen ?? 'centro'] ?? 'centro' }
+        gateway: 'centro',
+        situaciones: 'centro',
+        pasoTestConsent: 'centro',
+        pasoTestExposicion: 'centro',
+        pasoColabPersonas: 'centro',
+        pasoColabEntorno: 'centro',
+        pasoHitoValidacion: 'centro',
+        pasoHitoEntorno: 'centro',
+        brief: 'centro',
       }
       return { ...p, pantalla: destino[p.pantalla] }
     })
