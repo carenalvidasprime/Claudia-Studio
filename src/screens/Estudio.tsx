@@ -169,6 +169,18 @@ export function Estudio() {
 
         {!app.generando && resultados.length > 0 && (
           <>
+            {b.concepto && (
+              <div style={sx('display:flex;align-items:flex-start;gap:9px;background:var(--suave-1);border:1px solid rgba(var(--acento-rgb),.22);border-radius:11px;padding:10px 13px;margin-bottom:14px')}>
+                <span style={sx('color:var(--acento);font-weight:700;font-size:12px;flex:none;margin-top:1px')}>✦</span>
+                <div style={sx('min-width:0;flex:1')}>
+                  <div style={sx("font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:.08em;color:rgba(23,25,31,.45);margin-bottom:3px")}>
+                    CLAUDIA PROPONE
+                  </div>
+                  <div style={sx('font-size:12.5px;line-height:1.5;color:#1D1D1B')}>{b.concepto}</div>
+                </div>
+              </div>
+            )}
+
             {/* Barra: filtro + maqueta de marca (post-producción) + entrega */}
             <div style={sx('display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px')}>
               <div style={sx('display:flex;gap:6px')}>

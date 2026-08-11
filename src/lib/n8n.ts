@@ -3,6 +3,7 @@ import type { Brief, Centro, Hub, Id, Linea, Situacion } from './types'
 const URL_GENERAR = import.meta.env.VITE_N8N_GENERAR_URL as string | undefined
 const URL_CHAT = import.meta.env.VITE_N8N_CHAT_URL as string | undefined
 const URL_COPY = import.meta.env.VITE_N8N_COPY_URL as string | undefined
+const URL_DIRECTOR = import.meta.env.VITE_N8N_DIRECTOR_URL as string | undefined
 
 export const generarConfigurado = Boolean(URL_GENERAR)
 export const chatConfigurado = Boolean(URL_CHAT)
@@ -157,6 +158,58 @@ export async function generarCopy(payload: PayloadCopy): Promise<RespuestaCopy> 
     ok: dato.ok !== false,
     copy_texto: typeof dato.copy_texto === 'string' ? dato.copy_texto : undefined,
     hashtags: typeof dato.hashtags === 'string' ? dato.hashtags : undefined,
+  }
+}
+
+/** Datos que la app envía al «director de arte» (IA) para dirigir la pieza. */
+export interface PayloadDirector {
+  intencion: string
+  tipoPost: string
+  red: string
+  ratio: string
+  cliente: string
+  ajuste: string
+  marca: {
+    territorio: string
+    tono: string
+    paleta: { hex: string; nombre: string }[]
+    reglas: string[]
+  }
+  contexto: { centro: string; linea: string }
+}
+
+export interface RespuestaDirector {
+  ok: boolean
+  /** Prompt de imagen dirigido (sustituye a la heurística de la Capa 1). */
+  prompt_imagen?: string
+  /** Idea creativa en una frase. */
+  concepto?: string
+  copy_texto?: string
+  hashtags?: string
+  error?: string
+}
+
+export const directorConfigurado = Boolean(URL_DIRECTOR)
+
+/**
+ * Director de arte con IA: de una intención + el Brand Kit devuelve, en UNA
+ * llamada, el prompt de imagen dirigido, el concepto, el texto del post y los
+ * hashtags. n8n solo genera texto; la app usa el prompt para generar la imagen
+ * y guarda el copy. Contrato en `n8n/claudia-director.md`.
+ */
+export async function dirigirArte(payload: PayloadDirector): Promise<RespuestaDirector> {
+  if (!URL_DIRECTOR) throw new Error('Falta configurar VITE_N8N_DIRECTOR_URL.')
+  const bruto = await postJson(URL_DIRECTOR, payload, 60_000)
+  const dato = (Array.isArray(bruto) ? bruto[0] : bruto) as Record<string, unknown> | undefined
+  if (!dato) return { ok: false, error: 'El director no devolvió nada.' }
+  if (dato.error) return { ok: false, error: String(dato.error) }
+  const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined)
+  return {
+    ok: dato.ok !== false,
+    prompt_imagen: str(dato.prompt_imagen),
+    concepto: str(dato.concepto),
+    copy_texto: str(dato.copy_texto),
+    hashtags: str(dato.hashtags),
   }
 }
 

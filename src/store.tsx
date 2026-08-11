@@ -11,7 +11,15 @@ import {
 import type { Session } from '@supabase/supabase-js'
 import { supabase, supabaseConfigurado, mensajeError } from './lib/supabase'
 import * as api from './lib/api'
-import { generarPieza, generarConfigurado, generarCopy, copyConfigurado, type PayloadGenerar } from './lib/n8n'
+import {
+  generarPieza,
+  generarConfigurado,
+  generarCopy,
+  copyConfigurado,
+  dirigirArte,
+  directorConfigurado,
+  type PayloadGenerar,
+} from './lib/n8n'
 import { presentacionDe, PALETA_POR_DEFECTO, REGLAS_POR_DEFECTO } from './lib/marca'
 import { CLIENTE } from './lib/cliente'
 import { MARCA_POR_DEFECTO, desdeFila, fijarMarca, type MarcaConfig } from './lib/brand'
@@ -81,6 +89,8 @@ export interface Borrador {
   tipoPost: string
   /** Ajuste conversacional para la siguiente ronda: «más luminoso», «sin personas»… */
   ajuste: string
+  /** Concepto que propone el director de arte (IA); se muestra editable. */
+  concepto: string
   estilo: string
   iluminacion: string
   encuadre: string
@@ -117,6 +127,7 @@ export const BORRADOR_INICIAL: Borrador = {
   variantes: 4,
   tipoPost: '',
   ajuste: '',
+  concepto: '',
   estilo: 'Editorial',
   iluminacion: 'Natural',
   encuadre: 'Medio',
@@ -822,6 +833,48 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const tituloAuto =
       intencion.length > 0 ? intencion.charAt(0).toUpperCase() + intencion.slice(1, 56) : b.titulo.trim() || `${b.canal}`
 
+    // Capa 2 · Director de arte (IA): de la intención + el Brand Kit obtiene el
+    // prompt de imagen dirigido, el concepto y el copy. Si no está configurado o
+    // falla, se cae a la heurística de la Capa 1 (nunca bloquea la generación).
+    let promptImagen = construirPromptImagen({
+      intencion,
+      tipoPost: b.tipoPost,
+      ajuste: b.ajuste,
+      ratio: b.ratio,
+      territorio: st.marcaConfig.territorio,
+      tono: st.marcaConfig.tonoVoz,
+      paleta: st.paleta,
+      reglas: st.reglas.map((r) => r.texto),
+    })
+    let dirCopy: { copy_texto: string | null; hashtags: string | null } | null = null
+    if (directorConfigurado) {
+      setSt((p) => ({ ...p, generando: true, errorGeneracion: null, borrador: { ...p.borrador, concepto: '' } }))
+      try {
+        const d = await dirigirArte({
+          intencion,
+          tipoPost: b.tipoPost,
+          red: b.canal,
+          ratio: b.ratio,
+          cliente: CLIENTE.cliente ?? '',
+          ajuste: b.ajuste,
+          marca: {
+            territorio: st.marcaConfig.territorio,
+            tono: st.marcaConfig.tonoVoz,
+            paleta: st.paleta.map((c) => ({ hex: c.hex, nombre: c.nombre })),
+            reglas: st.reglas.map((r) => r.texto),
+          },
+          contexto: { centro: centro.nombre, linea: linea?.nombre ?? '' },
+        })
+        if (d.ok) {
+          if (d.prompt_imagen) promptImagen = d.prompt_imagen
+          if (d.concepto) setSt((p) => ({ ...p, borrador: { ...p.borrador, concepto: d.concepto! } }))
+          dirCopy = { copy_texto: d.copy_texto ?? null, hashtags: d.hashtags ?? null }
+        }
+      } catch {
+        /* Sin director o con error: seguimos con la heurística de la Capa 1. */
+      }
+    }
+
     const payload: PayloadGenerar = {
       pieza_id: st.piezaId,
       pieza: {
@@ -835,19 +888,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         canal: b.canal,
         consentimiento_ok: b.consentimiento,
         notas_compliance: notasCompliance(st.borrador, situacion),
-        // Dirección de arte: la intención se enriquece con fotografía, formato y
-        // Brand Kit (no se manda pelada). La marca real (logo/copy) la compone
-        // la app encima, por eso a la IA se le pide una foto limpia sin texto.
-        prompt: construirPromptImagen({
-          intencion,
-          tipoPost: b.tipoPost,
-          ajuste: b.ajuste,
-          ratio: b.ratio,
-          territorio: st.marcaConfig.territorio,
-          tono: st.marcaConfig.tonoVoz,
-          paleta: st.paleta,
-          reglas: st.reglas.map((r) => r.texto),
-        }),
+        // Prompt dirigido (director IA si está; si no, heurística Capa 1). La
+        // marca real (logo/copy) la compone la app encima, por eso a la IA se le
+        // pide una foto limpia sin texto.
+        prompt: promptImagen,
         brief,
       },
       contexto: {
@@ -916,9 +960,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
           ? [st.piezaId]
           : []
 
+      // Si el director escribió el copy, lo guardamos en las piezas nuevas
+      // (todas comparten el mismo post) y lo reflejamos en el estado.
+      let piezasFinal = piezas
+      if (dirCopy && (dirCopy.copy_texto || dirCopy.hashtags) && nuevas.length) {
+        const ids = new Set(nuevas.map((n) => n.id))
+        await Promise.all([...ids].map((id) => api.actualizarPieza(id, dirCopy!).catch(() => {})))
+        piezasFinal = piezas.map((p) =>
+          ids.has(p.id) ? { ...p, copy_texto: dirCopy!.copy_texto, hashtags: dirCopy!.hashtags } : p,
+        )
+      }
+
       setSt((p) => ({
         ...p,
-        piezas,
+        piezas: piezasFinal,
         generando: false,
         resultados,
         piezaId: resultados[0] ?? p.piezaId,
