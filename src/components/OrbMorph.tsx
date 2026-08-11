@@ -1,19 +1,20 @@
 import { useEffect, useRef } from 'react'
 
 /**
- * Esfera de IA que se forma NÍTIDA en un concepto (orbe, Instagram, post, Meta,
- * Google, TikTok), se mantiene un momento, y luego se deshace en purpurina de
+ * Esfera de IA que se forma NÍTIDA en un concepto (orbe, Instagram, cámara,
+ * Meta, TikTok), se mantiene un momento, y luego se deshace en purpurina de
  * partículas que viajan y se recomponen en la siguiente. Combina una figura
  * vectorial limpia con una capa de partículas de luz encima. Color de marca.
  * Respeta prefers-reduced-motion (se queda en una figura nítida y quieta).
  */
-const FORMAS = ['orbe', 'instagram', 'post', 'meta', 'google', 'tiktok'] as const
+const FORMAS = ['orbe', 'instagram', 'camara', 'meta', 'tiktok'] as const
 const N = 520
 
 // Fases del ciclo (ms): formar -> mantener nítido -> estallar en purpurina.
-const FORM = 820
-const HOLD = 1250
-const SHATTER = 680
+// Tiempos generosos de formar/estallar => morphing más fluido entre conceptos.
+const FORM = 1050
+const HOLD = 1000
+const SHATTER = 900
 const TOTAL = FORM + HOLD + SHATTER
 
 export function OrbMorph({ size = 264 }: { size?: number }) {
@@ -68,27 +69,23 @@ export function OrbMorph({ size = 264 }: { size?: number }) {
         c.fill()
         return
       }
-      if (forma === 'post') {
-        c.lineWidth = 10
-        rr(c, 58, 52, 104, 116, 15)
+      if (forma === 'camara') {
+        c.lineWidth = 11
+        rr(c, 54, 86, 112, 68, 14) // cuerpo
+        c.stroke()
+        rr(c, 92, 72, 34, 16, 5) // visor superior
         c.stroke()
         c.beginPath()
-        c.arc(78, 74, 8, 0, Math.PI * 2)
+        c.arc(cx, 122, 19, 0, Math.PI * 2) // objetivo
         c.stroke()
-        rr(c, 66, 92, 88, 46, 8)
-        c.stroke()
-        linea(c, 66, 150, 132, 150)
-        linea(c, 66, 162, 108, 162)
+        c.beginPath()
+        c.arc(146, 100, 3.5, 0, Math.PI * 2) // flash
+        c.fill()
         return
       }
       if (forma === 'meta') {
         c.lineWidth = 16
         c.stroke(new Path2D('M66 110 C66 80 94 80 110 110 C126 140 154 140 154 110 C154 80 126 80 110 110 C94 140 66 140 66 110 Z'))
-        return
-      }
-      if (forma === 'google') {
-        c.lineWidth = 16
-        c.stroke(new Path2D('M152 82 A50 50 0 1 0 160 118 L114 118'))
         return
       }
       if (forma === 'tiktok') {
@@ -243,9 +240,3 @@ function rr(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: num
   c.closePath()
 }
 
-function linea(c: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number) {
-  c.beginPath()
-  c.moveTo(x1, y1)
-  c.lineTo(x2, y2)
-  c.stroke()
-}

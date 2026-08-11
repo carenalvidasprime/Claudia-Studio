@@ -10,19 +10,24 @@ import vidasprimeTrim from '../assets/logo-vidasprime-black-trim.png'
  * saltar con un clic.
  */
 
-// Puntos de la «V» (coordenadas relativas al centro del orbe). La purpurina
-// converge a estos puntos desde una dispersión inicial.
-const N = 9
-const TL: [number, number] = [-56, -46]
-const BV: [number, number] = [0, 46]
-const TR: [number, number] = [56, -46]
-const lerp = (a: [number, number], b: [number, number], t: number): [number, number] => [
-  a[0] + (b[0] - a[0]) * t,
-  a[1] + (b[1] - a[1]) * t,
+// Puntos de la «V» de VidasPrime, muestreados del propio logo (icono), en
+// coordenadas relativas al centro. La purpurina converge a estos puntos desde
+// una dispersión inicial hasta reconstruir la marca real.
+const V_PTS: [number, number][] = [
+  [-47.6, -36], [-40.5, -37.1], [-33.3, -36.5], [28, -35.6], [34.9, -36.9], [42.1, -36.7], [48.6, -35.4],
+  [-54.5, -29.1], [-48.1, -29.7], [-40.7, -30], [-33.1, -29.7], [-25.7, -29.6], [21.5, -28.8], [27.2, -29.7],
+  [34.6, -29.9], [42.4, -29.8], [49.8, -29.7], [-55.7, -22.2], [-48.5, -22.4], [-31.3, -23], [-25.5, -22.2],
+  [-19.2, -21.6], [19.9, -22], [27, -22.3], [44.7, -22.9], [49.8, -22.2], [55.6, -22.1], [-55.3, -14.9],
+  [-48.2, -14.6], [-25.1, -15], [-18, -14.6], [13.4, -14], [19.7, -14.6], [25.5, -15.4], [43.8, -14],
+  [49.8, -14.6], [55.3, -15.2], [-53.6, -8.1], [-48.1, -7.1], [-41.5, -6.6], [-23.2, -8.3], [-18, -7.1],
+  [-11.4, -6.8], [12.2, -7.1], [19.3, -7.4], [42.3, -7], [49.5, -7.4], [-47.4, 0], [-40.6, 0.4], [-35.3, 1.7],
+  [-17.1, -0.6], [-11.3, -0.5], [5.4, 0.8], [12.1, 0.4], [17.5, -0.6], [35.7, 1], [42.3, 0.4], [47.8, -0.6],
+  [-40.6, 8], [-33.6, 8.3], [-0.7, 9], [4.6, 8], [11.3, 7.5], [34.7, 8], [41.6, 7.6], [-39.4, 14.9],
+  [-33.1, 15.5], [-27.4, 16.3], [-2.5, 15.8], [4.6, 15.4], [27.7, 15.9], [34.7, 15.5], [-32.9, 22.9],
+  [-25.7, 23.2], [-9.1, 23.9], [-2.9, 23], [3.3, 22.4], [21.6, 23.9], [27.2, 23], [33.6, 22.5], [-31.3, 29.6],
+  [-25.5, 30.5], [-18, 30.5], [-10.5, 30.5], [-3.2, 30.3], [19.9, 30.7], [27.1, 30.4], [-24.7, 36.1],
+  [-17.9, 37.2], [-10.8, 36.8], [20.1, 36.9], [25.7, 36.6],
 ]
-const V_PTS: [number, number][] = []
-for (let i = 0; i <= N; i++) V_PTS.push(lerp(TL, BV, i / N))
-for (let i = 1; i <= N; i++) V_PTS.push(lerp(BV, TR, i / N))
 
 // Chispas finas que ascienden alrededor (el brillo de fondo).
 const CHISPAS = [
@@ -63,18 +68,20 @@ export function Portada({ saliendo, onSaltar }: { saliendo: boolean; onSaltar: (
           />
           {V_PTS.map(([tx, ty], i) => {
             // Dispersión inicial determinista (estable entre renders).
-            const sxr = Math.cos(i * 2.399) * 74
-            const syr = Math.sin(i * 1.7) * 60
-            const size = i % 3 === 0 ? 6 : 5
+            const sxr = Math.cos(i * 2.399) * 78
+            const syr = Math.sin(i * 1.7) * 62
+            const size = i % 6 === 0 ? 5 : 3.5
+            // Retardo pseudoaleatorio: la V se rellena de forma orgánica.
+            const delay = (0.1 + ((i * 0.618034) % 1) * 0.95).toFixed(2)
             return (
               <span
                 key={i}
                 style={sx(
                   `position:absolute;top:50%;left:50%;width:${size}px;height:${size}px;border-radius:50%;` +
                     'background:radial-gradient(circle at 34% 28%, #fff, var(--acento) 80%);' +
-                    'box-shadow:0 0 8px rgba(var(--acento-rgb),.7);' +
+                    'box-shadow:0 0 6px rgba(var(--acento-rgb),.65);' +
                     `--tx:${tx}px;--ty:${ty}px;--sx:${sxr.toFixed(1)}px;--sy:${syr.toFixed(1)}px;` +
-                    `animation:portada-forma 1s cubic-bezier(.2,.8,.25,1) ${(0.15 + i * 0.045).toFixed(2)}s both`,
+                    `animation:portada-forma 1s cubic-bezier(.2,.8,.25,1) ${delay}s both`,
                 )}
               />
             )
