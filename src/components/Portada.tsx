@@ -76,6 +76,23 @@ export function Portada({ saliendo, onSaltar }: { saliendo: boolean; onSaltar: (
                 'animation:portada-bloom 3.4s ease-out infinite',
             )}
           />
+          {/* Base difusa: los MISMOS puntos, más grandes y difuminados, para dar
+              cuerpo continuo a la «V» (se lee con claridad). Convergen igual que
+              las chispas, así que siempre quedan alineados. */}
+          {V_PTS.map(([tx, ty], i) => {
+            const delay = 0.1 + ((i * 0.618034) % 1) * 1.1
+            return (
+              <span
+                key={`b${i}`}
+                style={sx(
+                  'position:absolute;top:50%;left:50%;width:8px;height:8px;border-radius:50%;' +
+                    'background:radial-gradient(circle, rgba(var(--acento-rgb),.55), rgba(var(--acento-rgb),0) 70%);' +
+                    `--tx:${tx}px;--ty:${ty}px;--sx:${(Math.cos(i * 2.399) * 80).toFixed(1)}px;--sy:${(Math.sin(i * 1.7) * 64).toFixed(1)}px;` +
+                    `animation:portada-forma 1s cubic-bezier(.2,.8,.25,1) ${delay.toFixed(2)}s both`,
+                )}
+              />
+            )
+          })}
           {V_PTS.map(([tx, ty], i) => {
             // Dispersión inicial determinista (estable entre renders).
             const sxr = Math.cos(i * 2.399) * 80
