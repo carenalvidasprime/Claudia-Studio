@@ -404,7 +404,7 @@ export function Estudio() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        void app.abrirPieza(p.id)
+                        app.set({ piezaId: p.id, pantalla: 'detalle' })
                       }}
                       title="Abrir para revisar y refinar"
                       style={sx(

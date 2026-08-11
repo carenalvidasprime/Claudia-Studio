@@ -35,6 +35,14 @@ textarea:focus, button:focus, input:focus, select:focus { outline: none; }
 @keyframes pop { from { opacity: 0; transform: translateY(9px) scale(.98); } to { opacity: 1; transform: none; } }
 .fade { animation: fadeup .3s cubic-bezier(.2, .7, .3, 1) both; }
 
+/* Portada / cortinilla de marca (aparece antes del login). */
+@keyframes portada-in { 0% { opacity: 0; transform: translateY(12px) scale(.985); filter: blur(7px); } 100% { opacity: 1; transform: none; filter: blur(0); } }
+@keyframes portada-aura { 0%, 100% { opacity: .45; transform: translate(-50%, -50%) scale(1); } 50% { opacity: .8; transform: translate(-50%, -50%) scale(1.14); } }
+@keyframes portada-ring { to { transform: translate(-50%, -50%) rotate(360deg); } }
+@keyframes portada-sweep { 0% { background-position: -280px 0; } 65%, 100% { background-position: 340px 0; } }
+@keyframes portada-dot { 0% { opacity: 0; transform: translateY(10px) scale(.6); } 35% { opacity: 1; } 100% { opacity: 0; transform: translateY(-26px) scale(1); } }
+@keyframes portada-fade-out { to { opacity: 0; visibility: hidden; } }
+
 /* El runtime de Claude Design resolvía `style-hover` en el propio elemento.
    Aquí cada efecto de hover del prototipo pasa a una clase equivalente. */
 .hv-card:hover { box-shadow: 0 12px 28px rgba(23, 25, 31, .08); }

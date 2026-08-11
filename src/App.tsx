@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { sx } from './lib/sx'
 import { useApp } from './store'
+import { Portada } from './components/Portada'
 import { Sidebar } from './components/Sidebar'
 import { Header } from './components/Header'
 import { Aviso, Modal } from './components/Overlays'
@@ -64,7 +66,12 @@ function Cargando({ mensaje }: { mensaje: string }) {
   )
 }
 
-export function App() {
+// Fases de la cortinilla de marca. Solo avanza (nunca vuelve atrás), para que
+// ni los temporizadores ni el clic de salto la resuciten.
+type FasePortada = 'in' | 'out' | 'done'
+const RANGO: Record<FasePortada, number> = { in: 0, out: 1, done: 2 }
+
+function Interfaz() {
   const app = useApp()
 
   if (app.comprobandoSesion) return <Cargando mensaje="Comprobando sesión…" />
@@ -109,6 +116,32 @@ export function App() {
       <Modal />
       <Aviso />
       <Copiloto />
+    </>
+  )
+}
+
+export function App() {
+  const [fase, setFase] = useState<FasePortada>('in')
+  const avanzar = (a: FasePortada) => setFase((prev) => (RANGO[a] > RANGO[prev] ? a : prev))
+
+  useEffect(() => {
+    const t1 = setTimeout(() => avanzar('out'), 2100)
+    const t2 = setTimeout(() => avanzar('done'), 2600)
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+    }
+  }, [])
+
+  const saltar = () => {
+    avanzar('out')
+    setTimeout(() => avanzar('done'), 500)
+  }
+
+  return (
+    <>
+      <Interfaz />
+      {fase !== 'done' && <Portada saliendo={fase === 'out'} onSaltar={saltar} />}
     </>
   )
 }
