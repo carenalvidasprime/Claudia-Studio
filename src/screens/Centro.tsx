@@ -404,23 +404,10 @@ function TarjetaPieza({ pieza }: { pieza: Pieza }) {
         }),
     },
     {
-      nombre: 'Eliminar',
+      nombre: 'Desechar',
       peligro: true,
-      hacer: () =>
-        app.abrirModal({
-          tipo: 'eliminar',
-          titulo: 'Eliminar creatividad',
-          sub: `Se eliminará «${pieza.titulo}». Esta acción no se puede deshacer.`,
-          confirmar: async () => {
-            try {
-              await api.borrarPieza(pieza.id)
-              app.set((p) => ({ piezas: p.piezas.filter((x) => x.id !== pieza.id) }))
-              app.avisar('Creatividad eliminada')
-            } catch (error) {
-              app.avisar(mensajeError(error), 'error')
-            }
-          },
-        }),
+      // Recuperable: va a la Papelera (con «deshacer»), no es un borrado definitivo.
+      hacer: () => app.desecharPieza(pieza.id),
     },
   ]
 
