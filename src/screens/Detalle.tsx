@@ -20,13 +20,48 @@ const RETOQUES = [
   { id: 'luz', icono: '☀', nombre: 'Ajustar iluminación', sub: 'Reilumina la escena', activo: false },
 ]
 
+// Chip de estado (color semántico, no es el acento de marca).
+const TONO_ESTADO: Record<Estado, string> = {
+  borrador: 'background:#eef0f1;color:#5b6674',
+  en_revision: 'background:#FBEFD8;color:#9A6B1B',
+  aprobado: 'background:#E4F4EC;color:#1C7A4E',
+  programado: 'background:#E7F0FB;color:#1F5FB0',
+  publicado: 'background:#1D1D1B;color:#fff',
+}
+
+/**
+ * La columna vertebral del producto es el estado de la pieza. Cada estado
+ * tiene UN "siguiente paso" claro (avanzar) y, si procede, una vuelta atrás
+ * (retroceder). Así el usuario nunca se pregunta "¿y ahora qué?": la propia
+ * pieza se lo dice.
+ */
+const FLUJO: Record<Estado, { avanzar?: { a: Estado; label: string }; retroceder?: { a: Estado; label: string } }> = {
+  borrador: { avanzar: { a: 'en_revision', label: 'Enviar a revisión' } },
+  en_revision: {
+    avanzar: { a: 'aprobado', label: 'Aprobar' },
+    retroceder: { a: 'borrador', label: 'Devolver a borrador' },
+  },
+  aprobado: {
+    avanzar: { a: 'programado', label: 'Programar' },
+    retroceder: { a: 'en_revision', label: 'Volver a revisión' },
+  },
+  programado: {
+    avanzar: { a: 'publicado', label: 'Marcar como publicado' },
+    retroceder: { a: 'aprobado', label: 'Quitar de la programación' },
+  },
+  publicado: { retroceder: { a: 'programado', label: 'Reabrir' } },
+}
+
 export function Detalle() {
   const app = useApp()
   const pieza = app.piezaActual
   const b = app.borrador
   const [descargando, setDescargando] = useState(false)
   const [generandoTexto, setGenerandoTexto] = useState(false)
+  const [cambiarManual, setCambiarManual] = useState(false)
   if (!pieza) return null
+
+  const flujo = FLUJO[pieza.estado]
 
   const esAnimacion = b.formato === 'Animación'
 
@@ -129,28 +164,48 @@ export function Detalle() {
         </div>
       </div>
 
-      <div style={sx('border-left:1px solid rgba(23,25,31,.08);background:#fff;padding:22px 20px;overflow-y:auto')}>
+      <div style={sx('border-left:1px solid rgba(23,25,31,.08);background:#fff;padding:22px 20px 72px;overflow-y:auto')}>
         <div style={sx('font-size:13.5px;font-weight:700;line-height:1.35;margin-bottom:4px')}>{pieza.titulo}</div>
         <div style={sx('font-size:11px;color:rgba(23,25,31,.5);margin-bottom:14px')}>
           {pieza.canal ?? '—'} · {app.lineaDe(pieza.linea_id)?.nombre ?? 'Sin línea'}
         </div>
 
-        <div style={sx("font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.09em;color:rgba(23,25,31,.4);margin-bottom:7px")}>
-          ESTADO
+        <div style={sx('display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px')}>
+          <div style={sx("font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.09em;color:rgba(23,25,31,.4)")}>
+            ESTADO
+          </div>
+          <button
+            onClick={() => setCambiarManual((v) => !v)}
+            style={sx(
+              "background:none;border:none;padding:0;font-family:'Mulish';font-weight:600;font-size:10.5px;color:rgba(23,25,31,.45);cursor:pointer",
+            )}
+          >
+            {cambiarManual ? 'Cerrar' : 'Cambiar ▾'}
+          </button>
         </div>
-        <select
-          value={pieza.estado}
-          onChange={(e) => void app.ponerEstado(pieza.id, e.target.value as Estado)}
-          style={sx(
-            "width:100%;border:1px solid rgba(23,25,31,.14);border-radius:10px;padding:9px 11px;font-family:'Mulish';font-size:12.5px;background:#fff;color:#17191f;margin-bottom:18px;cursor:pointer",
-          )}
-        >
-          {ESTADOS.map((e) => (
-            <option key={e} value={e}>
-              {ESTADO_LABEL[e]}
-            </option>
-          ))}
-        </select>
+        {cambiarManual ? (
+          <select
+            value={pieza.estado}
+            onChange={(e) => void app.ponerEstado(pieza.id, e.target.value as Estado)}
+            style={sx(
+              "width:100%;border:1px solid rgba(23,25,31,.14);border-radius:10px;padding:9px 11px;font-family:'Mulish';font-size:12.5px;background:#fff;color:#17191f;margin-bottom:18px;cursor:pointer",
+            )}
+          >
+            {ESTADOS.map((e) => (
+              <option key={e} value={e}>
+                {ESTADO_LABEL[e]}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <div
+            style={sx(
+              `display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:6px 11px;border-radius:999px;margin-bottom:18px;${TONO_ESTADO[pieza.estado]}`,
+            )}
+          >
+            {ESTADO_LABEL[pieza.estado]}
+          </div>
+        )}
 
         <div
           style={sx(
@@ -302,21 +357,38 @@ export function Detalle() {
               ↓ SVG (editable)
             </button>
           </div>
-          <button
-            onClick={() => void app.aprobarPieza(pieza.id)}
-            style={sx(
-              "width:100%;background:var(--acento);color:#fff;border:none;border-radius:10px;padding:12px;font-family:'Mulish';font-weight:600;font-size:13px;cursor:pointer",
-            )}
-          >
-            Aprobar y añadir a entrega
-          </button>
+          {flujo.avanzar && (
+            <button
+              onClick={() => void app.ponerEstado(pieza.id, flujo.avanzar!.a)}
+              style={sx(
+                "width:100%;display:flex;align-items:center;justify-content:center;gap:7px;background:var(--acento);color:#fff;border:none;border-radius:10px;padding:12px;font-family:'Mulish';font-weight:700;font-size:13px;cursor:pointer",
+              )}
+            >
+              {flujo.avanzar.label} <span style={sx('font-size:15px;line-height:1')}>→</span>
+            </button>
+          )}
+          {flujo.retroceder && (
+            <button
+              onClick={() => void app.ponerEstado(pieza.id, flujo.retroceder!.a)}
+              style={sx(
+                "width:100%;background:#fff;border:1px solid rgba(23,25,31,.14);border-radius:10px;padding:10px;font-family:'Mulish';font-weight:500;font-size:12px;cursor:pointer;color:rgba(23,25,31,.7)",
+              )}
+            >
+              {flujo.retroceder.label}
+            </button>
+          )}
+          {!flujo.avanzar && !flujo.retroceder && (
+            <div style={sx('text-align:center;font-size:12px;color:rgba(23,25,31,.5);padding:6px')}>
+              Esta pieza ya está publicada.
+            </div>
+          )}
           <button
             onClick={() => app.ir('estudio')}
             style={sx(
-              "width:100%;background:#f4f4f4;border:1px solid rgba(23,25,31,.1);border-radius:10px;padding:12px;font-family:'Mulish';font-weight:500;font-size:13px;cursor:pointer;color:#17191f",
+              "width:100%;background:none;border:none;border-radius:10px;padding:8px;font-family:'Mulish';font-weight:500;font-size:12px;cursor:pointer;color:rgba(23,25,31,.5)",
             )}
           >
-            Volver a variantes
+            ↩ Volver a las variantes del estudio
           </button>
         </div>
       </div>
