@@ -39,16 +39,6 @@ const V_PTS: [number, number][] = [
   [-7.1,36.7],[19,37.1],[23.8,37.4],[27.7,36.6],
 ]
 
-// Chispas finas que ascienden alrededor (el brillo de fondo).
-const CHISPAS = [
-  { x: 28, d: 0.3, s: 3 },
-  { x: 42, d: 1.1, s: 2 },
-  { x: 55, d: 0.6, s: 3 },
-  { x: 66, d: 1.7, s: 2 },
-  { x: 74, d: 2.4, s: 2 },
-  { x: 48, d: 2.0, s: 2 },
-]
-
 export function Portada({ saliendo, onSaltar }: { saliendo: boolean; onSaltar: () => void }) {
   return (
     <div
@@ -76,23 +66,6 @@ export function Portada({ saliendo, onSaltar }: { saliendo: boolean; onSaltar: (
                 'animation:portada-bloom 3.4s ease-out infinite',
             )}
           />
-          {/* Base difusa: los MISMOS puntos, más grandes y difuminados, para dar
-              cuerpo continuo a la «V» (se lee con claridad). Convergen igual que
-              las chispas, así que siempre quedan alineados. */}
-          {V_PTS.map(([tx, ty], i) => {
-            const delay = 0.1 + ((i * 0.618034) % 1) * 1.1
-            return (
-              <span
-                key={`b${i}`}
-                style={sx(
-                  'position:absolute;top:50%;left:50%;width:8px;height:8px;border-radius:50%;' +
-                    'background:radial-gradient(circle, rgba(var(--acento-rgb),.55), rgba(var(--acento-rgb),0) 70%);' +
-                    `--tx:${tx}px;--ty:${ty}px;--sx:${(Math.cos(i * 2.399) * 80).toFixed(1)}px;--sy:${(Math.sin(i * 1.7) * 64).toFixed(1)}px;` +
-                    `animation:portada-forma 1s cubic-bezier(.2,.8,.25,1) ${delay.toFixed(2)}s both`,
-                )}
-              />
-            )
-          })}
           {V_PTS.map(([tx, ty], i) => {
             // Dispersión inicial determinista (estable entre renders).
             const sxr = Math.cos(i * 2.399) * 80
@@ -116,15 +89,6 @@ export function Portada({ saliendo, onSaltar }: { saliendo: boolean; onSaltar: (
               />
             )
           })}
-          {CHISPAS.map((c, i) => (
-            <span
-              key={`ch${i}`}
-              style={sx(
-                `position:absolute;bottom:8px;left:${c.x}%;width:${c.s}px;height:${c.s}px;border-radius:50%;` +
-                  `background:var(--acento);opacity:.7;animation:portada-dot 3s ease-in-out ${c.d}s infinite`,
-              )}
-            />
-          ))}
         </div>
 
         {/* Wordmark: Claudia dominante + Studio ligero, con barrido de luz. */}
