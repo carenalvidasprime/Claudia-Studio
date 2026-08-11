@@ -7,3 +7,5 @@ dist
 
 # Artefactos de compilación de TypeScript
 tsconfig.tsbuildinfo
+
+dist-vp

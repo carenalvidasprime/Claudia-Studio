@@ -4,6 +4,7 @@ import { MarcaOverlay } from '../components/Piezas'
 import { descargarPieza, descargarPiezaSVG } from '../lib/componer'
 import * as api from '../lib/api'
 import { mensajeError } from '../lib/supabase'
+import { ESTADOS, ESTADO_LABEL, type Estado } from '../lib/types'
 import { useApp } from '../store'
 
 /**
@@ -130,9 +131,26 @@ export function Detalle() {
 
       <div style={sx('border-left:1px solid rgba(23,25,31,.08);background:#fff;padding:22px 20px;overflow-y:auto')}>
         <div style={sx('font-size:13.5px;font-weight:700;line-height:1.35;margin-bottom:4px')}>{pieza.titulo}</div>
-        <div style={sx('font-size:11px;color:rgba(23,25,31,.5);margin-bottom:18px')}>
+        <div style={sx('font-size:11px;color:rgba(23,25,31,.5);margin-bottom:14px')}>
           {pieza.canal ?? '—'} · {app.lineaDe(pieza.linea_id)?.nombre ?? 'Sin línea'}
         </div>
+
+        <div style={sx("font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.09em;color:rgba(23,25,31,.4);margin-bottom:7px")}>
+          ESTADO
+        </div>
+        <select
+          value={pieza.estado}
+          onChange={(e) => void app.ponerEstado(pieza.id, e.target.value as Estado)}
+          style={sx(
+            "width:100%;border:1px solid rgba(23,25,31,.14);border-radius:10px;padding:9px 11px;font-family:'Mulish';font-size:12.5px;background:#fff;color:#17191f;margin-bottom:18px;cursor:pointer",
+          )}
+        >
+          {ESTADOS.map((e) => (
+            <option key={e} value={e}>
+              {ESTADO_LABEL[e]}
+            </option>
+          ))}
+        </select>
 
         <div
           style={sx(

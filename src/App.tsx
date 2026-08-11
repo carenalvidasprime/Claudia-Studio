@@ -9,6 +9,7 @@ import { Dashboard } from './screens/Dashboard'
 import { CentroScreen } from './screens/Centro'
 import { Calendario } from './screens/Calendario'
 import { MarcaRibera } from './screens/MarcaRibera'
+import { Contenido } from './screens/Contenido'
 import { Estudio } from './screens/Estudio'
 import { Detalle } from './screens/Detalle'
 import { Exportar } from './screens/Exportar'
@@ -18,6 +19,8 @@ function Pantalla() {
   switch (app.pantalla) {
     case 'dashboard':
       return <Dashboard />
+    case 'contenido':
+      return <Contenido />
     case 'calendario':
       return <Calendario />
     case 'marcaRibera':

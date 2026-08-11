@@ -58,6 +58,11 @@ export function Sidebar() {
       ir: () => app.set({ hubFiltro: null, pantalla: 'dashboard' }),
     },
     {
+      nombre: 'Contenido',
+      activo: app.pantalla === 'contenido',
+      ir: () => app.set({ pantalla: 'contenido' }),
+    },
+    {
       nombre: 'Calendario',
       activo: app.pantalla === 'calendario' && !app.calCentroScope && !app.calHubScope,
       ir: () => app.set({ calCentroScope: null, calHubScope: null, pantalla: 'calendario' }),
@@ -89,6 +94,15 @@ export function Sidebar() {
       >
         <Lockup variante="sidebar" />
       </div>
+
+      <button
+        onClick={() => app.crearNueva()}
+        style={sx(
+          "display:flex;align-items:center;justify-content:center;gap:7px;width:100%;background:var(--acento);color:#fff;border:none;border-radius:10px;padding:11px;font-family:'Mulish';font-weight:700;font-size:12.5px;cursor:pointer",
+        )}
+      >
+        <span style={sx('font-size:15px;line-height:1')}>+</span> Nueva creatividad
+      </button>
 
       <Grupo titulo="TRABAJO" items={trabajo} />
       <Grupo titulo="HUBS" items={hubs} />

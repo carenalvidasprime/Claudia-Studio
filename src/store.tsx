@@ -50,6 +50,7 @@ import type {
 
 export type Pantalla =
   | 'dashboard'
+  | 'contenido'
   | 'calendario'
   | 'marcaRibera'
   | 'centro'
@@ -344,6 +345,7 @@ interface Contexto extends Estado_ {
 
   nuevaCarpeta: () => Promise<void>
   nuevaCreatividad: (carpetaId: Id) => void
+  crearNueva: () => void
   elegirSituacion: (s: Situacion) => void
   generar: (opts?: { referenciaUrl?: string }) => Promise<void>
   generarTextoPost: (piezaId: string) => Promise<void>
@@ -639,6 +641,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // antiguos (gateway/situaciones/brief) están retirados y vuelven al centro.
       const destino: Record<Pantalla, Pantalla> = {
         dashboard: 'dashboard',
+        contenido: 'dashboard',
         calendario: 'dashboard',
         marcaRibera: 'dashboard',
         centro: 'dashboard',
@@ -740,6 +743,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     [st.centros, st.centroId],
   )
+
+  // Crear desde cualquier sitio (botón «+ Nueva creatividad» de la barra):
+  // usa el centro activo o, si no hay, el primero. Sin carpeta.
+  const crearNueva = useCallback(() => {
+    const centro = st.centros.find((c) => String(c.id) === String(st.centroId)) ?? st.centros[0]
+    if (!centro) {
+      avisar('Crea o carga un centro antes de generar.', 'error')
+      return
+    }
+    setSt((p) => ({
+      ...p,
+      centroId: centro.id,
+      carpetaId: null,
+      piezaId: null,
+      origen: 'scratch',
+      pantalla: 'estudio',
+      resultados: [],
+      seleccion: {},
+      favoritas: {},
+      errorGeneracion: null,
+      borrador: { ...BORRADOR_INICIAL, titulo: `Nueva creatividad · ${centro.nombre}` },
+    }))
+  }, [st.centros, st.centroId, avisar])
 
   const elegirSituacion = useCallback((s: Situacion) => {
     const pres = presentacionDe(s.clave)
@@ -1111,6 +1137,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     abrirCalendarioHub,
     nuevaCarpeta,
     nuevaCreatividad,
+    crearNueva,
     elegirSituacion,
     generar,
     aprobarPieza,

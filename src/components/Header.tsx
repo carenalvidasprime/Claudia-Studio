@@ -5,6 +5,7 @@ import { useApp, type Pantalla } from '../store'
 
 const TITULOS: Record<Pantalla, string> = {
   dashboard: 'Tus centros',
+  contenido: 'Contenido',
   calendario: 'Calendario editorial',
   marcaRibera: CLIENTE.cliente ? `Marca ${CLIENTE.cliente}` : 'Marca',
   centro: '',
@@ -75,6 +76,9 @@ export function Header() {
   switch (app.pantalla) {
     case 'dashboard':
       segs = [{ label: (hub ? hub.nombre : 'Todos los centros').toUpperCase() }]
+      break
+    case 'contenido':
+      segs = [{ label: 'CONTENIDO' }]
       break
     case 'calendario':
       segs = [{ label: 'CALENDARIO' }]
