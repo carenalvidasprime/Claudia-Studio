@@ -208,30 +208,6 @@ export function Estudio() {
           {b.marca ? 'Se aplica tu Brand Kit (logo y mensaje) sobre la imagen.' : 'Se entrega la foto limpia, sin logo ni texto.'}
         </div>
 
-        {b.marca && (
-          <>
-            <div style={sx(rotulo, 'margin:18px 0 9px')}>TEXTO SOBRE LA IMAGEN (OPCIONAL)</div>
-            <textarea
-              value={b.copy}
-              onChange={(e) => app.setBorrador({ copy: e.target.value })}
-              placeholder="El titular que va encima de la imagen. Déjalo vacío para solo logo."
-              style={sx(campo, 'min-height:52px;resize:vertical')}
-            />
-            <div style={sx('display:flex;gap:5px;margin-top:8px')}>
-              {(
-                [
-                  ['editorial', 'Editorial'],
-                  ['franja', 'Franja'],
-                ] as const
-              ).map(([val, label]) => (
-                <button key={val} onClick={() => app.setBorrador({ plantilla: val })} style={sx(seg(b.plantilla === val), 'flex:1')}>
-                  {label}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-
         <div style={sx('margin-top:22px;display:flex;align-items:center;gap:10px')}>
           <div style={sx('font-size:11.5px;font-weight:500;color:rgba(23,25,31,.62)')}>Variantes</div>
           <div style={sx('display:flex;gap:5px;margin-left:auto')}>
