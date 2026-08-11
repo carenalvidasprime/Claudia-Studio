@@ -48,4 +48,42 @@ export const DEMO_CARPETAS: Carpeta[] = [
   { id: 'car2', centro_id: 'c2', nombre: 'Campaña prevención' },
 ]
 
-export const DEMO_PIEZAS: Pieza[] = []
+/**
+ * Piezas de ejemplo para que el modo demo muestre una biblioteca de contenido
+ * con creatividades en distintos estados (y así se vean Contenido, Por revisar,
+ * los contadores y el filtro por centro). Sin imagen real: se muestra el
+ * marcador «Sin imagen todavía».
+ */
+const pieza = (
+  id: string,
+  titulo: string,
+  centro_id: string,
+  estado: Pieza['estado'],
+  carpeta_id: string | null = null,
+): Pieza => ({
+  id,
+  titulo,
+  centro_id,
+  carpeta_id,
+  situacion_id: null,
+  linea_id: null,
+  estado,
+  fecha_publicacion: null,
+  canal: 'Instagram',
+  brief: null,
+  prompt: null,
+  imagen_url: null,
+  consentimiento_ok: null,
+  notas_compliance: null,
+})
+
+export const DEMO_PIEZAS: Pieza[] = [
+  pieza('p1', 'Bienvenida nueva unidad de fisioterapia', 'c1', 'borrador', 'car1'),
+  pieza('p2', 'Día Mundial del Corazón', 'c1', 'en_revision', 'car1'),
+  pieza('p3', 'Consejo: hidratación en verano', 'c1', 'aprobado', 'car1'),
+  pieza('p4', 'Nuevo equipo de diagnóstico', 'c2', 'en_revision', 'car2'),
+  pieza('p5', 'Campaña de prevención', 'c2', 'programado', 'car2'),
+  pieza('p6', 'Testimonio de paciente', 'c2', 'publicado', 'car2'),
+  pieza('p7', 'Horario especial agosto', 'c3', 'borrador'),
+  pieza('p8', 'Efeméride: Día del Médico', 'c3', 'aprobado'),
+]

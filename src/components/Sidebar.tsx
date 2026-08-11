@@ -21,7 +21,14 @@ const EN_CENTROS: Pantalla[] = [
   'exportar',
 ]
 
-function Grupo({ titulo, items }: { titulo: string; items: { nombre: string; activo: boolean; ir: () => void }[] }) {
+interface NavItem {
+  nombre: string
+  activo: boolean
+  ir: () => void
+  badge?: number
+}
+
+function Grupo({ titulo, items }: { titulo: string; items: NavItem[] }) {
   if (!items.length) return null
   return (
     <div
@@ -40,7 +47,16 @@ function Grupo({ titulo, items }: { titulo: string; items: { nombre: string; act
       {items.map((it) => (
         <button key={it.nombre} onClick={it.ir} style={sx(navBtn(it.activo))}>
           <span style={sx(navDot(it.activo))} />
-          {it.nombre}
+          <span style={sx('flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{it.nombre}</span>
+          {it.badge != null && it.badge > 0 && (
+            <span
+              style={sx(
+                "flex:none;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;border-radius:9px;background:var(--acento);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600",
+              )}
+            >
+              {it.badge}
+            </span>
+          )}
         </button>
       ))}
     </div>
@@ -51,7 +67,10 @@ export function Sidebar() {
   const app = useApp()
   const enCentros = EN_CENTROS.includes(app.pantalla)
 
-  const trabajo = [
+  const porRevisar = app.piezas.filter((p) => p.estado === 'en_revision').length
+  const enContenido = app.pantalla === 'contenido'
+
+  const trabajo: NavItem[] = [
     {
       nombre: 'Todos los centros',
       activo: enCentros && !app.hubFiltro,
@@ -59,8 +78,14 @@ export function Sidebar() {
     },
     {
       nombre: 'Contenido',
-      activo: app.pantalla === 'contenido',
-      ir: () => app.set({ pantalla: 'contenido' }),
+      activo: enContenido && app.filtroEstado !== 'en_revision',
+      ir: () => app.set({ pantalla: 'contenido', filtroEstado: 'Todas' }),
+    },
+    {
+      nombre: 'Por revisar',
+      activo: enContenido && app.filtroEstado === 'en_revision',
+      badge: porRevisar,
+      ir: () => app.set({ pantalla: 'contenido', filtroEstado: 'en_revision', contenidoCentro: null }),
     },
     {
       nombre: 'Calendario',
