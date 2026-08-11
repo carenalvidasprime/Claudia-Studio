@@ -15,6 +15,7 @@ import { generarPieza, generarConfigurado, generarCopy, copyConfigurado, type Pa
 import { presentacionDe, PALETA_POR_DEFECTO, REGLAS_POR_DEFECTO } from './lib/marca'
 import { CLIENTE } from './lib/cliente'
 import { MARCA_POR_DEFECTO, desdeFila, fijarMarca, type MarcaConfig } from './lib/brand'
+import { construirPromptImagen } from './lib/direccion'
 import {
   DEMO,
   DEMO_CARPETAS,
@@ -834,17 +835,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         canal: b.canal,
         consentimiento_ok: b.consentimiento,
         notas_compliance: notasCompliance(st.borrador, situacion),
-        // La marca (logo, colores, copy) la compone la app POR ENCIMA de la
-        // imagen. Por eso a la IA se le pide una foto limpia sin texto ni logos:
-        // así no inventa rótulos y queda sitio para superponer la marca real.
-        prompt: [
-          b.tipoPost ? `${b.tipoPost}.` : '',
+        // Dirección de arte: la intención se enriquece con fotografía, formato y
+        // Brand Kit (no se manda pelada). La marca real (logo/copy) la compone
+        // la app encima, por eso a la IA se le pide una foto limpia sin texto.
+        prompt: construirPromptImagen({
           intencion,
-          b.ajuste.trim() ? `Ajuste: ${b.ajuste.trim()}.` : '',
-          'Fotografia profesional limpia y fotorrealista. No incluyas ningun texto, palabra, letra, numero, logotipo, emblema, marca de agua ni cartel dentro de la imagen. Deja las esquinas despejadas para superponer la marca despues.',
-        ]
-          .filter(Boolean)
-          .join(' '),
+          tipoPost: b.tipoPost,
+          ajuste: b.ajuste,
+          ratio: b.ratio,
+          territorio: st.marcaConfig.territorio,
+          tono: st.marcaConfig.tonoVoz,
+          paleta: st.paleta,
+          reglas: st.reglas.map((r) => r.texto),
+        }),
         brief,
       },
       contexto: {
