@@ -213,6 +213,7 @@ interface Estado_ {
   ordenCarpetas: 'Recientes' | 'A–Z'
   busquedaPiezas: string
   filtroEstado: 'Todas' | Estado
+  contenidoCentro: Id | null
 
   calMes: number
   calAnio: number
@@ -267,6 +268,7 @@ const ESTADO_INICIAL: Estado_ = {
   ordenCarpetas: 'Recientes',
   busquedaPiezas: '',
   filtroEstado: 'Todas',
+  contenidoCentro: null,
   calMes: new Date().getMonth(),
   calAnio: new Date().getFullYear(),
   calHub: null,

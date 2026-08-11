@@ -1,5 +1,4 @@
 import { sx } from '../lib/sx'
-import { plural } from '../lib/ui'
 import { VistaPieza } from '../components/Piezas'
 import { ESTADOS, ESTADO_LABEL, type Estado } from '../lib/types'
 import { useApp } from '../store'
@@ -17,10 +16,15 @@ export function Contenido() {
   const app = useApp()
   const q = app.busquedaPiezas.trim().toLowerCase()
 
+  // Ámbito por centro: si hay un centro seleccionado, solo su contenido.
+  const enCentro = (p: (typeof app.piezas)[number]) =>
+    app.contenidoCentro == null || String(p.centro_id) === String(app.contenidoCentro)
+
   const cuenta = (e: Estado | 'Todas') =>
-    e === 'Todas' ? app.piezas.length : app.piezas.filter((p) => p.estado === e).length
+    app.piezas.filter(enCentro).filter((p) => e === 'Todas' || p.estado === e).length
 
   const piezas = app.piezas
+    .filter(enCentro)
     .filter((p) => app.filtroEstado === 'Todas' || p.estado === app.filtroEstado)
     .filter((p) => {
       if (!q) return true
@@ -32,11 +36,22 @@ export function Contenido() {
 
   return (
     <section className="fade" style={sx('padding:28px 32px 60px')}>
-      <div style={sx('display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px')}>
+      <div style={sx('display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px')}>
         <div style={sx('font-size:22px;font-weight:600;letter-spacing:-.02em')}>Contenido</div>
-        <div style={sx('font-size:11.5px;color:rgba(23,25,31,.45)')}>
-          {plural(app.piezas.length, 'pieza', 'piezas')} en total
-        </div>
+        <select
+          value={app.contenidoCentro == null ? '' : String(app.contenidoCentro)}
+          onChange={(e) => app.set({ contenidoCentro: e.target.value === '' ? null : e.target.value })}
+          style={sx(
+            "border:1px solid rgba(23,25,31,.14);border-radius:10px;padding:9px 12px;font-family:'Mulish';font-size:12.5px;font-weight:600;background:#fff;color:#17191f;cursor:pointer",
+          )}
+        >
+          <option value="">Todos los centros</option>
+          {app.centros.map((c) => (
+            <option key={String(c.id)} value={String(c.id)}>
+              {c.nombre}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Pestañas por estado (el ciclo de vida) */}
