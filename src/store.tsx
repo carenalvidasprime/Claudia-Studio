@@ -948,11 +948,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       // Supabase es la fuente de verdad: n8n escribe las filas, la app las relee.
+      // Preferimos los IDs que devuelve cada llamada (fiable); si por lo que sea
+      // no vinieran, caemos al filtro por centro + marca de tiempo.
+      const idsDevueltos = respuestas
+        .map((r) => (r.status === 'fulfilled' ? r.value.pieza_id : undefined))
+        .filter((x): x is string => typeof x === 'string' && x.length > 0)
       const piezas = await api.cargarPiezas()
-      const nuevas = piezas
-        .filter((p) => String(p.centro_id) === String(centro.id))
-        .filter((p) => (p.created_at ?? '') >= desde)
-        .sort((a, b2) => (a.created_at ?? '').localeCompare(b2.created_at ?? ''))
+      const porId = idsDevueltos.length ? piezas.filter((p) => idsDevueltos.includes(p.id)) : []
+      const nuevas = (
+        porId.length
+          ? porId
+          : piezas
+              .filter((p) => String(p.centro_id) === String(centro.id))
+              .filter((p) => (p.created_at ?? '') >= desde)
+      ).sort((a, b2) => (a.created_at ?? '').localeCompare(b2.created_at ?? ''))
 
       const resultados = nuevas.length
         ? nuevas.map((p) => p.id)
