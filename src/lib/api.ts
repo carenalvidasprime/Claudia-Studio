@@ -116,6 +116,26 @@ export async function subirMaterial(archivo: File): Promise<{ url: string; nombr
 }
 
 /**
+ * Descarga una imagen y la devuelve en base64 (+ su mime). Se usa para remezclar
+ * (imagen-a-imagen): la referencia viaja a n8n como base64. El bucket de Supabase
+ * es público con CORS abierto, así que el fetch funciona desde el navegador.
+ */
+export async function imagenABase64(url: string): Promise<{ base64: string; mime: string }> {
+  const resp = await fetch(url, { mode: 'cors' })
+  if (!resp.ok) throw new Error('No se pudo leer la imagen de referencia.')
+  const blob = await resp.blob()
+  const dataUrl: string = await new Promise((res, rej) => {
+    const fr = new FileReader()
+    fr.onload = () => res(fr.result as string)
+    fr.onerror = () => rej(new Error('No se pudo procesar la imagen de referencia.'))
+    fr.readAsDataURL(blob)
+  })
+  const m = /^data:([^;]+);base64,(.*)$/.exec(dataUrl)
+  if (!m) throw new Error('Formato de imagen de referencia no válido.')
+  return { mime: m[1], base64: m[2] }
+}
+
+/**
  * Sube el logo de marca al bucket «piezas», bajo `marca/`. Devuelve la URL
  * pública para guardarla en el Brand Kit (`marca_config.logo_url`).
  */

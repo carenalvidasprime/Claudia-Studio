@@ -47,6 +47,9 @@ export interface PayloadGenerar {
       reglas: string[]
     }
   }
+  /** Imagen de referencia (base64) para remezclar/variar: activa imagen-a-imagen. */
+  referenciaBase64?: string
+  referenciaMime?: string
 }
 
 export interface RespuestaGenerar {

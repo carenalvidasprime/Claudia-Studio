@@ -12,11 +12,11 @@ import { useApp } from '../store'
  * dejarlas activas prometería una capacidad que no existe.
  */
 const RETOQUES = [
-  { icono: '✦', nombre: 'Generar otras versiones', sub: 'Nuevas imágenes con la misma idea y el mismo texto', activo: true },
-  { icono: '⤢', nombre: 'Mejorar resolución', sub: 'Reescalado a mayor tamaño', activo: false },
-  { icono: '◫', nombre: 'Cambiar fondo', sub: 'Otro color de la paleta de marca', activo: false },
-  { icono: '☀', nombre: 'Ajustar iluminación', sub: 'Reilumina la escena', activo: false },
-  { icono: '✎', nombre: 'Corregir color', sub: 'Equilibrio y saturación naturales', activo: false },
+  { id: 'variar', icono: '⧉', nombre: 'Variaciones de esta imagen', sub: 'Versiones parecidas partiendo de esta misma imagen', activo: true },
+  { id: 'otras', icono: '✦', nombre: 'Generar otras versiones', sub: 'Nuevas imágenes con la misma idea y el mismo texto', activo: true },
+  { id: 'fondo', icono: '◫', nombre: 'Cambiar fondo', sub: 'Mismo sujeto, entorno nuevo', activo: false },
+  { id: 'resolucion', icono: '⤢', nombre: 'Mejorar resolución', sub: 'Reescalado a mayor tamaño', activo: false },
+  { id: 'luz', icono: '☀', nombre: 'Ajustar iluminación', sub: 'Reilumina la escena', activo: false },
 ]
 
 export function Detalle() {
@@ -82,6 +82,15 @@ export function Detalle() {
     app.ir('estudio')
     void app.generar()
   }
+
+  // Remezclar: parte de ESTA imagen (imagen-a-imagen) y crea variaciones
+  // parecidas, manteniendo el texto y la marca de la capa superpuesta.
+  const variaciones = () => {
+    app.ir('estudio')
+    void app.generar({ referenciaUrl: pieza.imagen_url ?? undefined })
+  }
+
+  const accionRetoque = (id?: string) => (id === 'variar' ? variaciones : otrasVersiones)
 
   return (
     <section className="fade" style={sx('display:grid;grid-template-columns:1fr 296px;height:calc(100vh - 64px)')}>
@@ -212,10 +221,12 @@ export function Detalle() {
             <button
               key={r.nombre}
               disabled={!r.activo || app.generando}
-              onClick={r.activo ? otrasVersiones : undefined}
+              onClick={r.activo ? accionRetoque(r.id) : undefined}
               title={
                 r.activo
-                  ? 'Regenera versiones nuevas manteniendo la idea y el texto'
+                  ? r.id === 'variar'
+                    ? 'Crea variaciones partiendo de esta misma imagen'
+                    : 'Regenera versiones nuevas manteniendo la idea y el texto'
                   : 'Disponible cuando el workflow de n8n incorpore un paso de edición.'
               }
               className={r.activo ? undefined : 'is-pending'}

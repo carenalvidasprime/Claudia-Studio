@@ -342,7 +342,7 @@ interface Contexto extends Estado_ {
   nuevaCarpeta: () => Promise<void>
   nuevaCreatividad: (carpetaId: Id) => void
   elegirSituacion: (s: Situacion) => void
-  generar: () => Promise<void>
+  generar: (opts?: { referenciaUrl?: string }) => Promise<void>
   generarTextoPost: (piezaId: string) => Promise<void>
   copyDisponible: boolean
   aprobarPieza: (id: string) => Promise<void>
@@ -783,7 +783,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // --- Generación -----------------------------------------------------------
-  const generar = useCallback(async () => {
+  // opts.referenciaUrl activa el modo REMEZCLAR (imagen-a-imagen): parte de una
+  // imagen existente y crea variaciones similares. Si no, es CREAR (desde idea).
+  const generar = useCallback(async (opts?: { referenciaUrl?: string }) => {
     const centro = st.centros.find((c) => String(c.id) === String(st.centroId))
     if (!centro) {
       avisar('Selecciona un centro antes de generar.', 'error')
@@ -846,8 +848,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       paleta: st.paleta,
       reglas: st.reglas.map((r) => r.texto),
     })
+    // En modo remezclar (hay imagen de referencia) NO llamamos al director: se
+    // mantiene el concepto original y solo se varía la imagen.
+    const referenciaUrl = opts?.referenciaUrl ?? b.material?.url ?? null
     let dirCopy: { copy_texto: string | null; hashtags: string | null } | null = null
-    if (directorConfigurado) {
+    if (directorConfigurado && !referenciaUrl) {
       setSt((p) => ({ ...p, generando: true, errorGeneracion: null, borrador: { ...p.borrador, concepto: '' } }))
       try {
         const d = await dirigirArte({
@@ -906,6 +911,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
           reglas: st.reglas.map((r) => r.texto),
         },
       },
+    }
+
+    // Remezclar: adjunta la imagen de referencia en base64 para imagen-a-imagen.
+    if (referenciaUrl) {
+      try {
+        const ref = await api.imagenABase64(referenciaUrl)
+        payload.referenciaBase64 = ref.base64
+        payload.referenciaMime = ref.mime
+      } catch {
+        /* si no se puede leer la referencia, se genera desde cero */
+      }
     }
 
     // Una llamada a n8n por variante: el workflow genera una imagen por llamada,
