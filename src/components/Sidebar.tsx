@@ -66,7 +66,8 @@ export function Sidebar() {
   const app = useApp()
   const enCentros = EN_CENTROS.includes(app.pantalla)
 
-  const porRevisar = app.piezas.filter((p) => p.estado === 'en_revision').length
+  const activas = app.piezas.filter((p) => !p.descartada)
+  const porRevisar = activas.filter((p) => p.estado === 'en_revision').length
   const enContenido = app.pantalla === 'contenido'
 
   const trabajo: NavItem[] = [
@@ -87,9 +88,19 @@ export function Sidebar() {
       ir: () => app.set({ pantalla: 'contenido', filtroEstado: 'en_revision', contenidoCentro: null }),
     },
     {
+      nombre: 'Favoritos',
+      activo: app.pantalla === 'favoritos',
+      ir: () => app.set({ pantalla: 'favoritos', filtroEstado: 'Todas' }),
+    },
+    {
       nombre: 'Calendario',
       activo: app.pantalla === 'calendario' && !app.calCentroScope && !app.calHubScope,
       ir: () => app.set({ calCentroScope: null, calHubScope: null, pantalla: 'calendario' }),
+    },
+    {
+      nombre: 'Papelera',
+      activo: app.pantalla === 'papelera',
+      ir: () => app.set({ pantalla: 'papelera' }),
     },
   ]
 

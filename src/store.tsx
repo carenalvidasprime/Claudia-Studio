@@ -51,6 +51,8 @@ import type {
 export type Pantalla =
   | 'dashboard'
   | 'contenido'
+  | 'favoritos'
+  | 'papelera'
   | 'calendario'
   | 'marcaRibera'
   | 'centro'
@@ -202,7 +204,6 @@ interface Estado_ {
   errorGeneracion: string | null
   /** Piezas creadas por la última generación, en orden. */
   resultados: string[]
-  favoritas: Record<string, boolean>
   filtroResultados: 'Todas' | 'Favoritas'
 
   busquedaCentros: string
@@ -256,7 +257,6 @@ const ESTADO_INICIAL: Estado_ = {
   generando: false,
   errorGeneracion: null,
   resultados: [],
-  favoritas: {},
   filtroResultados: 'Todas',
   busquedaCentros: '',
   ordenCentros: 'Recientes',
@@ -295,7 +295,6 @@ const CAMPOS_PERSISTENTES = [
   'centroTab',
   'borrador',
   'resultados',
-  'favoritas',
   'filtroResultados',
 ] as const
 
@@ -348,6 +347,10 @@ interface Contexto extends Estado_ {
   copyDisponible: boolean
   ponerEstado: (id: string, estado: Estado) => Promise<void>
   ponerFecha: (id: string, fecha: string) => Promise<void>
+  desecharPieza: (id: string) => void
+  restaurarPieza: (id: string) => void
+  borrarPiezaDef: (id: string) => Promise<void>
+  alternarFavorita: (id: string) => Promise<void>
 
   avisar: (msg: string, tono?: 'normal' | 'error') => void
   avisarConDeshacer: (msg: string, deshacer: () => void) => void
@@ -508,7 +511,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     st.centroTab,
     st.borrador,
     st.resultados,
-    st.favoritas,
     st.filtroResultados,
   ])
 
@@ -557,11 +559,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [st.hubs],
   )
   const piezasDeCarpeta = useCallback(
-    (carpetaId: Id) => st.piezas.filter((p) => p.carpeta_id != null && String(p.carpeta_id) === String(carpetaId)),
+    (carpetaId: Id) =>
+      st.piezas.filter((p) => !p.descartada && p.carpeta_id != null && String(p.carpeta_id) === String(carpetaId)),
     [st.piezas],
   )
   const piezasDeCentro = useCallback(
-    (centroId: Id) => st.piezas.filter((p) => String(p.centro_id) === String(centroId)),
+    (centroId: Id) => st.piezas.filter((p) => !p.descartada && String(p.centro_id) === String(centroId)),
     [st.piezas],
   )
 
@@ -586,7 +589,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         origen: 'centro',
         pantalla: 'estudio',
         resultados: [pieza.id],
-        favoritas: {},
         filtroResultados: 'Todas',
         errorGeneracion: null,
         borrador: {
@@ -634,6 +636,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const destino: Record<Pantalla, Pantalla> = {
         dashboard: 'dashboard',
         contenido: 'dashboard',
+        favoritos: 'dashboard',
+        papelera: 'dashboard',
         calendario: 'dashboard',
         marcaRibera: 'dashboard',
         centro: 'dashboard',
@@ -726,7 +730,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         origen: 'scratch',
         pantalla: 'estudio',
         resultados: [],
-        favoritas: {},
         errorGeneracion: null,
         borrador: { ...BORRADOR_INICIAL, titulo: centro ? `Nueva creatividad · ${centro.nombre}` : 'Nueva creatividad' },
       }))
@@ -750,7 +753,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       origen: 'scratch',
       pantalla: 'estudio',
       resultados: [],
-      favoritas: {},
       errorGeneracion: null,
       borrador: { ...BORRADOR_INICIAL, titulo: `Nueva creatividad · ${centro.nombre}` },
     }))
@@ -947,7 +949,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const espera = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
     const desde = new Date().toISOString()
-    setSt((p) => ({ ...p, generando: true, errorGeneracion: null, resultados: [], favoritas: {} }))
+    setSt((p) => ({ ...p, generando: true, errorGeneracion: null, resultados: [] }))
 
     try {
       const respuestas: PromiseSettledResult<Awaited<ReturnType<typeof generarPieza>>>[] = []
@@ -1082,6 +1084,67 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [avisar, recargar],
   )
 
+  // Marca la pieza como descartada = a la papelera (recuperable), no la borra.
+  const marcarDescartada = useCallback(
+    async (id: string, descartada: boolean) => {
+      setSt((p) => ({
+        ...p,
+        piezas: p.piezas.map((x) => (x.id === id ? { ...x, descartada } : x)),
+        menu: null,
+      }))
+      try {
+        await api.actualizarPieza(id, { descartada })
+      } catch (error) {
+        setSt((p) => ({ ...p, piezas: p.piezas.map((x) => (x.id === id ? { ...x, descartada: !descartada } : x)) }))
+        avisar(mensajeError(error), 'error')
+      }
+    },
+    [avisar],
+  )
+
+  const desecharPieza = useCallback(
+    (id: string) => {
+      void marcarDescartada(id, true)
+      // Si estábamos viendo la pieza, salimos a la biblioteca.
+      setSt((p) => (p.pantalla === 'detalle' && p.piezaId === id ? { ...p, pantalla: 'contenido', piezaId: null } : p))
+      avisarConDeshacer('Pieza enviada a la papelera', () => void marcarDescartada(id, false))
+    },
+    [marcarDescartada, avisarConDeshacer],
+  )
+
+  const restaurarPieza = useCallback((id: string) => void marcarDescartada(id, false), [marcarDescartada])
+
+  // Borrado definitivo desde la papelera.
+  const borrarPiezaDef = useCallback(
+    async (id: string) => {
+      const anterior = st.piezas
+      setSt((p) => ({ ...p, piezas: p.piezas.filter((x) => x.id !== id), menu: null }))
+      try {
+        await api.borrarPieza(id)
+        avisar('Pieza borrada definitivamente')
+      } catch (error) {
+        setSt((p) => ({ ...p, piezas: anterior }))
+        avisar(mensajeError(error), 'error')
+      }
+    },
+    [st.piezas, avisar],
+  )
+
+  const alternarFavorita = useCallback(
+    async (id: string) => {
+      const actual = st.piezas.find((x) => x.id === id)?.favorita ?? false
+      const favorita = !actual
+      setSt((p) => ({ ...p, piezas: p.piezas.map((x) => (x.id === id ? { ...x, favorita } : x)) }))
+      try {
+        await api.actualizarPieza(id, { favorita })
+      } catch (error) {
+        setSt((p) => ({ ...p, piezas: p.piezas.map((x) => (x.id === id ? { ...x, favorita: actual } : x)) }))
+        avisar(mensajeError(error), 'error')
+      }
+    },
+    [st.piezas, avisar],
+  )
+
   const valor: Contexto = {
     ...st,
     set,
@@ -1102,6 +1165,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     generar,
     ponerEstado,
     ponerFecha,
+    desecharPieza,
+    restaurarPieza,
+    borrarPiezaDef,
+    alternarFavorita,
     avisar,
     avisarConDeshacer,
     cerrarAviso,

@@ -116,6 +116,10 @@ export interface Pieza {
   copy_texto?: string | null
   /** Hashtags sugeridos para el post. */
   hashtags?: string | null
+  /** En la papelera (borrado recuperable). Ausente/false = activa. */
+  descartada?: boolean | null
+  /** Destacada por el usuario (persistente). */
+  favorita?: boolean | null
 }
 
 /** Tablas opcionales de marca (`supabase/02_marca.sql`). */

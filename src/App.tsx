@@ -10,6 +10,7 @@ import { CentroScreen } from './screens/Centro'
 import { Calendario } from './screens/Calendario'
 import { MarcaRibera } from './screens/MarcaRibera'
 import { Contenido } from './screens/Contenido'
+import { Papelera } from './screens/Papelera'
 import { Estudio } from './screens/Estudio'
 import { Detalle } from './screens/Detalle'
 
@@ -19,7 +20,10 @@ function Pantalla() {
     case 'dashboard':
       return <Dashboard />
     case 'contenido':
+    case 'favoritos':
       return <Contenido />
+    case 'papelera':
+      return <Papelera />
     case 'calendario':
       return <Calendario />
     case 'marcaRibera':

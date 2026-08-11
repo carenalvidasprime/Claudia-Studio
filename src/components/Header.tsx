@@ -6,6 +6,8 @@ import { useApp, type Pantalla } from '../store'
 const TITULOS: Record<Pantalla, string> = {
   dashboard: 'Tus centros',
   contenido: 'Contenido',
+  favoritos: 'Favoritos',
+  papelera: 'Papelera',
   calendario: 'Calendario editorial',
   marcaRibera: CLIENTE.cliente ? `Marca ${CLIENTE.cliente}` : 'Marca',
   centro: '',
@@ -77,6 +79,12 @@ export function Header() {
       break
     case 'contenido':
       segs = [{ label: 'CONTENIDO' }]
+      break
+    case 'favoritos':
+      segs = [{ label: 'FAVORITOS' }]
+      break
+    case 'papelera':
+      segs = [{ label: 'PAPELERA' }]
       break
     case 'calendario':
       segs = [{ label: 'CALENDARIO' }]

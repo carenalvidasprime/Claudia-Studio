@@ -24,7 +24,7 @@ export function Estudio() {
   const resultados = app.resultados
     .map((id) => app.piezas.find((p) => p.id === id))
     .filter(Boolean) as Pieza[]
-  const visibles = app.filtroResultados === 'Favoritas' ? resultados.filter((p) => app.favoritas[p.id]) : resultados
+  const visibles = app.filtroResultados === 'Favoritas' ? resultados.filter((p) => p.favorita) : resultados
 
   const [modo, setModo] = useState<'crear' | 'remezclar'>('crear')
   const cambiarModo = (m: 'crear' | 'remezclar') => {
@@ -349,7 +349,7 @@ export function Estudio() {
 
             <div style={sx('display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px')}>
               {visibles.map((p, i) => {
-                const fav = !!app.favoritas[p.id]
+                const fav = !!p.favorita
                 return (
                   <div
                     key={p.id}
@@ -380,14 +380,26 @@ export function Estudio() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        app.set((s) => ({ favoritas: { ...s.favoritas, [p.id]: !s.favoritas[p.id] } }))
+                        void app.alternarFavorita(p.id)
                       }}
-                      title={fav ? 'Quitar de favoritas' : 'Marcar como favorita'}
+                      title={fav ? 'Quitar de favoritos' : 'Marcar como favorita'}
                       style={sx(
-                        `position:absolute;top:8px;left:8px;width:23px;height:23px;border-radius:50%;border:none;background:rgba(23,25,31,.32);color:${fav ? 'oklch(0.75 0.15 60)' : '#fff'};font-size:12px;cursor:pointer`,
+                        `position:absolute;top:8px;left:8px;width:23px;height:23px;border-radius:50%;border:none;background:rgba(23,25,31,.32);color:${fav ? 'oklch(0.8 0.16 75)' : '#fff'};font-size:12px;cursor:pointer`,
                       )}
                     >
                       {fav ? '★' : '☆'}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        app.desecharPieza(p.id)
+                      }}
+                      title="Descartar (a la papelera)"
+                      style={sx(
+                        'position:absolute;top:8px;right:8px;width:23px;height:23px;border-radius:50%;border:none;background:rgba(23,25,31,.32);color:#fff;font-size:13px;cursor:pointer',
+                      )}
+                    >
+                      ×
                     </button>
                     <button
                       onClick={(e) => {

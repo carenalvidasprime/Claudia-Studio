@@ -60,6 +60,7 @@ const pieza = (
   centro_id: string,
   estado: Pieza['estado'],
   carpeta_id: string | null = null,
+  extra: Partial<Pieza> = {},
 ): Pieza => ({
   id,
   titulo,
@@ -75,15 +76,19 @@ const pieza = (
   imagen_url: null,
   consentimiento_ok: null,
   notas_compliance: null,
+  descartada: false,
+  favorita: false,
+  ...extra,
 })
 
 export const DEMO_PIEZAS: Pieza[] = [
   pieza('p1', 'Bienvenida nueva unidad de fisioterapia', 'c1', 'borrador', 'car1'),
   pieza('p2', 'Día Mundial del Corazón', 'c1', 'en_revision', 'car1'),
-  pieza('p3', 'Consejo: hidratación en verano', 'c1', 'aprobado', 'car1'),
+  pieza('p3', 'Consejo: hidratación en verano', 'c1', 'aprobado', 'car1', { favorita: true }),
   pieza('p4', 'Nuevo equipo de diagnóstico', 'c2', 'en_revision', 'car2'),
   pieza('p5', 'Campaña de prevención', 'c2', 'programado', 'car2'),
-  pieza('p6', 'Testimonio de paciente', 'c2', 'publicado', 'car2'),
+  pieza('p6', 'Testimonio de paciente', 'c2', 'publicado', 'car2', { favorita: true }),
   pieza('p7', 'Horario especial agosto', 'c3', 'borrador'),
   pieza('p8', 'Efeméride: Día del Médico', 'c3', 'aprobado'),
+  pieza('p9', 'Boceto descartado', 'c1', 'borrador', 'car1', { descartada: true }),
 ]

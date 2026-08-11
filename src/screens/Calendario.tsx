@@ -46,6 +46,7 @@ export function Calendario() {
   const filtradas = useMemo(
     () =>
       app.piezas.filter((p) => {
+        if (p.descartada) return false
         if (!p.fecha_publicacion) return false
         if (app.calEstado !== 'Todas' && p.estado !== app.calEstado) return false
         if (centroScope) return String(p.centro_id) === String(centroScope.id)
