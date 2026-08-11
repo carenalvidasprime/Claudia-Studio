@@ -12,6 +12,10 @@ const rotulo =
 const campo =
   "width:100%;border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:11px;font-family:'Mulish';font-size:12.5px;line-height:1.5;background:#fff;color:#17191f"
 
+// Tipos de post genéricos: encuadran la intención sin obligar. Se podrán
+// configurar por cliente desde el Brand Kit más adelante.
+const TIPOS = ['Novedad', 'Promoción', 'Efeméride', 'Consejo', 'Testimonio', 'Detrás de cámaras']
+
 export function Estudio() {
   const app = useApp()
   const b = app.borrador
@@ -25,8 +29,8 @@ export function Estudio() {
   const puedeGenerar = b.prompt.trim().length > 0 && !app.generando
 
   return (
-    <section className="fade" style={sx('display:grid;grid-template-columns:344px 1fr;height:calc(100vh - 64px)')}>
-      {/* ---- Panel de trabajo (izquierda) ---- */}
+    <section className="fade" style={sx('display:grid;grid-template-columns:352px 1fr;height:calc(100vh - 64px)')}>
+      {/* ---- Brief: lo que el usuario SÍ sabe ---- */}
       <div style={sx('border-right:1px solid rgba(23,25,31,.08);background:#fff;overflow-y:auto;padding:20px 18px')}>
         <div style={sx('display:flex;align-items:center;gap:9px;background:#f4f4f4;border-radius:10px;padding:10px 11px;margin-bottom:18px')}>
           <div style={sx(`width:26px;height:26px;border-radius:7px;background:${centro ? colorDeCentro(centro.id) : '#DEDEDE'};flex:none`)} />
@@ -36,21 +40,29 @@ export function Estudio() {
           </div>
         </div>
 
-        <div style={sx(rotulo)}>TÍTULO</div>
-        <input
-          value={b.titulo}
-          onChange={(e) => app.setBorrador({ titulo: e.target.value })}
-          placeholder="Nombre de esta creatividad"
-          style={sx(campo, 'margin-bottom:18px')}
-        />
-
-        <div style={sx(rotulo)}>QUÉ QUIERES CREAR</div>
+        <div style={sx(rotulo)}>¿QUÉ QUIERES COMUNICAR?</div>
         <textarea
           value={b.prompt}
           onChange={(e) => app.setBorrador({ prompt: e.target.value, texto: e.target.value })}
-          placeholder="Describe la imagen: la escena, el sujeto, el tono y el mensaje. Cuanto más concreto, mejor."
-          style={sx(campo, 'min-height:110px;resize:vertical')}
+          placeholder="En una frase, en tu idioma. Ej: «anunciar nuestra nueva unidad de fisioterapia» o «felicitar el Día de la Madre»."
+          style={sx(campo, 'min-height:104px;resize:vertical')}
         />
+        <div style={sx('font-size:10px;color:rgba(23,25,31,.42);margin-top:6px;line-height:1.5')}>
+          Cuéntale la idea. Claudia se encarga de la dirección de arte.
+        </div>
+
+        <div style={sx(rotulo, 'margin:20px 0 9px')}>TIPO (OPCIONAL)</div>
+        <div style={sx('display:flex;flex-wrap:wrap;gap:5px')}>
+          {TIPOS.map((t) => (
+            <button
+              key={t}
+              onClick={() => app.setBorrador({ tipoPost: b.tipoPost === t ? '' : t })}
+              style={sx(pill(b.tipoPost === t))}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
 
         <div style={sx(rotulo, 'margin:20px 0 9px')}>RED SOCIAL Y FORMATO</div>
         <div style={sx('display:flex;flex-wrap:wrap;gap:6px')}>
@@ -76,33 +88,6 @@ export function Estudio() {
           })}
         </div>
 
-        <div style={sx(rotulo, 'margin:20px 0 9px')}>OBJETIVO</div>
-        <div style={sx('display:flex;gap:5px')}>
-          {(['Orgánico', 'Promoción'] as const).map((o) => (
-            <button key={o} onClick={() => app.setBorrador({ objetivo: o })} style={sx(seg(b.objetivo === o), 'flex:1')}>
-              {o}
-            </button>
-          ))}
-        </div>
-
-        {app.lineas.length > 0 && (
-          <>
-            <div style={sx(rotulo, 'margin:20px 0 9px')}>LÍNEA (OPCIONAL)</div>
-            <div style={sx('display:flex;flex-wrap:wrap;gap:5px')}>
-              {app.lineas.map((l) => (
-                <button
-                  key={String(l.id)}
-                  title={l.descripcion ?? undefined}
-                  onClick={() => app.setBorrador({ lineaId: String(b.lineaId) === String(l.id) ? null : l.id })}
-                  style={sx(pill(String(b.lineaId) === String(l.id)))}
-                >
-                  {l.nombre}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-
         <div style={sx(rotulo, 'margin:20px 0 9px')}>FOTO BASE (OPCIONAL)</div>
         <FotoBase />
 
@@ -120,48 +105,8 @@ export function Estudio() {
           ))}
         </div>
         <div style={sx('font-size:10px;color:rgba(23,25,31,.45);margin-top:6px;line-height:1.5')}>
-          {b.marca ? 'Se compone el logo y el mensaje sobre la imagen.' : 'Se entrega la foto limpia, sin logo ni texto.'}
+          {b.marca ? 'Se aplica tu Brand Kit (logo y mensaje) sobre la imagen.' : 'Se entrega la foto limpia, sin logo ni texto.'}
         </div>
-
-        {b.marca && (
-          <>
-            <div style={sx(rotulo, 'margin:18px 0 9px')}>MENSAJE SOBRE LA PIEZA</div>
-            <textarea
-              value={b.copy}
-              onChange={(e) => app.setBorrador({ copy: e.target.value })}
-              placeholder="Texto que aparecerá encima de la imagen. Déjalo vacío para solo logo."
-              style={sx(campo, 'min-height:56px;resize:vertical')}
-            />
-
-            <div style={sx(rotulo, 'margin:16px 0 9px')}>PLANTILLA DE MARCA</div>
-            <div style={sx('display:flex;gap:5px')}>
-              {(
-                [
-                  ['editorial', 'Editorial'],
-                  ['franja', 'Franja'],
-                ] as const
-              ).map(([val, label]) => (
-                <button
-                  key={val}
-                  onClick={() => app.setBorrador({ plantilla: val })}
-                  style={sx(seg(b.plantilla === val), 'flex:1')}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-
-        <div style={sx(rotulo, 'margin:20px 0 9px')}>FECHA DE PUBLICACIÓN (OPCIONAL)</div>
-        <input
-          type="date"
-          value={b.fechaPublicacion}
-          onChange={(e) => app.setBorrador({ fechaPublicacion: e.target.value })}
-          style={sx(
-            "border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:9px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;background:#fff;color:#17191f",
-          )}
-        />
 
         <div style={sx('margin-top:22px;display:flex;align-items:center;gap:10px')}>
           <div style={sx('font-size:11.5px;font-weight:500;color:rgba(23,25,31,.62)')}>Variantes</div>
@@ -186,12 +131,12 @@ export function Estudio() {
         </button>
         {!b.prompt.trim() && !app.generando && (
           <div style={sx('font-size:10px;color:rgba(23,25,31,.45);margin-top:7px;text-align:center')}>
-            Describe qué quieres crear para poder generar.
+            Escribe qué quieres comunicar para generar.
           </div>
         )}
       </div>
 
-      {/* ---- Lienzo de resultados (derecha) ---- */}
+      {/* ---- Lienzo: resultados + refinar ---- */}
       <div style={sx('overflow-y:auto;padding:22px 28px')}>
         {app.errorGeneracion && (
           <div
@@ -215,24 +160,17 @@ export function Estudio() {
                 />
               ))}
             </div>
-            <div
-              style={sx(
-                'text-align:center;margin-top:22px;font-size:12.5px;color:rgba(23,25,31,.55);display:flex;align-items:center;justify-content:center;gap:10px',
-              )}
-            >
-              <span
-                style={sx(
-                  'width:14px;height:14px;border:2px solid rgba(23,25,31,.2);border-top-color:#17191f;border-radius:50%;animation:spin .7s linear infinite',
-                )}
-              />
-              Generando las variantes…
+            <div style={sx('text-align:center;margin-top:22px;font-size:12.5px;color:rgba(23,25,31,.55);display:flex;align-items:center;justify-content:center;gap:10px')}>
+              <span style={sx('width:14px;height:14px;border:2px solid rgba(23,25,31,.2);border-top-color:#17191f;border-radius:50%;animation:spin .7s linear infinite')} />
+              Claudia está creando las variantes…
             </div>
           </>
         )}
 
         {!app.generando && resultados.length > 0 && (
           <>
-            <div style={sx('display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;flex-wrap:wrap;gap:10px')}>
+            {/* Barra: filtro + maqueta de marca (post-producción) + entrega */}
+            <div style={sx('display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px')}>
               <div style={sx('display:flex;gap:6px')}>
                 {(['Todas', 'Favoritas'] as const).map((f) => (
                   <button key={f} onClick={() => app.set({ filtroResultados: f })} style={sx(pill(app.filtroResultados === f))}>
@@ -244,13 +182,58 @@ export function Estudio() {
                 <span style={sx('font-size:11.5px;color:rgba(23,25,31,.5)')}>{seleccionadas} en la entrega</span>
                 <button
                   onClick={() => app.ir('exportar')}
-                  style={sx(
-                    "background:var(--acento);color:#fff;border:none;border-radius:9px;padding:8px 13px;font-family:'Mulish';font-weight:600;font-size:12px;cursor:pointer",
-                  )}
+                  style={sx("background:var(--acento);color:#fff;border:none;border-radius:9px;padding:8px 13px;font-family:'Mulish';font-weight:600;font-size:12px;cursor:pointer")}
                 >
                   Publicar →
                 </button>
               </div>
+            </div>
+
+            {b.marca && (
+              <div style={sx('display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid rgba(23,25,31,.1);border-radius:11px;padding:9px 11px;margin-bottom:14px')}>
+                <span style={sx('font-size:10.5px;font-weight:700;color:rgba(23,25,31,.5)')}>Mensaje sobre la pieza</span>
+                <input
+                  value={b.copy}
+                  onChange={(e) => app.setBorrador({ copy: e.target.value })}
+                  placeholder="Titular que va encima de la imagen (opcional)"
+                  style={sx("flex:1;min-width:180px;border:1px solid rgba(23,25,31,.12);border-radius:8px;padding:7px 10px;font-family:'Mulish';font-size:12px;background:#fff;color:#17191f")}
+                />
+                <div style={sx('display:flex;gap:4px')}>
+                  {(
+                    [
+                      ['editorial', 'Editorial'],
+                      ['franja', 'Franja'],
+                    ] as const
+                  ).map(([val, label]) => (
+                    <button key={val} onClick={() => app.setBorrador({ plantilla: val })} style={sx(seg(b.plantilla === val))}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Refinar: ajuste conversacional + otra ronda */}
+            <div style={sx('display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap')}>
+              <input
+                value={b.ajuste}
+                onChange={(e) => app.setBorrador({ ajuste: e.target.value })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && b.prompt.trim()) void app.generar()
+                }}
+                placeholder="Dile un ajuste a Claudia: «más luminoso», «en exteriores», «sin personas»…"
+                style={sx("flex:1;min-width:220px;border:1px solid rgba(23,25,31,.14);border-radius:10px;padding:10px 12px;font-family:'Mulish';font-size:12.5px;background:#fff;color:#17191f")}
+              />
+              <button
+                onClick={() => void app.generar()}
+                disabled={app.generando || !b.prompt.trim()}
+                style={sx(
+                  "background:#17191f;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-family:'Mulish';font-weight:600;font-size:12.5px;cursor:pointer;white-space:nowrap",
+                  (app.generando || !b.prompt.trim()) && 'opacity:.5;cursor:not-allowed',
+                )}
+              >
+                ↻ Otra ronda
+              </button>
             </div>
 
             <div style={sx('display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px')}>
@@ -271,9 +254,9 @@ export function Estudio() {
                         url={p.imagen_url}
                         ratio={b.ratio}
                         radio="0"
-                        copy={app.borrador.marca ? app.borrador.copy : undefined}
-                        mostrarLogo={app.borrador.marca}
-                        plantilla={app.borrador.plantilla}
+                        copy={b.marca ? b.copy : undefined}
+                        mostrarLogo={b.marca}
+                        plantilla={b.plantilla}
                         extra={
                           <span
                             style={sx(
@@ -322,23 +305,15 @@ export function Estudio() {
         )}
 
         {!app.generando && resultados.length === 0 && !app.errorGeneracion && (
-          <div
-            style={sx(
-              'height:100%;min-height:380px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:rgba(23,25,31,.42);padding:20px',
-            )}
-          >
-            <div
-              style={sx(
-                'width:60px;height:60px;border-radius:16px;background:#fff;border:1px solid rgba(23,25,31,.09);display:grid;place-items:center;font-size:24px;margin-bottom:15px',
-              )}
-            >
+          <div style={sx('height:100%;min-height:380px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:rgba(23,25,31,.42);padding:20px')}>
+            <div style={sx('width:60px;height:60px;border-radius:16px;background:#fff;border:1px solid rgba(23,25,31,.09);display:grid;place-items:center;font-size:24px;margin-bottom:15px')}>
               ◍
             </div>
             <div style={sx('font-size:14.5px;font-weight:600;color:rgba(23,25,31,.66)')}>
-              Describe qué quieres y pulsa Generar
+              Cuéntale a Claudia qué quieres comunicar
             </div>
-            <div style={sx('font-size:12px;margin-top:6px;max-width:360px;line-height:1.55')}>
-              Claudia producirá las variantes con la identidad de marca aplicada. Aparecerán aquí en cuanto estén listas.
+            <div style={sx('font-size:12px;margin-top:6px;max-width:380px;line-height:1.55')}>
+              Ella dirige el arte y produce las variantes con tu marca aplicada. Aparecerán aquí en cuanto estén listas.
             </div>
           </div>
         )}
@@ -380,11 +355,7 @@ function FotoBase() {
         {subiendo ? (
           <div style={sx('font-size:11.5px;color:rgba(23,25,31,.5)')}>Subiendo…</div>
         ) : material ? (
-          <div
-            style={sx(
-              "font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:rgba(23,25,31,.5);text-align:center;line-height:1.6;word-break:break-all",
-            )}
-          >
+          <div style={sx("font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:rgba(23,25,31,.5);text-align:center;line-height:1.6;word-break:break-all")}>
             {material.nombre}
             <br />
             <span style={sx('color:oklch(0.55 0.12 155);font-weight:600')}>✓ foto cargada</span>
@@ -400,9 +371,7 @@ function FotoBase() {
       {material && (
         <button
           onClick={() => app.setBorrador({ material: null })}
-          style={sx(
-            "margin-top:7px;background:none;border:none;padding:0;font-family:'Mulish';font-size:11px;color:rgba(23,25,31,.5);cursor:pointer;text-decoration:underline",
-          )}
+          style={sx("margin-top:7px;background:none;border:none;padding:0;font-family:'Mulish';font-size:11px;color:rgba(23,25,31,.5);cursor:pointer;text-decoration:underline")}
         >
           Quitar foto base
         </button>

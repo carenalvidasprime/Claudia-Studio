@@ -76,6 +76,10 @@ export interface Borrador {
   ratio: '1:1' | '4:5' | '9:16' | '16:9'
   formato: 'Imagen' | 'Animación'
   variantes: number
+  /** Tipo de post (encuadra la intención): Novedad, Promoción, Efeméride… */
+  tipoPost: string
+  /** Ajuste conversacional para la siguiente ronda: «más luminoso», «sin personas»… */
+  ajuste: string
   estilo: string
   iluminacion: string
   encuadre: string
@@ -110,6 +114,8 @@ export const BORRADOR_INICIAL: Borrador = {
   ratio: '4:5',
   formato: 'Imagen',
   variantes: 4,
+  tipoPost: '',
+  ajuste: '',
   estilo: 'Editorial',
   iluminacion: 'Natural',
   encuadre: 'Medio',
@@ -810,10 +816,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       },
     }
 
+    // Título automático a partir de la intención (el usuario ya no lo escribe).
+    const intencion = b.prompt.trim()
+    const tituloAuto =
+      intencion.length > 0 ? intencion.charAt(0).toUpperCase() + intencion.slice(1, 56) : b.titulo.trim() || `${b.canal}`
+
     const payload: PayloadGenerar = {
       pieza_id: st.piezaId,
       pieza: {
-        titulo: b.titulo.trim() || `${b.formato} · ${b.canal}`,
+        titulo: tituloAuto,
         centro_id: centro.id,
         carpeta_id: st.carpetaId,
         situacion_id: b.situacionId,
@@ -827,7 +838,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // imagen. Por eso a la IA se le pide una foto limpia sin texto ni logos:
         // así no inventa rótulos y queda sitio para superponer la marca real.
         prompt: [
-          b.prompt.trim(),
+          b.tipoPost ? `${b.tipoPost}.` : '',
+          intencion,
+          b.ajuste.trim() ? `Ajuste: ${b.ajuste.trim()}.` : '',
           'Fotografia profesional limpia y fotorrealista. No incluyas ningun texto, palabra, letra, numero, logotipo, emblema, marca de agua ni cartel dentro de la imagen. Deja las esquinas despejadas para superponer la marca despues.',
         ]
           .filter(Boolean)
