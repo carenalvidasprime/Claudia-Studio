@@ -42,6 +42,17 @@ textarea:focus, button:focus, input:focus, select:focus { outline: none; }
 @keyframes portada-sweep { 0% { background-position: -280px 0; } 65%, 100% { background-position: 340px 0; } }
 @keyframes portada-dot { 0% { opacity: 0; transform: translateY(10px) scale(.6); } 35% { opacity: 1; } 100% { opacity: 0; transform: translateY(-26px) scale(1); } }
 @keyframes portada-fade-out { to { opacity: 0; visibility: hidden; } }
+@keyframes portada-orbit { to { transform: rotate(360deg); } }
+@keyframes portada-orbit-rev { to { transform: rotate(-360deg); } }
+@keyframes portada-pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 16px 2px rgba(var(--acento-rgb), .5); } 50% { transform: translate(-50%, -50%) scale(1.16); box-shadow: 0 0 26px 5px rgba(var(--acento-rgb), .7); } }
+@keyframes portada-twinkle { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+@keyframes portada-bloom { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.4); } 55% { opacity: 1; } 100% { opacity: .001; transform: translate(-50%, -50%) scale(1.7); } }
+/* Purpurina que converge desde una posición dispersa hasta su punto en la «V». */
+@keyframes portada-forma {
+  0% { opacity: 0; transform: translate(calc(-50% + var(--sx)), calc(-50% + var(--sy))) scale(.4); }
+  60% { opacity: 1; }
+  100% { opacity: 1; transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1); }
+}
 
 /* El runtime de Claude Design resolvía `style-hover` en el propio elemento.
    Aquí cada efecto de hover del prototipo pasa a una clase equivalente. */

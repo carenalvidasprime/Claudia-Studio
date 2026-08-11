@@ -125,8 +125,8 @@ export function App() {
   const avanzar = (a: FasePortada) => setFase((prev) => (RANGO[a] > RANGO[prev] ? a : prev))
 
   useEffect(() => {
-    const t1 = setTimeout(() => avanzar('out'), 2100)
-    const t2 = setTimeout(() => avanzar('done'), 2600)
+    const t1 = setTimeout(() => avanzar('out'), 3300)
+    const t2 = setTimeout(() => avanzar('done'), 3800)
     return () => {
       clearTimeout(t1)
       clearTimeout(t2)
