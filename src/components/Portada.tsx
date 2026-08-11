@@ -55,8 +55,8 @@ export function Portada({ saliendo, onSaltar }: { saliendo: boolean; onSaltar: (
           <span
             style={sx(
               'position:absolute;top:50%;left:50%;width:150px;height:150px;border-radius:50%;' +
-                'background:radial-gradient(circle, rgba(var(--acento-rgb),.4), rgba(var(--acento-rgb),0) 66%);' +
-                'filter:blur(7px);animation:portada-aura 3s ease-in-out infinite',
+                'background:radial-gradient(circle, rgba(var(--acento-rgb),.28), rgba(var(--acento-rgb),0) 68%);' +
+                'filter:blur(8px);animation:portada-aura 3s ease-in-out infinite',
             )}
           />
           <span
@@ -68,20 +68,23 @@ export function Portada({ saliendo, onSaltar }: { saliendo: boolean; onSaltar: (
           />
           {V_PTS.map(([tx, ty], i) => {
             // Dispersión inicial determinista (estable entre renders).
-            const sxr = Math.cos(i * 2.399) * 78
-            const syr = Math.sin(i * 1.7) * 62
-            const size = i % 6 === 0 ? 5 : 3.5
+            const sxr = Math.cos(i * 2.399) * 80
+            const syr = Math.sin(i * 1.7) * 64
+            // Chispas finas (no gotas): puntos pequeños de luz, alguno mínimo.
+            const size = i % 7 === 0 ? 2.6 : i % 3 === 0 ? 1.4 : 2
             // Retardo pseudoaleatorio: la V se rellena de forma orgánica.
-            const delay = (0.1 + ((i * 0.618034) % 1) * 0.95).toFixed(2)
+            const delay = 0.1 + ((i * 0.618034) % 1) * 1.1
+            const tw = (1.4 + (i % 5) * 0.22).toFixed(2)
             return (
               <span
                 key={i}
                 style={sx(
                   `position:absolute;top:50%;left:50%;width:${size}px;height:${size}px;border-radius:50%;` +
-                    'background:radial-gradient(circle at 34% 28%, #fff, var(--acento) 80%);' +
-                    'box-shadow:0 0 6px rgba(var(--acento-rgb),.65);' +
+                    'background:radial-gradient(circle, #fff 0%, #eaf2ff 60%, rgba(var(--acento-rgb),.9) 100%);' +
+                    'box-shadow:0 0 3px rgba(var(--acento-rgb),.75);' +
                     `--tx:${tx}px;--ty:${ty}px;--sx:${sxr.toFixed(1)}px;--sy:${syr.toFixed(1)}px;` +
-                    `animation:portada-forma 1s cubic-bezier(.2,.8,.25,1) ${delay}s both`,
+                    `animation:portada-forma 1s cubic-bezier(.2,.8,.25,1) ${delay.toFixed(2)}s both, ` +
+                    `portada-chispear ${tw}s ease-in-out ${(delay + 1).toFixed(2)}s infinite`,
                 )}
               />
             )
@@ -100,7 +103,7 @@ export function Portada({ saliendo, onSaltar }: { saliendo: boolean; onSaltar: (
         {/* Wordmark: Claudia dominante + Studio ligero, con barrido de luz. */}
         <div
           style={sx(
-            'display:flex;align-items:baseline;gap:11px;animation:portada-in .8s cubic-bezier(.2,.7,.3,1) .9s both',
+            'display:flex;align-items:baseline;gap:11px;animation:portada-in .8s cubic-bezier(.2,.7,.3,1) 1.1s both',
           )}
         >
           <span
@@ -108,7 +111,7 @@ export function Portada({ saliendo, onSaltar }: { saliendo: boolean; onSaltar: (
               "font-family:'Poppins';font-weight:800;font-size:46px;letter-spacing:-.03em;line-height:1;color:transparent;" +
                 'background:linear-gradient(100deg,#1D1D1B 0%,#1D1D1B 38%,var(--acento) 50%,#1D1D1B 62%,#1D1D1B 100%);' +
                 'background-size:280px 100%;-webkit-background-clip:text;background-clip:text;' +
-                'animation:portada-sweep 2s ease-out 1.1s both',
+                'animation:portada-sweep 2s ease-out 1.3s both',
             )}
           >
             {CLIENTE.producto}
@@ -124,9 +127,9 @@ export function Portada({ saliendo, onSaltar }: { saliendo: boolean; onSaltar: (
           )}
         </div>
 
-        {/* by VidasPrime */}
+        {/* by VidasPrime: aparece ~1s después, para que Claudia gane protagonismo. */}
         <div
-          style={sx('display:flex;align-items:center;gap:6px;margin-top:-10px;animation:portada-in .8s ease 1.2s both')}
+          style={sx('display:flex;align-items:center;gap:6px;margin-top:-10px;animation:portada-in .9s ease 2.3s both')}
         >
           <span
             style={sx("font-family:'Poppins';font-size:11px;font-weight:700;color:rgba(29,29,27,.5)")}

@@ -46,6 +46,7 @@ textarea:focus, button:focus, input:focus, select:focus { outline: none; }
 @keyframes portada-orbit-rev { to { transform: rotate(-360deg); } }
 @keyframes portada-pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 16px 2px rgba(var(--acento-rgb), .5); } 50% { transform: translate(-50%, -50%) scale(1.16); box-shadow: 0 0 26px 5px rgba(var(--acento-rgb), .7); } }
 @keyframes portada-twinkle { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+@keyframes portada-chispear { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
 @keyframes portada-bloom { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.4); } 55% { opacity: 1; } 100% { opacity: .001; transform: translate(-50%, -50%) scale(1.7); } }
 /* Purpurina que converge desde una posición dispersa hasta su punto en la «V». */
 @keyframes portada-forma {
