@@ -65,7 +65,6 @@ export type Pantalla =
   | 'brief'
   | 'estudio'
   | 'detalle'
-  | 'exportar'
 
 export type Origen = 'scratch' | 'testimonio' | 'colaboracion' | 'hito' | 'situacionDirecta' | 'centro' | null
 
@@ -203,7 +202,6 @@ interface Estado_ {
   errorGeneracion: string | null
   /** Piezas creadas por la última generación, en orden. */
   resultados: string[]
-  seleccion: Record<string, boolean>
   favoritas: Record<string, boolean>
   filtroResultados: 'Todas' | 'Favoritas'
 
@@ -225,7 +223,6 @@ interface Estado_ {
   formato: string
   resolucion: string
   destino: string
-  entregada: { tipo: 'descarga' | 'centro'; etiqueta: string } | null
 
   menu: string | null
   modal: Modal | null
@@ -259,7 +256,6 @@ const ESTADO_INICIAL: Estado_ = {
   generando: false,
   errorGeneracion: null,
   resultados: [],
-  seleccion: {},
   favoritas: {},
   filtroResultados: 'Todas',
   busquedaCentros: '',
@@ -278,7 +274,6 @@ const ESTADO_INICIAL: Estado_ = {
   formato: 'JPG',
   resolucion: '4K',
   destino: 'Descargar',
-  entregada: null,
   menu: null,
   modal: null,
   aviso: null,
@@ -300,7 +295,6 @@ const CAMPOS_PERSISTENTES = [
   'centroTab',
   'borrador',
   'resultados',
-  'seleccion',
   'favoritas',
   'filtroResultados',
 ] as const
@@ -352,10 +346,8 @@ interface Contexto extends Estado_ {
   generar: (opts?: { referenciaUrl?: string }) => Promise<void>
   generarTextoPost: (piezaId: string) => Promise<void>
   copyDisponible: boolean
-  aprobarPieza: (id: string) => Promise<void>
   ponerEstado: (id: string, estado: Estado) => Promise<void>
   ponerFecha: (id: string, fecha: string) => Promise<void>
-  entregar: (tipo: 'descarga' | 'centro') => Promise<void>
 
   avisar: (msg: string, tono?: 'normal' | 'error') => void
   avisarConDeshacer: (msg: string, deshacer: () => void) => void
@@ -516,7 +508,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     st.centroTab,
     st.borrador,
     st.resultados,
-    st.seleccion,
     st.favoritas,
     st.filtroResultados,
   ])
@@ -595,7 +586,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         origen: 'centro',
         pantalla: 'estudio',
         resultados: [pieza.id],
-        seleccion: {},
         favoritas: {},
         filtroResultados: 'Todas',
         errorGeneracion: null,
@@ -639,7 +629,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const volver = useCallback(() => {
     setSt((p) => {
-      // Flujo actual: dashboard → centro → estudio → detalle/exportar. Los pasos
+      // Flujo actual: dashboard → centro → estudio → detalle. Los pasos
       // antiguos (gateway/situaciones/brief) están retirados y vuelven al centro.
       const destino: Record<Pantalla, Pantalla> = {
         dashboard: 'dashboard',
@@ -649,7 +639,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         centro: 'dashboard',
         estudio: 'centro',
         detalle: 'estudio',
-        exportar: 'estudio',
         gateway: 'centro',
         situaciones: 'centro',
         pasoTestConsent: 'centro',
@@ -737,7 +726,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         origen: 'scratch',
         pantalla: 'estudio',
         resultados: [],
-        seleccion: {},
         favoritas: {},
         errorGeneracion: null,
         borrador: { ...BORRADOR_INICIAL, titulo: centro ? `Nueva creatividad · ${centro.nombre}` : 'Nueva creatividad' },
@@ -762,7 +750,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       origen: 'scratch',
       pantalla: 'estudio',
       resultados: [],
-      seleccion: {},
       favoritas: {},
       errorGeneracion: null,
       borrador: { ...BORRADOR_INICIAL, titulo: `Nueva creatividad · ${centro.nombre}` },
@@ -960,7 +947,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const espera = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
     const desde = new Date().toISOString()
-    setSt((p) => ({ ...p, generando: true, errorGeneracion: null, resultados: [], seleccion: {}, favoritas: {} }))
+    setSt((p) => ({ ...p, generando: true, errorGeneracion: null, resultados: [], favoritas: {} }))
 
     try {
       const respuestas: PromiseSettledResult<Awaited<ReturnType<typeof generarPieza>>>[] = []
@@ -1081,14 +1068,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [st.piezas, avisar],
   )
 
-  const aprobarPieza = useCallback(
-    async (id: string) => {
-      await ponerEstado(id, 'aprobado')
-      setSt((p) => ({ ...p, seleccion: { ...p.seleccion, [id]: true }, pantalla: 'exportar' }))
-    },
-    [ponerEstado],
-  )
-
   const ponerFecha = useCallback(
     async (id: string, fecha: string) => {
       const valor = fecha || null
@@ -1101,27 +1080,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     },
     [avisar, recargar],
-  )
-
-  const entregar = useCallback(
-    async (tipo: 'descarga' | 'centro') => {
-      const ids = Object.keys(st.seleccion).filter((k) => st.seleccion[k])
-      if (!ids.length) {
-        avisar('No hay creatividades en la entrega.', 'error')
-        return
-      }
-      try {
-        await Promise.all(ids.map((id) => api.cambiarEstado(id, 'publicado')))
-        setSt((p) => ({
-          ...p,
-          piezas: p.piezas.map((x) => (ids.includes(x.id) ? { ...x, estado: 'publicado' as Estado } : x)),
-          entregada: { tipo, etiqueta: tipo === 'descarga' ? 'Descargada' : 'Enviada al centro' },
-        }))
-      } catch (error) {
-        avisar(mensajeError(error), 'error')
-      }
-    },
-    [st.seleccion, avisar],
   )
 
   const valor: Contexto = {
@@ -1142,10 +1100,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     crearNueva,
     elegirSituacion,
     generar,
-    aprobarPieza,
     ponerEstado,
     ponerFecha,
-    entregar,
     avisar,
     avisarConDeshacer,
     cerrarAviso,

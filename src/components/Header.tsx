@@ -20,7 +20,6 @@ const TITULOS: Record<Pantalla, string> = {
   brief: '¿Qué necesitas crear?',
   estudio: 'Estudio de generación',
   detalle: 'Revisión y retoque',
-  exportar: 'Publicar y exportar',
 }
 
 const CON_VOLVER: Pantalla[] = [
@@ -28,7 +27,6 @@ const CON_VOLVER: Pantalla[] = [
   'brief',
   'estudio',
   'detalle',
-  'exportar',
   'marcaRibera',
   'gateway',
   'situaciones',
@@ -119,9 +117,6 @@ export function Header() {
       break
     case 'detalle':
       segs = conRuta('REVISIÓN')
-      break
-    case 'exportar':
-      segs = conRuta('ENTREGA')
       break
   }
 

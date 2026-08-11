@@ -25,7 +25,6 @@ export function Estudio() {
     .map((id) => app.piezas.find((p) => p.id === id))
     .filter(Boolean) as Pieza[]
   const visibles = app.filtroResultados === 'Favoritas' ? resultados.filter((p) => app.favoritas[p.id]) : resultados
-  const seleccionadas = Object.keys(app.seleccion).filter((k) => app.seleccion[k]).length
 
   const [modo, setModo] = useState<'crear' | 'remezclar'>('crear')
   const cambiarModo = (m: 'crear' | 'remezclar') => {
@@ -291,12 +290,12 @@ export function Estudio() {
                 ))}
               </div>
               <div style={sx('display:flex;align-items:center;gap:10px')}>
-                <span style={sx('font-size:11.5px;color:rgba(23,25,31,.5)')}>{seleccionadas} en la entrega</span>
+                <span style={sx('font-size:11.5px;color:rgba(23,25,31,.5)')}>Se guardan como borradores</span>
                 <button
-                  onClick={() => app.ir('exportar')}
+                  onClick={() => app.set({ pantalla: 'contenido', filtroEstado: 'Todas', contenidoCentro: centro?.id ?? null })}
                   style={sx("background:var(--acento);color:#fff;border:none;border-radius:9px;padding:8px 13px;font-family:'Mulish';font-weight:600;font-size:12px;cursor:pointer")}
                 >
-                  Publicar →
+                  Ver en Contenido →
                 </button>
               </div>
             </div>
@@ -350,15 +349,13 @@ export function Estudio() {
 
             <div style={sx('display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px')}>
               {visibles.map((p, i) => {
-                const sel = !!app.seleccion[p.id]
                 const fav = !!app.favoritas[p.id]
                 return (
                   <div
                     key={p.id}
                     className="fade hv-result"
                     style={sx(
-                      'border-radius:13px;overflow:hidden;position:relative;transition:transform .15s;',
-                      sel ? 'outline:2.5px solid #17191f;outline-offset:-1px' : 'outline:1px solid rgba(23,25,31,.08)',
+                      'border-radius:13px;overflow:hidden;position:relative;transition:transform .15s;outline:1px solid rgba(23,25,31,.08)',
                     )}
                   >
                     <div onClick={() => app.set({ piezaId: p.id, pantalla: 'detalle' })} style={sx('cursor:pointer')}>
@@ -385,6 +382,7 @@ export function Estudio() {
                         e.stopPropagation()
                         app.set((s) => ({ favoritas: { ...s.favoritas, [p.id]: !s.favoritas[p.id] } }))
                       }}
+                      title={fav ? 'Quitar de favoritas' : 'Marcar como favorita'}
                       style={sx(
                         `position:absolute;top:8px;left:8px;width:23px;height:23px;border-radius:50%;border:none;background:rgba(23,25,31,.32);color:${fav ? 'oklch(0.75 0.15 60)' : '#fff'};font-size:12px;cursor:pointer`,
                       )}
@@ -394,15 +392,14 @@ export function Estudio() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        app.set((s) => ({ seleccion: { ...s.seleccion, [p.id]: !s.seleccion[p.id] } }))
+                        void app.abrirPieza(p.id)
                       }}
+                      title="Abrir para revisar y refinar"
                       style={sx(
-                        sel
-                          ? 'position:absolute;top:8px;right:8px;width:23px;height:23px;border-radius:50%;border:none;background:var(--acento);color:#fff;font-size:12px;cursor:pointer'
-                          : 'position:absolute;top:8px;right:8px;width:23px;height:23px;border-radius:50%;border:1.5px solid rgba(255,255,255,.92);background:rgba(23,25,31,.32);color:#fff;font-size:12px;cursor:pointer',
+                        "position:absolute;bottom:8px;right:8px;display:inline-flex;align-items:center;gap:4px;border:none;border-radius:8px;padding:5px 9px;background:rgba(23,25,31,.72);color:#fff;font-family:'Mulish';font-weight:600;font-size:10.5px;cursor:pointer",
                       )}
                     >
-                      {sel ? '✓' : ''}
+                      Refinar →
                     </button>
                   </div>
                 )

@@ -12,7 +12,6 @@ import { MarcaRibera } from './screens/MarcaRibera'
 import { Contenido } from './screens/Contenido'
 import { Estudio } from './screens/Estudio'
 import { Detalle } from './screens/Detalle'
-import { Exportar } from './screens/Exportar'
 
 function Pantalla() {
   const app = useApp()
@@ -43,8 +42,6 @@ function Pantalla() {
       return <Estudio />
     case 'detalle':
       return <Detalle />
-    case 'exportar':
-      return <Exportar />
   }
 }
 

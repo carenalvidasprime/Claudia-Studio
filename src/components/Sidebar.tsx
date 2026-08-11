@@ -18,7 +18,6 @@ const EN_CENTROS: Pantalla[] = [
   'brief',
   'estudio',
   'detalle',
-  'exportar',
 ]
 
 interface NavItem {
