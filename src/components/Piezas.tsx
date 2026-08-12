@@ -57,7 +57,7 @@ export function MarcaOverlay({
       : oscuro
         ? 'linear-gradient(180deg,#1b1e26,#0f1218)'
         : 'linear-gradient(180deg,#ffffff 0%,#e9f0fb 100%)'
-    const fadeCol = marca ? 'rgba(var(--acento-rgb),.9)' : oscuro ? 'rgba(15,18,24,.9)' : 'rgba(245,248,253,.9)'
+    const fadeCol = marca ? 'rgba(var(--acento-rgb),.9)' : oscuro ? 'rgba(15,18,24,.9)' : 'rgba(233,240,251,.9)'
     const titCol = oscuro || marca ? '#fff' : '#141821'
     const subCol = oscuro || marca ? 'rgba(255,255,255,.78)' : 'rgba(23,25,31,.58)'
     const ctaBg = marca ? '#fff' : 'linear-gradient(135deg,var(--acento),var(--acento-2))'

@@ -98,16 +98,16 @@ function hexRgb(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
 }
 
-/** Colores de la maqueta «anuncio» según la variante. */
+/** Colores de la maqueta «anuncio» según la variante. `fadeStop` es el color
+ * (hex) al que funde la foto hacia el panel; se usa IGUAL en PNG y SVG. */
 function esquemaAnuncio(variante: OpcAnuncio['variante']) {
   const acento = CLIENTE.tema.acento
   const acento2 = CLIENTE.tema.acento2
-  const [r, g, b] = hexRgb(acento)
   if (variante === 'oscuro')
-    return { pA: '#1b1e26', pB: '#0f1218', tit: '#ffffff', sub: 'rgba(255,255,255,0.78)', fade: 'rgba(15,18,24,', ctaSolid: '', ctaText: '#ffffff', chip: true }
+    return { pA: '#1b1e26', pB: '#0f1218', tit: '#ffffff', sub: 'rgba(255,255,255,0.78)', fadeStop: '#0f1218', ctaSolid: '', ctaText: '#ffffff', chip: true }
   if (variante === 'marca')
-    return { pA: acento, pB: acento2, tit: '#ffffff', sub: 'rgba(255,255,255,0.9)', fade: `rgba(${r},${g},${b},`, ctaSolid: '#ffffff', ctaText: acento, chip: true }
-  return { pA: '#ffffff', pB: '#e9f0fb', tit: '#141821', sub: 'rgba(23,25,31,0.58)', fade: 'rgba(233,240,251,', ctaSolid: '', ctaText: '#ffffff', chip: false }
+    return { pA: acento, pB: acento2, tit: '#ffffff', sub: 'rgba(255,255,255,0.9)', fadeStop: acento, ctaSolid: '#ffffff', ctaText: acento, chip: true }
+  return { pA: '#ffffff', pB: '#e9f0fb', tit: '#141821', sub: 'rgba(23,25,31,0.58)', fadeStop: '#e9f0fb', ctaSolid: '', ctaText: '#ffffff', chip: false }
 }
 
 /** Dibuja la plantilla ANUNCIO sobre el canvas: foto arriba + panel de marca. */
@@ -140,10 +140,11 @@ async function dibujarAnuncioPNG(ctx: CanvasRenderingContext2D, url: string, W: 
   } catch {
     /* sin foto: el panel queda igualmente */
   }
-  // Fundido de la foto al color del panel.
+  // Fundido de la foto al color del panel (mismo color que el SVG).
+  const [fr, fg, fb] = hexRgb(esq.fadeStop)
   const fade = ctx.createLinearGradient(0, fotoH * 0.82, 0, fotoH)
-  fade.addColorStop(0, `${esq.fade}0)`)
-  fade.addColorStop(1, `${esq.fade}0.95)`)
+  fade.addColorStop(0, `rgba(${fr},${fg},${fb},0)`)
+  fade.addColorStop(1, `rgba(${fr},${fg},${fb},0.95)`)
   ctx.fillStyle = fade
   ctx.fillRect(0, Math.round(fotoH * 0.82), W, Math.round(fotoH * 0.18))
 
@@ -164,7 +165,7 @@ async function dibujarAnuncioPNG(ctx: CanvasRenderingContext2D, url: string, W: 
   await cargarFuente(`800 ${fsT}px Mulish`)
   ctx.font = `800 ${fsT}px Poppins, Mulish, system-ui, sans-serif`
   ctx.fillStyle = esq.tit
-  const lineasT = envolver(ctx, (o.copy || 'Titular del anuncio').trim(), W - pad * 2)
+  const lineasT = envolver(ctx, (o.copy || 'Titular del anuncio').trim(), W - pad * 2).slice(0, 3)
   y += fsT
   lineasT.forEach((l, i) => ctx.fillText(l, pad, y + i * lhT))
   y += (lineasT.length - 1) * lhT
@@ -176,7 +177,7 @@ async function dibujarAnuncioPNG(ctx: CanvasRenderingContext2D, url: string, W: 
     await cargarFuente(`600 ${fsS}px Mulish`)
     ctx.font = `600 ${fsS}px Mulish, system-ui, sans-serif`
     ctx.fillStyle = esq.sub
-    const lineasS = envolver(ctx, o.subtitulo.trim(), Math.round((W - pad * 2) * 0.94))
+    const lineasS = envolver(ctx, o.subtitulo.trim(), Math.round((W - pad * 2) * 0.94)).slice(0, 2)
     y += Math.round(fsS * 1.7)
     lineasS.forEach((l, i) => ctx.fillText(l, pad, y + i * lhS))
   }
@@ -267,14 +268,14 @@ async function dibujarSobreFotoPNG(ctx: CanvasRenderingContext2D, url: string, W
   const lhT = Math.round(fsT * 1.12)
   await cargarFuente(`800 ${fsT}px Mulish`)
   ctx.font = `800 ${fsT}px Poppins, Mulish, system-ui, sans-serif`
-  const lineasT = envolver(ctx, (o.copy || 'Titular del anuncio').trim(), maxW)
+  const lineasT = envolver(ctx, (o.copy || 'Titular del anuncio').trim(), maxW).slice(0, 3)
 
   const fsS = Math.round(W * 0.032)
   const lhS = Math.round(fsS * 1.4)
   let lineasS: string[] = []
   if (o.mostrarSubtitulo !== false && o.subtitulo && o.subtitulo.trim()) {
     ctx.font = `600 ${fsS}px Mulish, system-ui, sans-serif`
-    lineasS = envolver(ctx, o.subtitulo.trim(), Math.round(maxW * 0.94))
+    lineasS = envolver(ctx, o.subtitulo.trim(), Math.round(maxW * 0.94)).slice(0, 2)
   }
 
   const fsC = Math.round(W * 0.032)
@@ -394,7 +395,7 @@ async function anuncioSVG(url: string, W: number, H: number, o: OpcAnuncio): Pro
   const fsT = Math.round(W * 0.056)
   const lhT = Math.round(fsT * 1.08)
   medidor.font = `800 ${fsT}px Mulish, sans-serif`
-  const lineasT = envolver(medidor, (o.copy || 'Titular del anuncio').trim(), W - pad * 2)
+  const lineasT = envolver(medidor, (o.copy || 'Titular del anuncio').trim(), W - pad * 2).slice(0, 3)
   let y = fotoH + Math.round((H - fotoH) * 0.17) + fsT
   const tsT = lineasT
     .map((l, i) => `<tspan x="${pad}" ${i === 0 ? `y="${y}"` : `dy="${lhT}"`}>${escaparXML(l)}</tspan>`)
@@ -406,7 +407,7 @@ async function anuncioSVG(url: string, W: number, H: number, o: OpcAnuncio): Pro
     const fsS = Math.round(W * 0.032)
     const lhS = Math.round(fsS * 1.4)
     medidor.font = `600 ${fsS}px Mulish, sans-serif`
-    const lineasS = envolver(medidor, o.subtitulo.trim(), Math.round((W - pad * 2) * 0.94))
+    const lineasS = envolver(medidor, o.subtitulo.trim(), Math.round((W - pad * 2) * 0.94)).slice(0, 2)
     const ys = y + Math.round(fsS * 1.7)
     const tsS = lineasS
       .map((l, i) => `<tspan x="${pad}" ${i === 0 ? `y="${ys}"` : `dy="${lhS}"`}>${escaparXML(l)}</tspan>`)
@@ -455,7 +456,7 @@ async function anuncioSVG(url: string, W: number, H: number, o: OpcAnuncio): Pro
   const defs =
     `<defs>` +
     `<linearGradient id="panel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${esq.pA}"/><stop offset="1" stop-color="${esq.pB}"/></linearGradient>` +
-    `<linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${esq.pA}" stop-opacity="0"/><stop offset="1" stop-color="${esq.pA}" stop-opacity="0.95"/></linearGradient>` +
+    `<linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${esq.fadeStop}" stop-opacity="0"/><stop offset="1" stop-color="${esq.fadeStop}" stop-opacity="0.95"/></linearGradient>` +
     `<linearGradient id="bar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${acento}"/><stop offset="1" stop-color="${acento2}"/></linearGradient>` +
     `<linearGradient id="cta" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${acento}"/><stop offset="1" stop-color="${acento2}"/></linearGradient>` +
     `</defs>`
@@ -474,13 +475,13 @@ async function sobreFotoSVG(url: string, W: number, H: number, o: OpcAnuncio): P
   const fsT = Math.round(W * 0.056)
   const lhT = Math.round(fsT * 1.12)
   med.font = `800 ${fsT}px Mulish, sans-serif`
-  const lineasT = envolver(med, (o.copy || 'Titular del anuncio').trim(), maxW)
+  const lineasT = envolver(med, (o.copy || 'Titular del anuncio').trim(), maxW).slice(0, 3)
   const fsS = Math.round(W * 0.032)
   const lhS = Math.round(fsS * 1.4)
   let lineasS: string[] = []
   if (o.mostrarSubtitulo !== false && o.subtitulo && o.subtitulo.trim()) {
     med.font = `600 ${fsS}px Mulish, sans-serif`
-    lineasS = envolver(med, o.subtitulo.trim(), Math.round(maxW * 0.94))
+    lineasS = envolver(med, o.subtitulo.trim(), Math.round(maxW * 0.94)).slice(0, 2)
   }
   const fsC = Math.round(W * 0.032)
   const pxC = Math.round(W * 0.05)

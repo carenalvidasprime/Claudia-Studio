@@ -7,19 +7,6 @@ import { mensajeError } from '../lib/supabase'
 import { ESTADOS, ESTADO_LABEL, type Brief, type Estado } from '../lib/types'
 import { useApp } from '../store'
 
-/**
- * Acciones de retoque. Se muestran deshabilitadas: hoy la producción de imagen
- * la hace n8n en una sola pasada y no hay un endpoint de edición, así que
- * dejarlas activas prometería una capacidad que no existe.
- */
-const RETOQUES = [
-  { id: 'variar', icono: '⧉', nombre: 'Variaciones de esta imagen', sub: 'Versiones parecidas partiendo de esta misma imagen', activo: true },
-  { id: 'otras', icono: '✦', nombre: 'Generar otras versiones', sub: 'Nuevas imágenes con la misma idea y el mismo texto', activo: true },
-  { id: 'fondo', icono: '◫', nombre: 'Cambiar fondo', sub: 'Mismo sujeto, entorno nuevo', activo: false },
-  { id: 'resolucion', icono: '⤢', nombre: 'Mejorar resolución', sub: 'Reescalado a mayor tamaño', activo: false },
-  { id: 'luz', icono: '☀', nombre: 'Ajustar iluminación', sub: 'Reilumina la escena', activo: false },
-]
-
 // Chip de estado (color semántico, no es el acento de marca).
 const TONO_ESTADO: Record<Estado, string> = {
   borrador: 'background:#eef0f1;color:#5b6674',
@@ -93,11 +80,19 @@ export function Detalle() {
   }
 
   // Guarda cambios en el brief de la pieza (plantilla, maqueta…) de forma
-  // optimista y persistente. `maqueta` se fusiona sobre la existente.
+  // optimista y persistente. La fusión se hace SOBRE la pieza más reciente del
+  // estado (no una copia del render), para que dos ediciones seguidas no se
+  // pisen. `maqueta` se fusiona sobre la existente.
   const guardarBrief = async (cambios: Partial<Brief>) => {
-    const prev = pieza.brief ?? {}
-    const brief: Brief = { ...prev, ...cambios, maqueta: { ...(prev.maqueta ?? {}), ...(cambios.maqueta ?? {}) } }
-    app.set((s) => ({ piezas: s.piezas.map((x) => (x.id === pieza.id ? { ...x, brief } : x)) }))
+    let brief: Brief = pieza.brief ?? {}
+    app.set((s) => ({
+      piezas: s.piezas.map((x) => {
+        if (x.id !== pieza.id) return x
+        const prev = x.brief ?? {}
+        brief = { ...prev, ...cambios, maqueta: { ...(prev.maqueta ?? {}), ...(cambios.maqueta ?? {}) } }
+        return { ...x, brief }
+      }),
+    }))
     try {
       await api.actualizarPieza(pieza.id, { brief })
     } catch (error) {
@@ -148,18 +143,18 @@ export function Detalle() {
     void app.generar()
   }
 
-  // Genera versiones del anuncio: N fotos nuevas manteniendo la maqueta y los
-  // textos (mismo modelo que "otras versiones", enmarcado para el anuncio).
+  // Genera versiones: N fotos nuevas manteniendo la idea, la plantilla y los
+  // textos. Es la vía principal para producir más imágenes.
   const generarVersiones = otrasVersiones
 
-  // Remezclar: parte de ESTA imagen (imagen-a-imagen) y crea variaciones
-  // parecidas, manteniendo el texto y la marca de la capa superpuesta.
+  // Variaciones: parte de ESTA imagen (imagen-a-imagen) y crea variantes
+  // parecidas. Lleva al estudio en modo remezclar, con esta foto como partida,
+  // para que el usuario ajuste el grado antes de lanzar.
   const variaciones = () => {
+    if (!pieza.imagen_url) return
+    app.setBorrador({ material: { url: pieza.imagen_url, nombre: pieza.titulo } })
     app.ir('estudio')
-    void app.generar({ referenciaUrl: pieza.imagen_url ?? undefined })
   }
-
-  const accionRetoque = (id?: string) => (id === 'variar' ? variaciones : otrasVersiones)
 
   return (
     <section className="fade" style={sx('display:grid;grid-template-columns:1fr 296px;height:calc(100vh - 64px)')}>
@@ -308,21 +303,45 @@ export function Detalle() {
                 "width:100%;border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:10px 11px;font-family:'Mulish';font-size:12px;background:#fff;color:#17191f;margin-bottom:14px",
               )}
             />
-            {/* Generar versiones: N fotos nuevas con esta misma maqueta y textos. */}
-            <button
-              onClick={() => void generarVersiones()}
-              disabled={app.generando || !app.generarDisponible}
-              title={app.generarDisponible ? 'Genera varias fotos nuevas manteniendo la maqueta y el texto' : 'Falta configurar el webhook de n8n.'}
-              style={sx(
-                "width:100%;display:flex;flex-direction:column;align-items:center;gap:1px;background:var(--acento);color:#fff;border:none;border-radius:11px;padding:12px;font-family:'Mulish';cursor:pointer;margin-bottom:18px",
-                (app.generando || !app.generarDisponible) && 'opacity:.55;cursor:not-allowed',
-              )}
-            >
-              <span style={sx('font-weight:700;font-size:13px')}>✨ {app.generando ? 'Generando versiones…' : 'Generar versiones'}</span>
-              <span style={sx('font-size:10px;opacity:.85')}>{b.variantes} fotos nuevas · misma maqueta y textos</span>
-            </button>
           </>
         )}
+
+        {/* Acciones de imagen: siempre visibles (cualquier plantilla). Dos vías
+            claras para producir imagen — nuevas fotos con la misma idea, o
+            variaciones partiendo de ESTA foto. */}
+        <div style={sx("font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.09em;color:rgba(23,25,31,.4);margin-bottom:9px")}>
+          {esAnuncio ? 'GENERAR IMAGEN' : 'MÁS IMÁGENES'}
+        </div>
+        <button
+          onClick={() => void generarVersiones()}
+          disabled={app.generando || !app.generarDisponible}
+          title={app.generarDisponible ? 'Genera varias fotos nuevas manteniendo la idea, la plantilla y el texto' : 'Falta configurar el webhook de n8n.'}
+          style={sx(
+            "width:100%;display:flex;flex-direction:column;align-items:center;gap:1px;background:var(--acento);color:#fff;border:none;border-radius:11px;padding:12px;font-family:'Mulish';cursor:pointer;margin-bottom:8px",
+            (app.generando || !app.generarDisponible) && 'opacity:.55;cursor:not-allowed',
+          )}
+        >
+          <span style={sx('font-weight:700;font-size:13px')}>✨ {app.generando ? 'Generando…' : 'Generar versiones'}</span>
+          <span style={sx('font-size:10px;opacity:.85')}>{b.variantes} fotos nuevas · misma idea{esAnuncio ? ', maqueta y textos' : ' y texto'}</span>
+        </button>
+        <button
+          onClick={() => void variaciones()}
+          disabled={app.generando || !app.generarDisponible || !pieza.imagen_url}
+          title={
+            !pieza.imagen_url
+              ? 'Aún no hay imagen de partida.'
+              : app.generarDisponible
+                ? 'Crea variaciones partiendo de esta misma foto (mismo sujeto y escena)'
+                : 'Falta configurar el webhook de n8n.'
+          }
+          style={sx(
+            "width:100%;display:flex;flex-direction:column;align-items:center;gap:1px;background:#fff;color:#17191f;border:1px solid rgba(23,25,31,.18);border-radius:11px;padding:11px;font-family:'Mulish';cursor:pointer;margin-bottom:18px",
+            (app.generando || !app.generarDisponible || !pieza.imagen_url) && 'opacity:.5;cursor:not-allowed',
+          )}
+        >
+          <span style={sx('font-weight:700;font-size:12.5px')}>⧉ Variaciones de esta foto</span>
+          <span style={sx('font-size:10px;color:rgba(23,25,31,.5)')}>Parte de esta misma imagen · ajusta el grado en el estudio</span>
+        </button>
 
         <div style={sx('display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px')}>
           <div style={sx("font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.09em;color:rgba(23,25,31,.4)")}>
@@ -373,52 +392,8 @@ export function Detalle() {
           ⧉ Copiar texto del post
         </button>
 
-        <div
-          style={sx(
-            "font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.09em;color:rgba(23,25,31,.4);margin-bottom:11px",
-          )}
-        >
-          RETOQUE IA
-        </div>
-        <div style={sx('display:flex;flex-direction:column;gap:7px')}>
-          {RETOQUES.map((r) => (
-            <button
-              key={r.nombre}
-              disabled={!r.activo || app.generando}
-              onClick={r.activo ? accionRetoque(r.id) : undefined}
-              title={
-                r.activo
-                  ? r.id === 'variar'
-                    ? 'Crea variaciones partiendo de esta misma imagen'
-                    : 'Regenera versiones nuevas manteniendo la idea y el texto'
-                  : 'Disponible cuando el workflow de n8n incorpore un paso de edición.'
-              }
-              className={r.activo ? undefined : 'is-pending'}
-              style={sx(
-                "display:flex;align-items:center;gap:11px;border-radius:10px;padding:11px 12px;font-family:'Mulish';font-weight:500;font-size:12.5px;color:#17191f;text-align:left;width:100%",
-                r.activo
-                  ? 'background:#fff;border:1px solid rgba(23,25,31,.16);cursor:pointer'
-                  : 'background:#f4f4f4;border:1px solid transparent',
-              )}
-            >
-              <span
-                style={sx(
-                  'width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:13px;flex:none',
-                  r.activo ? 'background:var(--suave-1);color:var(--acento)' : 'background:#ddf3fb;color:oklch(0.45 0.09 220)',
-                )}
-              >
-                {r.icono}
-              </span>
-              <span>
-                {r.nombre}
-                <br />
-                <span style={sx('font-weight:400;font-size:10.5px;color:rgba(23,25,31,.48)')}>{r.sub}</span>
-              </span>
-            </button>
-          ))}
-        </div>
-        <div style={sx('font-size:10.5px;color:rgba(23,25,31,.45);margin-top:9px;line-height:1.5')}>
-          El resto de retoques (resolución, fondo, iluminación…) llegará cuando el workflow de n8n incorpore un paso de edición sobre la propia imagen.
+        <div style={sx('font-size:10.5px;color:rgba(23,25,31,.4);line-height:1.5')}>
+          Los retoques sobre la propia imagen (cambiar fondo, mejorar resolución, reiluminar…) llegarán cuando el workflow de n8n incorpore un paso de edición.
         </div>
 
         <div

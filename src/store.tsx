@@ -908,7 +908,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     const payload: PayloadGenerar = {
-      pieza_id: st.piezaId,
+      // Generar SIEMPRE crea piezas nuevas (borradores). Antes se mandaba el id
+      // de la pieza abierta y n8n ACTUALIZABA esa misma fila en cada llamada:
+      // pedir 2 variaciones sobrescribía una y otra vez la misma pieza, así que
+      // «solo salía una variación y encima idéntica». Con id nulo, cada llamada
+      // inserta una fila distinta y salen las N variantes de verdad.
+      pieza_id: null,
       pieza: {
         titulo: tituloAuto,
         centro_id: centro.id,

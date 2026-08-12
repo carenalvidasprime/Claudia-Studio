@@ -26,7 +26,9 @@ export function Estudio() {
     .filter(Boolean) as Pieza[]
   const visibles = app.filtroResultados === 'Favoritas' ? resultados.filter((p) => p.favorita) : resultados
 
-  const [modo, setModo] = useState<'crear' | 'remezclar'>('crear')
+  // Si llegamos con una foto de partida ya cargada (p. ej. «Variaciones de esta
+  // foto» desde el detalle), abrimos directamente en modo Remezclar.
+  const [modo, setModo] = useState<'crear' | 'remezclar'>(app.borrador.material ? 'remezclar' : 'crear')
   const cambiarModo = (m: 'crear' | 'remezclar') => {
     setModo(m)
     if (m === 'crear') app.setBorrador({ material: null }) // Crear parte de una idea, no de una imagen.
