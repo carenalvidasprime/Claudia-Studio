@@ -31,11 +31,11 @@ const CONTRATO = [
 
 const VARIACION: Record<string, string> = {
   sutil:
-    'Cambia MUY POCO respecto a la imagen de referencia: mismo sujeto, mismo encuadre y misma composición. Varía únicamente matices de luz o detalles menores. El resultado debe parecerse muchísimo al original.',
+    'Es una variación MUY SUTIL: mantén el mismo sujeto, encuadre y composición, y cambia solo pequeños detalles de luz, color o textura. La nueva imagen debe parecerse mucho al original, pero no ser idéntica.',
   media:
-    'Mantén el sujeto y la idea central de la imagen de referencia. Cambia de forma clara y controlada UNA de estas cosas: el encuadre, la luz o el entorno.',
+    'Es una variación CLARA: mantén el sujeto y la idea central, y cambia de forma perceptible el encuadre, la luz o el entorno.',
   atrevida:
-    'Mantén solo el sujeto principal y el mensaje de la imagen de referencia. Reinterpreta con libertad el encuadre, la luz y el entorno.',
+    'Es una REINTERPRETACIÓN libre: mantén el sujeto principal y el mensaje, y cambia con libertad el encuadre, la luz y el entorno.',
 }
 
 const COMPOSICION: Record<string, string> = {
@@ -61,10 +61,12 @@ export function construirPromptImagen(o: DireccionOpts): string {
   // híbridos raros: la referencia ya aporta escena, composición y color.
   if (o.variacion) {
     const partes = [
-      'Trabaja a partir de la imagen de referencia adjunta.',
+      // Orden de edición inequívoca: el modelo DEBE devolver una imagen nueva
+      // (no una descripción de texto), editando la de referencia.
+      'Edita la imagen de referencia adjunta y genera una NUEVA imagen fotorrealista. Devuelve únicamente la imagen, nunca texto.',
       VARIACION[o.variacion],
-      o.ajuste.trim() ? `Cambio concreto pedido: ${o.ajuste.trim()}.` : '',
-      'No añadas ningún texto, letra, número, logotipo ni marca de agua. Deja las esquinas y un margen despejados para superponer la marca después.',
+      o.ajuste.trim() ? `Aplica además este cambio concreto: ${o.ajuste.trim()}.` : '',
+      'La nueva imagen no debe contener ningún texto, letra, número, logotipo ni marca de agua, y debe dejar las esquinas y un margen despejados para superponer la marca después.',
     ]
     return partes.filter(Boolean).join(' ')
   }
