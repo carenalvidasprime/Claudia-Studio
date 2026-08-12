@@ -961,6 +961,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // itere por dentro. Se lanzan EN SERIE (una tras otra, con un respiro entre
     // ellas): el modelo de imagen de Google limita las peticiones simultáneas y
     // en paralelo las rechaza con «too many requests». En serie son fiables.
+    //
+    // REINTENTOS: sobre todo al remezclar, el modelo de imagen de Google a veces
+    // devuelve texto en vez de imagen y esa ejecución de n8n no crea fila. Antes
+    // eso dejaba menos variantes de las pedidas («pedí 2, salió 1»). Ahora, si un
+    // intento falla, se reintenta hasta juntar las N que pidió el usuario, con un
+    // tope de intentos para no quedarnos en bucle si n8n está caído de verdad.
     const nVariantes = Math.min(Math.max(brief.variantes ?? 1, 1), 6)
     const payloadUno: PayloadGenerar = {
       ...payload,
@@ -973,10 +979,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     try {
       const respuestas: PromiseSettledResult<Awaited<ReturnType<typeof generarPieza>>>[] = []
-      for (let i = 0; i < nVariantes; i++) {
-        if (i > 0) await espera(1500)
+      let exitos = 0
+      let intentos = 0
+      const intentosMax = nVariantes * 3
+      while (exitos < nVariantes && intentos < intentosMax) {
+        if (intentos > 0) await espera(1500)
+        intentos++
         try {
-          respuestas.push({ status: 'fulfilled', value: await generarPieza(payloadUno) })
+          const value = await generarPieza(payloadUno)
+          respuestas.push({ status: 'fulfilled', value })
+          if (value.ok !== false) exitos++
         } catch (error) {
           respuestas.push({ status: 'rejected', reason: error })
         }
@@ -1028,15 +1040,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         )
       }
 
-      // Diagnóstico del desajuste: si pedimos N y aparecen menos, casi siempre
-      // es que n8n insertó menos filas (p. ej. sobrescribe por título repetido).
-      // Antes esto pasaba en silencio; ahora lo decimos con los datos a la vista.
-      const idsUnicos = new Set(idsDevueltos).size
+      // Diagnóstico del desajuste: si tras los reintentos aún faltan variantes,
+      // suele ser que el modelo de imagen de Google devolvió texto en vez de
+      // imagen en esas pasadas (esa ejecución de n8n no llega a crear fila).
       const desajuste =
         resultados.length > 0 && resultados.length < nVariantes
-          ? `Pediste ${nVariantes} variantes pero solo aparecieron ${resultados.length}. ` +
-            `n8n devolvió ${idsDevueltos.length} id(s) (${idsUnicos} distinto/s). ` +
-            'Si los ids se repiten, el workflow está sobrescribiendo la misma pieza en vez de crear una nueva.'
+          ? `Pediste ${nVariantes} variantes y salieron ${resultados.length} tras ${intentos} intentos. ` +
+            'Alguna pasada del modelo de imagen no devolvió foto (suele pasar al remezclar). ' +
+            'Puedes lanzarlo otra vez para completar las que falten.'
           : null
 
       setSt((p) => ({
