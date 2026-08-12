@@ -73,10 +73,225 @@ function rectRedondeado(ctx: CanvasRenderingContext2D, x: number, y: number, w: 
   ctx.closePath()
 }
 
+async function cargarFuente(spec: string) {
+  try {
+    await (document as unknown as { fonts?: { load: (f: string) => Promise<unknown> } }).fonts?.load(spec)
+  } catch {
+    /* si la fuente no carga, se usa la de sistema */
+  }
+}
+
+interface OpcAnuncio {
+  copy?: string | null
+  subtitulo?: string | null
+  cta?: string | null
+  mostrarSubtitulo?: boolean
+  mostrarCta?: boolean
+  mostrarLogo?: boolean
+}
+
+/** Dibuja la plantilla ANUNCIO sobre el canvas: foto arriba + panel de marca. */
+async function dibujarAnuncioPNG(ctx: CanvasRenderingContext2D, url: string, W: number, H: number, o: OpcAnuncio) {
+  const acento = CLIENTE.tema.acento
+  const acento2 = CLIENTE.tema.acento2
+  const fotoH = Math.round(H * 0.6)
+  const pad = Math.round(W * 0.06)
+
+  // Panel (fondo con degradado sutil).
+  const gp = ctx.createLinearGradient(0, fotoH, 0, H)
+  gp.addColorStop(0, '#ffffff')
+  gp.addColorStop(1, '#e9f0fb')
+  ctx.fillStyle = gp
+  ctx.fillRect(0, fotoH, W, H - fotoH)
+
+  // Foto a «cover» en la mitad superior.
+  try {
+    const fondo = await cargarFondo(url)
+    const escala = Math.max(W / fondo.width, fotoH / fondo.height)
+    const dw = fondo.width * escala
+    const dh = fondo.height * escala
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(0, 0, W, fotoH)
+    ctx.clip()
+    ctx.drawImage(fondo, (W - dw) / 2, (fotoH - dh) / 2, dw, dh)
+    ctx.restore()
+  } catch {
+    /* sin foto: el panel queda igualmente */
+  }
+  // Fundido de la foto al color del panel.
+  const fade = ctx.createLinearGradient(0, fotoH * 0.82, 0, fotoH)
+  fade.addColorStop(0, 'rgba(233,240,251,0)')
+  fade.addColorStop(1, 'rgba(233,240,251,.95)')
+  ctx.fillStyle = fade
+  ctx.fillRect(0, Math.round(fotoH * 0.82), W, Math.round(fotoH * 0.18))
+
+  // Barra de acento entre foto y panel.
+  const barH = Math.max(4, Math.round(W * 0.006))
+  const gb = ctx.createLinearGradient(0, 0, W, 0)
+  gb.addColorStop(0, acento)
+  gb.addColorStop(1, acento2)
+  ctx.fillStyle = gb
+  ctx.fillRect(0, fotoH - Math.round(barH / 2), W, barH)
+
+  ctx.textBaseline = 'alphabetic'
+  let y = fotoH + Math.round((H - fotoH) * 0.17)
+
+  // Titular.
+  const fsT = Math.round(W * 0.056)
+  const lhT = Math.round(fsT * 1.08)
+  await cargarFuente(`800 ${fsT}px Mulish`)
+  ctx.font = `800 ${fsT}px Poppins, Mulish, system-ui, sans-serif`
+  ctx.fillStyle = '#141821'
+  const lineasT = envolver(ctx, (o.copy || 'Titular del anuncio').trim(), W - pad * 2)
+  y += fsT
+  lineasT.forEach((l, i) => ctx.fillText(l, pad, y + i * lhT))
+  y += (lineasT.length - 1) * lhT
+
+  // Subtítulo.
+  if (o.mostrarSubtitulo !== false && o.subtitulo && o.subtitulo.trim()) {
+    const fsS = Math.round(W * 0.032)
+    const lhS = Math.round(fsS * 1.4)
+    await cargarFuente(`600 ${fsS}px Mulish`)
+    ctx.font = `600 ${fsS}px Mulish, system-ui, sans-serif`
+    ctx.fillStyle = 'rgba(23,25,31,.58)'
+    const lineasS = envolver(ctx, o.subtitulo.trim(), Math.round((W - pad * 2) * 0.94))
+    y += Math.round(fsS * 1.7)
+    lineasS.forEach((l, i) => ctx.fillText(l, pad, y + i * lhS))
+  }
+
+  const bottomY = H - pad
+
+  // Botón CTA (píldora con degradado + flecha).
+  if (o.mostrarCta !== false && o.cta && o.cta.trim()) {
+    const fsC = Math.round(W * 0.032)
+    await cargarFuente(`700 ${fsC}px Mulish`)
+    ctx.font = `700 ${fsC}px Mulish, system-ui, sans-serif`
+    const txt = `${o.cta.trim()}   →`
+    const tw = ctx.measureText(txt).width
+    const px = Math.round(W * 0.05)
+    const py = Math.round(W * 0.033)
+    const pillW = tw + px * 2
+    const pillH = fsC + py * 2
+    const pillX = pad
+    const pillY = bottomY - pillH
+    const gc = ctx.createLinearGradient(pillX, pillY, pillX + pillW, pillY + pillH)
+    gc.addColorStop(0, acento)
+    gc.addColorStop(1, acento2)
+    ctx.fillStyle = gc
+    rectRedondeado(ctx, pillX, pillY, pillW, pillH, pillH / 2)
+    ctx.fill()
+    ctx.fillStyle = '#ffffff'
+    ctx.fillText(txt, pillX + px, pillY + pillH / 2 + fsC * 0.35)
+  }
+
+  // Logo abajo a la derecha.
+  if (o.mostrarLogo !== false) {
+    const logoUrl = marcaActiva().logoUrl
+    if (logoUrl) {
+      try {
+        const logo = await cargarImagen(logoUrl, /^https?:/.test(logoUrl))
+        const lh = Math.round(W * 0.045)
+        const lw = Math.round(lh * (logo.width / logo.height))
+        ctx.globalAlpha = 0.9
+        ctx.drawImage(logo, W - pad - lw, bottomY - lh, lw, lh)
+        ctx.globalAlpha = 1
+      } catch {
+        /* sin logo */
+      }
+    }
+  }
+}
+
+/** Versión SVG (editable) de la plantilla ANUNCIO: capas de foto, panel y texto. */
+async function anuncioSVG(url: string, W: number, H: number, o: OpcAnuncio): Promise<string> {
+  const acento = CLIENTE.tema.acento
+  const acento2 = CLIENTE.tema.acento2
+  const fotoH = Math.round(H * 0.6)
+  const pad = Math.round(W * 0.06)
+  const fondoData = await comoDataURL(url)
+  const medidor = document.createElement('canvas').getContext('2d')!
+
+  const capas: string[] = []
+  capas.push(`<rect x="0" y="${fotoH}" width="${W}" height="${H - fotoH}" fill="url(#panel)"/>`)
+  capas.push(`<clipPath id="cfoto"><rect x="0" y="0" width="${W}" height="${fotoH}"/></clipPath>`)
+  capas.push(
+    `<image x="0" y="0" width="${W}" height="${fotoH}" preserveAspectRatio="xMidYMid slice" href="${fondoData}" clip-path="url(#cfoto)"/>`,
+  )
+  capas.push(`<rect x="0" y="${Math.round(fotoH * 0.82)}" width="${W}" height="${Math.round(fotoH * 0.18)}" fill="url(#fade)"/>`)
+  const barH = Math.max(4, Math.round(W * 0.006))
+  capas.push(`<rect x="0" y="${fotoH - Math.round(barH / 2)}" width="${W}" height="${barH}" fill="url(#bar)"/>`)
+
+  const fsT = Math.round(W * 0.056)
+  const lhT = Math.round(fsT * 1.08)
+  medidor.font = `800 ${fsT}px Mulish, sans-serif`
+  const lineasT = envolver(medidor, (o.copy || 'Titular del anuncio').trim(), W - pad * 2)
+  let y = fotoH + Math.round((H - fotoH) * 0.17) + fsT
+  const tsT = lineasT
+    .map((l, i) => `<tspan x="${pad}" ${i === 0 ? `y="${y}"` : `dy="${lhT}"`}>${escaparXML(l)}</tspan>`)
+    .join('')
+  capas.push(`<text font-family="Poppins, Mulish, sans-serif" font-weight="800" font-size="${fsT}" fill="#141821">${tsT}</text>`)
+  y += (lineasT.length - 1) * lhT
+
+  if (o.mostrarSubtitulo !== false && o.subtitulo && o.subtitulo.trim()) {
+    const fsS = Math.round(W * 0.032)
+    const lhS = Math.round(fsS * 1.4)
+    medidor.font = `600 ${fsS}px Mulish, sans-serif`
+    const lineasS = envolver(medidor, o.subtitulo.trim(), Math.round((W - pad * 2) * 0.94))
+    const ys = y + Math.round(fsS * 1.7)
+    const tsS = lineasS
+      .map((l, i) => `<tspan x="${pad}" ${i === 0 ? `y="${ys}"` : `dy="${lhS}"`}>${escaparXML(l)}</tspan>`)
+      .join('')
+    capas.push(
+      `<text font-family="Mulish, sans-serif" font-weight="600" font-size="${fsS}" fill="#17191f" fill-opacity="0.58">${tsS}</text>`,
+    )
+  }
+
+  const bottomY = H - pad
+  if (o.mostrarCta !== false && o.cta && o.cta.trim()) {
+    const fsC = Math.round(W * 0.032)
+    medidor.font = `700 ${fsC}px Mulish, sans-serif`
+    const txt = `${o.cta.trim()}   →`
+    const tw = medidor.measureText(txt).width
+    const px = Math.round(W * 0.05)
+    const py = Math.round(W * 0.033)
+    const pillW = Math.round(tw + px * 2)
+    const pillH = fsC + py * 2
+    const pillX = pad
+    const pillY = bottomY - pillH
+    capas.push(`<rect x="${pillX}" y="${pillY}" width="${pillW}" height="${pillH}" rx="${Math.round(pillH / 2)}" fill="url(#cta)"/>`)
+    capas.push(
+      `<text x="${pillX + px}" y="${pillY + Math.round(pillH / 2 + fsC * 0.35)}" font-family="Mulish, sans-serif" font-weight="700" font-size="${fsC}" fill="#ffffff">${escaparXML(txt)}</text>`,
+    )
+  }
+
+  const logoUrl = marcaActiva().logoUrl
+  if (o.mostrarLogo !== false && logoUrl) {
+    const img = await cargarImagen(logoUrl, /^https?:/.test(logoUrl))
+    const logoData = await comoDataURL(logoUrl)
+    const lh = Math.round(W * 0.045)
+    const lw = Math.round(lh * (img.width / img.height))
+    capas.push(`<image x="${W - pad - lw}" y="${bottomY - lh}" width="${lw}" height="${lh}" href="${logoData}" opacity="0.9"/>`)
+  }
+
+  const defs =
+    `<defs>` +
+    `<linearGradient id="panel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e9f0fb"/></linearGradient>` +
+    `<linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9f0fb" stop-opacity="0"/><stop offset="1" stop-color="#e9f0fb" stop-opacity="0.95"/></linearGradient>` +
+    `<linearGradient id="bar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${acento}"/><stop offset="1" stop-color="${acento2}"/></linearGradient>` +
+    `<linearGradient id="cta" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${acento}"/><stop offset="1" stop-color="${acento2}"/></linearGradient>` +
+    `</defs>`
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${defs}${capas.join('')}</svg>`
+}
+
 /** Compone la pieza (foto + logo + copy) y devuelve un PNG como Blob. */
 export async function componerPiezaPNG(opciones: {
   url: string
   copy?: string | null
+  subtitulo?: string | null
+  cta?: string | null
+  mostrarSubtitulo?: boolean
+  mostrarCta?: boolean
   ratio?: string | null
   mostrarLogo?: boolean
   plantilla?: 'editorial' | 'franja' | 'anuncio'
@@ -89,6 +304,13 @@ export async function componerPiezaPNG(opciones: {
   canvas.height = H
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('Tu navegador no permite componer la imagen.')
+
+  if (plantilla === 'anuncio') {
+    await dibujarAnuncioPNG(ctx, url, W, H, opciones)
+    return await new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('No se pudo generar el PNG.'))), 'image/png'),
+    )
+  }
 
   // Fondo a «cover» (rellena el lienzo sin deformar).
   const fondo = await cargarFondo(url)
@@ -214,12 +436,17 @@ function escaparXML(t: string): string {
 export async function componerPiezaSVG(opciones: {
   url: string
   copy?: string | null
+  subtitulo?: string | null
+  cta?: string | null
+  mostrarSubtitulo?: boolean
+  mostrarCta?: boolean
   ratio?: string | null
   mostrarLogo?: boolean
   plantilla?: 'editorial' | 'franja' | 'anuncio'
 }): Promise<string> {
   const { url, copy, ratio, mostrarLogo = true, plantilla = 'editorial' } = opciones
   const [W, H] = RESOLUCION[ratio ?? '1:1'] ?? RESOLUCION['1:1']
+  if (plantilla === 'anuncio') return await anuncioSVG(url, W, H, opciones)
   const pad = Math.round(W * 0.055)
   const fondoData = await comoDataURL(url)
   const logoUrl = marcaActiva().logoUrl
@@ -317,9 +544,14 @@ function slug(texto: string): string {
 export async function descargarPieza(pieza: Pieza, copy?: string | null): Promise<void> {
   if (!pieza.imagen_url) throw new Error('Esta pieza todavía no tiene imagen.')
   const marca = pieza.brief?.marca !== false
+  const m = pieza.brief?.maqueta
   const blob = await componerPiezaPNG({
     url: pieza.imagen_url,
     copy: marca ? copy ?? pieza.brief?.copy : null,
+    subtitulo: m?.subtitulo,
+    cta: m?.cta,
+    mostrarSubtitulo: m?.mostrarSubtitulo,
+    mostrarCta: m?.mostrarCta,
     ratio: pieza.brief?.ratio ?? '1:1',
     plantilla: pieza.brief?.plantilla ?? 'editorial',
     mostrarLogo: marca,
@@ -337,9 +569,14 @@ export async function descargarPieza(pieza: Pieza, copy?: string | null): Promis
 export async function descargarPiezaSVG(pieza: Pieza, copy?: string | null): Promise<void> {
   if (!pieza.imagen_url) throw new Error('Esta pieza todavía no tiene imagen.')
   const marca = pieza.brief?.marca !== false
+  const m = pieza.brief?.maqueta
   const svg = await componerPiezaSVG({
     url: pieza.imagen_url,
     copy: marca ? copy ?? pieza.brief?.copy : null,
+    subtitulo: m?.subtitulo,
+    cta: m?.cta,
+    mostrarSubtitulo: m?.mostrarSubtitulo,
+    mostrarCta: m?.mostrarCta,
     ratio: pieza.brief?.ratio ?? '1:1',
     plantilla: pieza.brief?.plantilla ?? 'editorial',
     mostrarLogo: marca,
