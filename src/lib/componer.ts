@@ -203,6 +203,137 @@ async function dibujarAnuncioPNG(ctx: CanvasRenderingContext2D, url: string, W: 
   }
 }
 
+/** Dibuja la plantilla SOBRE FOTO: imagen a sangre + velo + textos/CTA encima. */
+async function dibujarSobreFotoPNG(ctx: CanvasRenderingContext2D, url: string, W: number, H: number, o: OpcAnuncio) {
+  const acento = CLIENTE.tema.acento
+  const acento2 = CLIENTE.tema.acento2
+  const pad = Math.round(W * 0.06)
+  ctx.fillStyle = '#14161c'
+  ctx.fillRect(0, 0, W, H)
+  try {
+    const fondo = await cargarFondo(url)
+    const escala = Math.max(W / fondo.width, H / fondo.height)
+    const dw = fondo.width * escala
+    const dh = fondo.height * escala
+    ctx.drawImage(fondo, (W - dw) / 2, (H - dh) / 2, dw, dh)
+  } catch {
+    /* sin foto */
+  }
+  const sc = ctx.createLinearGradient(0, H, 0, Math.round(H * 0.42))
+  sc.addColorStop(0, 'rgba(10,12,16,0.92)')
+  sc.addColorStop(1, 'rgba(10,12,16,0)')
+  ctx.fillStyle = sc
+  ctx.fillRect(0, Math.round(H * 0.42), W, H - Math.round(H * 0.42))
+
+  ctx.textBaseline = 'alphabetic'
+  const maxW = W - pad * 2
+
+  const fsT = Math.round(W * 0.056)
+  const lhT = Math.round(fsT * 1.12)
+  await cargarFuente(`800 ${fsT}px Mulish`)
+  ctx.font = `800 ${fsT}px Poppins, Mulish, system-ui, sans-serif`
+  const lineasT = envolver(ctx, (o.copy || 'Titular del anuncio').trim(), maxW)
+
+  const fsS = Math.round(W * 0.032)
+  const lhS = Math.round(fsS * 1.4)
+  let lineasS: string[] = []
+  if (o.mostrarSubtitulo !== false && o.subtitulo && o.subtitulo.trim()) {
+    ctx.font = `600 ${fsS}px Mulish, system-ui, sans-serif`
+    lineasS = envolver(ctx, o.subtitulo.trim(), Math.round(maxW * 0.94))
+  }
+
+  const fsC = Math.round(W * 0.032)
+  const pxC = Math.round(W * 0.05)
+  const pyC = Math.round(W * 0.033)
+  const conCta = o.mostrarCta !== false && !!o.cta && o.cta.trim().length > 0
+  let ctaTxt = ''
+  let pillW = 0
+  let pillH = 0
+  if (conCta) {
+    ctaTxt = `${o.cta!.trim()}   →`
+    ctx.font = `700 ${fsC}px Mulish, system-ui, sans-serif`
+    pillW = ctx.measureText(ctaTxt).width + pxC * 2
+    pillH = fsC + pyC * 2
+  }
+  let logo: HTMLImageElement | null = null
+  let lw = 0
+  let lh = 0
+  let chipPad = 0
+  let chipW = 0
+  let chipH = 0
+  if (o.mostrarLogo !== false) {
+    const lu = marcaActiva().logoUrl
+    if (lu) {
+      try {
+        logo = await cargarImagen(lu, /^https?:/.test(lu))
+        lh = Math.round(W * 0.038)
+        lw = Math.round(lh * (logo.width / logo.height))
+        chipPad = Math.round(lh * 0.45)
+        chipW = lw + chipPad * 2
+        chipH = lh + chipPad * 2
+      } catch {
+        /* sin logo */
+      }
+    }
+  }
+
+  const rowH = Math.max(pillH, chipH)
+  const ruleH = Math.max(4, Math.round(W * 0.009))
+  const gRule = Math.round(W * 0.03)
+  const gTitSub = lineasS.length ? Math.round(W * 0.028) : 0
+  const gSubRow = rowH ? Math.round(W * 0.045) : 0
+  const contentH = ruleH + gRule + lineasT.length * lhT + gTitSub + lineasS.length * lhS + gSubRow + rowH
+  let y = H - pad - contentH
+
+  // Filete de acento.
+  ctx.fillStyle = acento
+  ctx.fillRect(pad, y, Math.round(W * 0.075), ruleH)
+  y += ruleH + gRule
+
+  // Titular.
+  ctx.font = `800 ${fsT}px Poppins, Mulish, system-ui, sans-serif`
+  ctx.fillStyle = '#ffffff'
+  ctx.shadowColor = 'rgba(0,0,0,0.4)'
+  ctx.shadowBlur = Math.round(W * 0.02)
+  ctx.shadowOffsetY = 2
+  lineasT.forEach((l, i) => ctx.fillText(l, pad, y + fsT + i * lhT))
+  ctx.shadowColor = 'transparent'
+  ctx.shadowBlur = 0
+  ctx.shadowOffsetY = 0
+  y += lineasT.length * lhT + gTitSub
+
+  // Subtítulo.
+  if (lineasS.length) {
+    ctx.font = `600 ${fsS}px Mulish, system-ui, sans-serif`
+    ctx.fillStyle = 'rgba(255,255,255,0.85)'
+    lineasS.forEach((l, i) => ctx.fillText(l, pad, y + fsS + i * lhS))
+    y += lineasS.length * lhS
+  }
+  y += gSubRow
+
+  // Fila CTA + logo.
+  if (conCta) {
+    const pillY = y + (rowH - pillH) / 2
+    const gc = ctx.createLinearGradient(pad, pillY, pad + pillW, pillY + pillH)
+    gc.addColorStop(0, acento)
+    gc.addColorStop(1, acento2)
+    ctx.fillStyle = gc
+    rectRedondeado(ctx, pad, pillY, pillW, pillH, pillH / 2)
+    ctx.fill()
+    ctx.font = `700 ${fsC}px Mulish, system-ui, sans-serif`
+    ctx.fillStyle = '#ffffff'
+    ctx.fillText(ctaTxt, pad + pxC, pillY + pillH / 2 + fsC * 0.35)
+  }
+  if (logo) {
+    const chipX = W - pad - chipW
+    const chipY = y + (rowH - chipH) / 2
+    ctx.fillStyle = '#ffffff'
+    rectRedondeado(ctx, chipX, chipY, chipW, chipH, Math.round(chipH * 0.24))
+    ctx.fill()
+    ctx.drawImage(logo, chipX + chipPad, chipY + chipPad, lw, lh)
+  }
+}
+
 /** Versión SVG (editable) de la plantilla ANUNCIO: capas de foto, panel y texto. */
 async function anuncioSVG(url: string, W: number, H: number, o: OpcAnuncio): Promise<string> {
   const acento = CLIENTE.tema.acento
@@ -284,6 +415,102 @@ async function anuncioSVG(url: string, W: number, H: number, o: OpcAnuncio): Pro
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${defs}${capas.join('')}</svg>`
 }
 
+/** Versión SVG (editable) de la plantilla SOBRE FOTO. */
+async function sobreFotoSVG(url: string, W: number, H: number, o: OpcAnuncio): Promise<string> {
+  const acento = CLIENTE.tema.acento
+  const acento2 = CLIENTE.tema.acento2
+  const pad = Math.round(W * 0.06)
+  const maxW = W - pad * 2
+  const fondoData = await comoDataURL(url)
+  const med = document.createElement('canvas').getContext('2d')!
+
+  const fsT = Math.round(W * 0.056)
+  const lhT = Math.round(fsT * 1.12)
+  med.font = `800 ${fsT}px Mulish, sans-serif`
+  const lineasT = envolver(med, (o.copy || 'Titular del anuncio').trim(), maxW)
+  const fsS = Math.round(W * 0.032)
+  const lhS = Math.round(fsS * 1.4)
+  let lineasS: string[] = []
+  if (o.mostrarSubtitulo !== false && o.subtitulo && o.subtitulo.trim()) {
+    med.font = `600 ${fsS}px Mulish, sans-serif`
+    lineasS = envolver(med, o.subtitulo.trim(), Math.round(maxW * 0.94))
+  }
+  const fsC = Math.round(W * 0.032)
+  const pxC = Math.round(W * 0.05)
+  const pyC = Math.round(W * 0.033)
+  const conCta = o.mostrarCta !== false && !!o.cta && o.cta.trim().length > 0
+  const ctaTxt = conCta ? `${o.cta!.trim()}   →` : ''
+  let pillW = 0
+  let pillH = 0
+  if (conCta) {
+    med.font = `700 ${fsC}px Mulish, sans-serif`
+    pillW = Math.round(med.measureText(ctaTxt).width + pxC * 2)
+    pillH = fsC + pyC * 2
+  }
+  const logoUrl = marcaActiva().logoUrl
+  let lw = 0
+  let lh = 0
+  let chipPad = 0
+  let chipW = 0
+  let chipH = 0
+  let logoData = ''
+  if (o.mostrarLogo !== false && logoUrl) {
+    const img = await cargarImagen(logoUrl, /^https?:/.test(logoUrl))
+    logoData = await comoDataURL(logoUrl)
+    lh = Math.round(W * 0.038)
+    lw = Math.round(lh * (img.width / img.height))
+    chipPad = Math.round(lh * 0.45)
+    chipW = lw + chipPad * 2
+    chipH = lh + chipPad * 2
+  }
+
+  const rowH = Math.max(pillH, chipH)
+  const ruleH = Math.max(4, Math.round(W * 0.009))
+  const gRule = Math.round(W * 0.03)
+  const gTitSub = lineasS.length ? Math.round(W * 0.028) : 0
+  const gSubRow = rowH ? Math.round(W * 0.045) : 0
+  const contentH = ruleH + gRule + lineasT.length * lhT + gTitSub + lineasS.length * lhS + gSubRow + rowH
+  let y = H - pad - contentH
+
+  const capas: string[] = []
+  capas.push(`<image x="0" y="0" width="${W}" height="${H}" preserveAspectRatio="xMidYMid slice" href="${fondoData}"/>`)
+  capas.push(`<rect x="0" y="0" width="${W}" height="${H}" fill="url(#scrim)"/>`)
+  capas.push(`<rect x="${pad}" y="${y}" width="${Math.round(W * 0.075)}" height="${ruleH}" fill="${acento}"/>`)
+  y += ruleH + gRule
+  const tsT = lineasT
+    .map((l, i) => `<tspan x="${pad}" ${i === 0 ? `y="${y + fsT}"` : `dy="${lhT}"`}>${escaparXML(l)}</tspan>`)
+    .join('')
+  capas.push(`<text font-family="Poppins, Mulish, sans-serif" font-weight="800" font-size="${fsT}" fill="#ffffff">${tsT}</text>`)
+  y += lineasT.length * lhT + gTitSub
+  if (lineasS.length) {
+    const tsS = lineasS
+      .map((l, i) => `<tspan x="${pad}" ${i === 0 ? `y="${y + fsS}"` : `dy="${lhS}"`}>${escaparXML(l)}</tspan>`)
+      .join('')
+    capas.push(`<text font-family="Mulish, sans-serif" font-weight="600" font-size="${fsS}" fill="#ffffff" fill-opacity="0.85">${tsS}</text>`)
+    y += lineasS.length * lhS
+  }
+  y += gSubRow
+  if (conCta) {
+    const pillY = Math.round(y + (rowH - pillH) / 2)
+    capas.push(`<rect x="${pad}" y="${pillY}" width="${pillW}" height="${pillH}" rx="${Math.round(pillH / 2)}" fill="url(#cta)"/>`)
+    capas.push(
+      `<text x="${pad + pxC}" y="${pillY + Math.round(pillH / 2 + fsC * 0.35)}" font-family="Mulish, sans-serif" font-weight="700" font-size="${fsC}" fill="#ffffff">${escaparXML(ctaTxt)}</text>`,
+    )
+  }
+  if (logoData) {
+    const chipX = W - pad - chipW
+    const chipY = Math.round(y + (rowH - chipH) / 2)
+    capas.push(`<rect x="${chipX}" y="${chipY}" width="${chipW}" height="${chipH}" rx="${Math.round(chipH * 0.24)}" fill="#ffffff"/>`)
+    capas.push(`<image x="${chipX + chipPad}" y="${chipY + chipPad}" width="${lw}" height="${lh}" href="${logoData}"/>`)
+  }
+  const defs =
+    `<defs>` +
+    `<linearGradient id="scrim" x1="0" y1="1" x2="0" y2="0"><stop offset="0.02" stop-color="#0a0c10" stop-opacity="0.92"/><stop offset="0.34" stop-color="#0a0c10" stop-opacity="0.55"/><stop offset="0.62" stop-color="#0a0c10" stop-opacity="0"/></linearGradient>` +
+    `<linearGradient id="cta" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${acento}"/><stop offset="1" stop-color="${acento2}"/></linearGradient>` +
+    `</defs>`
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${defs}${capas.join('')}</svg>`
+}
+
 /** Compone la pieza (foto + logo + copy) y devuelve un PNG como Blob. */
 export async function componerPiezaPNG(opciones: {
   url: string
@@ -294,7 +521,7 @@ export async function componerPiezaPNG(opciones: {
   mostrarCta?: boolean
   ratio?: string | null
   mostrarLogo?: boolean
-  plantilla?: 'editorial' | 'franja' | 'anuncio'
+  plantilla?: 'editorial' | 'franja' | 'anuncio' | 'sobrefoto'
 }): Promise<Blob> {
   const { url, copy, ratio, mostrarLogo = true, plantilla = 'editorial' } = opciones
   const [W, H] = RESOLUCION[ratio ?? '1:1'] ?? RESOLUCION['1:1']
@@ -305,8 +532,9 @@ export async function componerPiezaPNG(opciones: {
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('Tu navegador no permite componer la imagen.')
 
-  if (plantilla === 'anuncio') {
-    await dibujarAnuncioPNG(ctx, url, W, H, opciones)
+  if (plantilla === 'anuncio' || plantilla === 'sobrefoto') {
+    if (plantilla === 'sobrefoto') await dibujarSobreFotoPNG(ctx, url, W, H, opciones)
+    else await dibujarAnuncioPNG(ctx, url, W, H, opciones)
     return await new Promise<Blob>((resolve, reject) =>
       canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('No se pudo generar el PNG.'))), 'image/png'),
     )
@@ -442,11 +670,12 @@ export async function componerPiezaSVG(opciones: {
   mostrarCta?: boolean
   ratio?: string | null
   mostrarLogo?: boolean
-  plantilla?: 'editorial' | 'franja' | 'anuncio'
+  plantilla?: 'editorial' | 'franja' | 'anuncio' | 'sobrefoto'
 }): Promise<string> {
   const { url, copy, ratio, mostrarLogo = true, plantilla = 'editorial' } = opciones
   const [W, H] = RESOLUCION[ratio ?? '1:1'] ?? RESOLUCION['1:1']
   if (plantilla === 'anuncio') return await anuncioSVG(url, W, H, opciones)
+  if (plantilla === 'sobrefoto') return await sobreFotoSVG(url, W, H, opciones)
   const pad = Math.round(W * 0.055)
   const fondoData = await comoDataURL(url)
   const logoUrl = marcaActiva().logoUrl

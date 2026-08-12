@@ -64,14 +64,16 @@ export function Detalle() {
   const flujo = FLUJO[pieza.estado]
 
   const esAnimacion = b.formato === 'Animación'
-  const esAnuncio = b.plantilla === 'anuncio'
+  const esAnuncio = b.plantilla === 'anuncio' || b.plantilla === 'sobrefoto'
 
-  const PLANTILLAS: Array<{ id: 'editorial' | 'franja' | 'anuncio'; label: string }> = [
+  type IdPlantilla = 'editorial' | 'franja' | 'anuncio' | 'sobrefoto'
+  const PLANTILLAS: Array<{ id: IdPlantilla; label: string }> = [
     { id: 'editorial', label: 'Editorial' },
     { id: 'franja', label: 'Franja' },
     { id: 'anuncio', label: 'Anuncio' },
+    { id: 'sobrefoto', label: 'Sobre foto' },
   ]
-  const elegirPlantilla = (id: 'editorial' | 'franja' | 'anuncio') => {
+  const elegirPlantilla = (id: IdPlantilla) => {
     app.setBorrador({ plantilla: id })
     void guardarBrief({ plantilla: id })
   }
@@ -242,7 +244,7 @@ export function Detalle() {
         <div style={sx("font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.09em;color:rgba(23,25,31,.4);margin-bottom:8px")}>
           PLANTILLA
         </div>
-        <div style={sx('display:flex;gap:5px;margin-bottom:18px')}>
+        <div style={sx('display:flex;flex-wrap:wrap;gap:5px;margin-bottom:18px')}>
           {PLANTILLAS.map((p) => {
             const on = b.plantilla === p.id
             return (
@@ -250,7 +252,7 @@ export function Detalle() {
                 key={p.id}
                 onClick={() => elegirPlantilla(p.id)}
                 style={sx(
-                  "flex:1;border-radius:8px;padding:8px 4px;cursor:pointer;font-family:'Mulish';font-weight:600;font-size:11.5px",
+                  "flex:1 1 45%;border-radius:8px;padding:8px 4px;cursor:pointer;font-family:'Mulish';font-weight:600;font-size:11.5px",
                   on ? 'background:#17191f;color:#fff;border:1px solid #17191f' : 'background:#fff;color:#17191f;border:1px solid rgba(23,25,31,.14)',
                 )}
               >

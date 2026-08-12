@@ -78,7 +78,7 @@ export interface Borrador {
    *  plantilla «anuncio» es el TITULAR. */
   copy: string
   /** Plantilla de marca con la que se compone la pieza. */
-  plantilla: 'editorial' | 'franja' | 'anuncio'
+  plantilla: 'editorial' | 'franja' | 'anuncio' | 'sobrefoto'
   /** Maqueta de anuncio: subtítulo y CTA (huecos editables). */
   subtitulo: string
   cta: string

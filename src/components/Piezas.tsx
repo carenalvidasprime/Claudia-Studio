@@ -36,7 +36,7 @@ export function MarcaOverlay({
   /** Vista ampliada (detalle): tipografía y logo mayores. */
   grande?: boolean
   mostrarLogo?: boolean
-  plantilla?: 'editorial' | 'franja' | 'anuncio'
+  plantilla?: 'editorial' | 'franja' | 'anuncio' | 'sobrefoto'
   extra?: React.ReactNode
 }) {
   const app = useApp()
@@ -99,6 +99,61 @@ export function MarcaOverlay({
             )}
             {conLogo && (
               <img src={logoUrl!} alt={CLIENTE.cliente ?? ''} style={sx(`height:${grande ? '20px' : '11px'};width:auto;display:block;flex:none;opacity:.9`)} />
+            )}
+          </div>
+        </div>
+        {extra}
+      </div>
+    )
+  }
+
+  // Plantilla SOBRE FOTO: imagen a sangre + velo oscuro + titular, subtítulo y
+  // CTA sobre la foto (estilo premium tipo anuncio de revista).
+  if (plantilla === 'sobrefoto') {
+    const conCta = mostrarCta && !!cta && cta.trim().length > 0
+    const conSub = mostrarSubtitulo && !!subtitulo && subtitulo.trim().length > 0
+    const fsT = grande ? '30px' : '15px'
+    const fsS = grande ? '13px' : '9px'
+    const fsC = grande ? '14px' : '9px'
+    const pad = grande ? '26px 28px 24px' : '12px 13px 13px'
+    return (
+      <div style={sx(base, 'background:#14161c')}>
+        {url ? (
+          <img src={url} alt={copy ?? 'Creatividad'} loading="lazy" style={sx('width:100%;height:100%;object-fit:cover;display:block')} />
+        ) : (
+          <div style={sx('width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.4);font-size:11px')}>
+            Sin imagen todavía
+          </div>
+        )}
+        {/* Velo oscuro de abajo para legibilidad del texto */}
+        <div style={sx('position:absolute;inset:0;background:linear-gradient(to top,rgba(10,12,16,.92) 2%,rgba(10,12,16,.55) 34%,rgba(10,12,16,0) 62%);pointer-events:none')} />
+        <div style={sx(`position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;padding:${pad}`)}>
+          <div style={sx(`width:${grande ? '40px' : '22px'};height:${grande ? '5px' : '3px'};border-radius:3px;background:var(--acento);margin-bottom:${grande ? '13px' : '7px'}`)} />
+          <div style={sx(`font-family:'Poppins','Mulish';font-weight:800;font-size:${fsT};line-height:1.08;letter-spacing:-.025em;color:#fff;text-shadow:0 1px 14px rgba(0,0,0,.4)`)}>
+            {hayCopy ? copy : 'Titular del anuncio'}
+          </div>
+          {conSub && (
+            <div style={sx(`font-size:${fsS};line-height:1.4;color:rgba(255,255,255,.82);margin-top:${grande ? '8px' : '5px'};max-width:94%`)}>
+              {subtitulo}
+            </div>
+          )}
+          <div style={sx(`margin-top:${grande ? '16px' : '9px'};display:flex;align-items:center;justify-content:space-between;gap:${grande ? '14px' : '8px'}`)}>
+            {conCta ? (
+              <span
+                style={sx(
+                  `display:inline-flex;align-items:center;gap:${grande ? '9px' : '5px'};background:linear-gradient(135deg,var(--acento),var(--acento-2));color:#fff;font-family:'Mulish';font-weight:700;font-size:${fsC};padding:${grande ? '13px 22px' : '7px 11px'};border-radius:30px;box-shadow:0 10px 22px rgba(0,0,0,.35);white-space:nowrap`,
+                )}
+              >
+                {cta}
+                <span style={sx(`font-size:${grande ? '15px' : '10px'};line-height:1`)}>→</span>
+              </span>
+            ) : (
+              <span />
+            )}
+            {conLogo && (
+              <span style={sx(`flex:none;background:#fff;border-radius:${grande ? '8px' : '5px'};padding:${grande ? '6px 9px' : '3px 5px'};display:flex;align-items:center`)}>
+                <img src={logoUrl!} alt={CLIENTE.cliente ?? ''} style={sx(`height:${grande ? '18px' : '10px'};width:auto;display:block`)} />
+              </span>
             )}
           </div>
         </div>
