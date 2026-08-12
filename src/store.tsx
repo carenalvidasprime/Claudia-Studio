@@ -74,10 +74,16 @@ export type Origen = 'scratch' | 'testimonio' | 'colaboracion' | 'hito' | 'situa
 export interface Borrador {
   titulo: string
   texto: string
-  /** Mensaje/copy que se pinta sobre la imagen en la capa de marca. */
+  /** Mensaje/copy que se pinta sobre la imagen en la capa de marca. En la
+   *  plantilla «anuncio» es el TITULAR. */
   copy: string
   /** Plantilla de marca con la que se compone la pieza. */
-  plantilla: 'editorial' | 'franja'
+  plantilla: 'editorial' | 'franja' | 'anuncio'
+  /** Maqueta de anuncio: subtítulo y CTA (huecos editables). */
+  subtitulo: string
+  cta: string
+  mostrarSubtitulo: boolean
+  mostrarCta: boolean
   /** Formato de red social (id de FORMATOS): fija proporción y canal. */
   redFormato: string
   /** Si se aplica la capa de marca (logo + copy) o se entrega la foto limpia. */
@@ -122,6 +128,10 @@ export const BORRADOR_INICIAL: Borrador = {
   texto: '',
   copy: '',
   plantilla: 'editorial',
+  subtitulo: '',
+  cta: '',
+  mostrarSubtitulo: true,
+  mostrarCta: true,
   redFormato: 'ig-post',
   marca: true,
   objetivo: 'Orgánico',
@@ -597,6 +607,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           texto: brief.texto ?? '',
           copy: brief.copy ?? '',
           plantilla: brief.plantilla ?? 'editorial',
+          subtitulo: brief.maqueta?.subtitulo ?? '',
+          cta: brief.maqueta?.cta ?? '',
+          mostrarSubtitulo: brief.maqueta?.mostrarSubtitulo !== false,
+          mostrarCta: brief.maqueta?.mostrarCta !== false,
           redFormato: brief.redFormato ?? 'ig-post',
           marca: brief.marca !== false,
           objetivo: brief.objetivo ?? 'Orgánico',
@@ -819,6 +833,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       texto: b.texto,
       copy: b.copy,
       plantilla: b.plantilla,
+      maqueta: { subtitulo: b.subtitulo, cta: b.cta, mostrarSubtitulo: b.mostrarSubtitulo, mostrarCta: b.mostrarCta },
       redFormato: b.redFormato,
       marca: b.marca,
       objetivo: b.objetivo,

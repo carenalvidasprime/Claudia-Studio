@@ -4,7 +4,7 @@ import { MarcaOverlay } from '../components/Piezas'
 import { descargarPieza, descargarPiezaSVG } from '../lib/componer'
 import * as api from '../lib/api'
 import { mensajeError } from '../lib/supabase'
-import { ESTADOS, ESTADO_LABEL, type Estado } from '../lib/types'
+import { ESTADOS, ESTADO_LABEL, type Brief, type Estado } from '../lib/types'
 import { useApp } from '../store'
 
 /**
@@ -64,6 +64,17 @@ export function Detalle() {
   const flujo = FLUJO[pieza.estado]
 
   const esAnimacion = b.formato === 'Animación'
+  const esAnuncio = b.plantilla === 'anuncio'
+
+  const PLANTILLAS: Array<{ id: 'editorial' | 'franja' | 'anuncio'; label: string }> = [
+    { id: 'editorial', label: 'Editorial' },
+    { id: 'franja', label: 'Franja' },
+    { id: 'anuncio', label: 'Anuncio' },
+  ]
+  const elegirPlantilla = (id: 'editorial' | 'franja' | 'anuncio') => {
+    app.setBorrador({ plantilla: id })
+    void guardarBrief({ plantilla: id })
+  }
 
   const setCampo = (campo: 'copy_texto' | 'hashtags', valor: string) =>
     app.set((s) => ({ piezas: s.piezas.map((x) => (x.id === pieza.id ? { ...x, [campo]: valor } : x)) }))
@@ -71,6 +82,19 @@ export function Detalle() {
   const guardarCampo = async (campo: 'copy_texto' | 'hashtags', valor: string) => {
     try {
       await api.actualizarPieza(pieza.id, { [campo]: valor })
+    } catch (error) {
+      app.avisar(mensajeError(error), 'error')
+    }
+  }
+
+  // Guarda cambios en el brief de la pieza (plantilla, maqueta…) de forma
+  // optimista y persistente. `maqueta` se fusiona sobre la existente.
+  const guardarBrief = async (cambios: Partial<Brief>) => {
+    const prev = pieza.brief ?? {}
+    const brief: Brief = { ...prev, ...cambios, maqueta: { ...(prev.maqueta ?? {}), ...(cambios.maqueta ?? {}) } }
+    app.set((s) => ({ piezas: s.piezas.map((x) => (x.id === pieza.id ? { ...x, brief } : x)) }))
+    try {
+      await api.actualizarPieza(pieza.id, { brief })
     } catch (error) {
       app.avisar(mensajeError(error), 'error')
     }
@@ -137,6 +161,10 @@ export function Detalle() {
             ratio={b.ratio}
             radio="0"
             copy={b.marca ? b.copy : undefined}
+            subtitulo={b.subtitulo}
+            cta={b.cta}
+            mostrarSubtitulo={b.mostrarSubtitulo}
+            mostrarCta={b.mostrarCta}
             mostrarLogo={b.marca}
             plantilla={b.plantilla}
             grande
@@ -207,31 +235,72 @@ export function Detalle() {
           </div>
         )}
 
+        <div style={sx("font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.09em;color:rgba(23,25,31,.4);margin-bottom:8px")}>
+          PLANTILLA
+        </div>
+        <div style={sx('display:flex;gap:5px;margin-bottom:18px')}>
+          {PLANTILLAS.map((p) => {
+            const on = b.plantilla === p.id
+            return (
+              <button
+                key={p.id}
+                onClick={() => elegirPlantilla(p.id)}
+                style={sx(
+                  "flex:1;border-radius:8px;padding:8px 4px;cursor:pointer;font-family:'Mulish';font-weight:600;font-size:11.5px",
+                  on ? 'background:#17191f;color:#fff;border:1px solid #17191f' : 'background:#fff;color:#17191f;border:1px solid rgba(23,25,31,.14)',
+                )}
+              >
+                {p.label}
+              </button>
+            )
+          })}
+        </div>
+
         <div
           style={sx(
             "font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.09em;color:rgba(23,25,31,.4);margin-bottom:9px",
           )}
         >
-          MENSAJE SOBRE LA PIEZA
+          {esAnuncio ? 'TITULAR' : 'MENSAJE SOBRE LA PIEZA'}
         </div>
         <textarea
           value={b.copy}
           onChange={(e) => app.setBorrador({ copy: e.target.value })}
-          onBlur={async () => {
-            try {
-              await api.actualizarPieza(pieza.id, { brief: { ...(pieza.brief ?? {}), copy: b.copy } })
-              app.set((s) => ({
-                piezas: s.piezas.map((x) => (x.id === pieza.id ? { ...x, brief: { ...(x.brief ?? {}), copy: b.copy } } : x)),
-              }))
-            } catch (error) {
-              app.avisar(mensajeError(error), 'error')
-            }
-          }}
-          placeholder="Texto que aparece encima de la imagen, con el logo. Se guarda al salir del campo."
+          onBlur={() => void guardarBrief({ copy: b.copy })}
+          placeholder={esAnuncio ? 'Titular del anuncio' : 'Texto que aparece encima de la imagen, con el logo. Se guarda al salir del campo.'}
           style={sx(
-            "width:100%;min-height:60px;resize:vertical;border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:11px;font-family:'Mulish';font-size:12.5px;line-height:1.5;background:#fff;color:#17191f;margin-bottom:18px",
+            "width:100%;min-height:60px;resize:vertical;border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:11px;font-family:'Mulish';font-size:12.5px;line-height:1.5;background:#fff;color:#17191f;margin-bottom:14px",
           )}
         />
+
+        {esAnuncio && (
+          <>
+            <div style={sx("font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.09em;color:rgba(23,25,31,.4);margin-bottom:7px")}>
+              SUBTÍTULO
+            </div>
+            <textarea
+              value={b.subtitulo}
+              onChange={(e) => app.setBorrador({ subtitulo: e.target.value })}
+              onBlur={() => void guardarBrief({ maqueta: { subtitulo: b.subtitulo } })}
+              placeholder="Una frase de apoyo (opcional)."
+              style={sx(
+                "width:100%;min-height:44px;resize:vertical;border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:10px;font-family:'Mulish';font-size:12px;line-height:1.5;background:#fff;color:#17191f;margin-bottom:12px",
+              )}
+            />
+            <div style={sx("font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.09em;color:rgba(23,25,31,.4);margin-bottom:7px")}>
+              BOTÓN (CTA)
+            </div>
+            <input
+              value={b.cta}
+              onChange={(e) => app.setBorrador({ cta: e.target.value })}
+              onBlur={() => void guardarBrief({ maqueta: { cta: b.cta } })}
+              placeholder="Ej.: «Pide tu cita»"
+              style={sx(
+                "width:100%;border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:10px 11px;font-family:'Mulish';font-size:12px;background:#fff;color:#17191f;margin-bottom:18px",
+              )}
+            />
+          </>
+        )}
 
         <div style={sx('display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px')}>
           <div style={sx("font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.09em;color:rgba(23,25,31,.4)")}>

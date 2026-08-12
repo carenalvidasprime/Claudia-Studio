@@ -65,7 +65,14 @@ export interface Brief {
   /** Mensaje/copy que se superpone sobre la imagen en la capa de marca. */
   copy?: string
   /** Plantilla de marca con la que se compone la pieza. */
-  plantilla?: 'editorial' | 'franja'
+  plantilla?: 'editorial' | 'franja' | 'anuncio'
+  /** Contenido de la maqueta de anuncio (huecos editables). El titular reutiliza `copy`. */
+  maqueta?: {
+    subtitulo?: string
+    cta?: string
+    mostrarSubtitulo?: boolean
+    mostrarCta?: boolean
+  }
   /** Formato de red social elegido (id de FORMATOS). Fija proporción y canal. */
   redFormato?: string
   /** Si se aplica la capa de marca (logo + copy) o se entrega la foto limpia. */

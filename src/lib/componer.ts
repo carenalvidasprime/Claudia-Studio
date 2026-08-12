@@ -79,7 +79,7 @@ export async function componerPiezaPNG(opciones: {
   copy?: string | null
   ratio?: string | null
   mostrarLogo?: boolean
-  plantilla?: 'editorial' | 'franja'
+  plantilla?: 'editorial' | 'franja' | 'anuncio'
 }): Promise<Blob> {
   const { url, copy, ratio, mostrarLogo = true, plantilla = 'editorial' } = opciones
   const [W, H] = RESOLUCION[ratio ?? '1:1'] ?? RESOLUCION['1:1']
@@ -216,7 +216,7 @@ export async function componerPiezaSVG(opciones: {
   copy?: string | null
   ratio?: string | null
   mostrarLogo?: boolean
-  plantilla?: 'editorial' | 'franja'
+  plantilla?: 'editorial' | 'franja' | 'anuncio'
 }): Promise<string> {
   const { url, copy, ratio, mostrarLogo = true, plantilla = 'editorial' } = opciones
   const [W, H] = RESOLUCION[ratio ?? '1:1'] ?? RESOLUCION['1:1']

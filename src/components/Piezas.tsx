@@ -15,6 +15,10 @@ export function MarcaOverlay({
   url,
   ratio,
   copy,
+  subtitulo,
+  cta,
+  mostrarSubtitulo = true,
+  mostrarCta = true,
   radio = '13px',
   grande,
   mostrarLogo = true,
@@ -24,11 +28,15 @@ export function MarcaOverlay({
   url: string | null | undefined
   ratio: string | null | undefined
   copy?: string | null
+  subtitulo?: string | null
+  cta?: string | null
+  mostrarSubtitulo?: boolean
+  mostrarCta?: boolean
   radio?: string
   /** Vista ampliada (detalle): tipografía y logo mayores. */
   grande?: boolean
   mostrarLogo?: boolean
-  plantilla?: 'editorial' | 'franja'
+  plantilla?: 'editorial' | 'franja' | 'anuncio'
   extra?: React.ReactNode
 }) {
   const app = useApp()
@@ -36,6 +44,63 @@ export function MarcaOverlay({
   const base = `aspect-ratio:${ratioToCss(ratio)};border-radius:${radio};position:relative;overflow:hidden;background:#eef0f1`
   const hayCopy = !!copy && copy.trim().length > 0
   const conLogo = !!(mostrarLogo && logoUrl)
+
+  // Plantilla ANUNCIO: foto arriba + panel de marca abajo (titular, subtítulo,
+  // botón CTA, logo). El texto es nuestra capa, nunca lo pinta la IA.
+  if (plantilla === 'anuncio') {
+    const conCta = mostrarCta && !!cta && cta.trim().length > 0
+    const conSub = mostrarSubtitulo && !!subtitulo && subtitulo.trim().length > 0
+    const fsT = grande ? '27px' : '15px'
+    const fsS = grande ? '13.5px' : '9px'
+    const fsC = grande ? '14px' : '9px'
+    return (
+      <div style={sx(base, 'background:#f7f9fc')}>
+        {/* Foto (IA) — mitad superior */}
+        <div style={sx('position:absolute;top:0;left:0;right:0;height:58%;overflow:hidden;background:#e6e9ec')}>
+          {url ? (
+            <img src={url} alt={copy ?? 'Creatividad'} loading="lazy" style={sx('width:100%;height:100%;object-fit:cover;display:block')} />
+          ) : (
+            <div style={sx('width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(23,25,31,.35);font-size:11px')}>
+              Sin imagen todavía
+            </div>
+          )}
+        </div>
+        {/* Panel de marca (nuestra capa editable) */}
+        <div
+          style={sx(
+            `position:absolute;left:0;right:0;bottom:0;height:42%;background:linear-gradient(180deg,#fff,#f7f9fc);display:flex;flex-direction:column;padding:${grande ? '22px 26px 20px' : '11px 13px 12px'}`,
+          )}
+        >
+          <div style={sx(`width:${grande ? '40px' : '22px'};height:${grande ? '5px' : '3px'};border-radius:3px;background:var(--acento);margin-bottom:${grande ? '13px' : '7px'}`)} />
+          <div style={sx(`font-family:'Poppins','Mulish';font-weight:800;font-size:${fsT};line-height:1.1;letter-spacing:-.02em;color:#17191f`)}>
+            {hayCopy ? copy : 'Titular del anuncio'}
+          </div>
+          {conSub && (
+            <div style={sx(`font-size:${fsS};line-height:1.4;color:rgba(23,25,31,.6);margin-top:${grande ? '9px' : '5px'};max-width:94%`)}>
+              {subtitulo}
+            </div>
+          )}
+          <div style={sx(`margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:${grande ? '14px' : '8px'}`)}>
+            {conCta ? (
+              <span
+                style={sx(
+                  `background:var(--acento);color:#fff;font-family:'Mulish';font-weight:700;font-size:${fsC};padding:${grande ? '13px 22px' : '7px 12px'};border-radius:30px;box-shadow:0 6px 16px rgba(var(--acento-rgb),.35);white-space:nowrap`,
+                )}
+              >
+                {cta}
+              </span>
+            ) : (
+              <span />
+            )}
+            {conLogo && (
+              <img src={logoUrl!} alt={CLIENTE.cliente ?? ''} style={sx(`height:${grande ? '20px' : '11px'};width:auto;display:block;flex:none`)} />
+            )}
+          </div>
+        </div>
+        {extra}
+      </div>
+    )
+  }
 
   return (
     <div style={sx(base)}>
