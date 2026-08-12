@@ -64,13 +64,16 @@ export function Detalle() {
   const flujo = FLUJO[pieza.estado]
 
   const esAnimacion = b.formato === 'Animación'
-  const esAnuncio = b.plantilla === 'anuncio' || b.plantilla === 'sobrefoto'
+  const ANUNCIOS: IdPlantilla[] = ['anuncio', 'anuncioOscuro', 'anuncioMarca', 'sobrefoto']
+  const esAnuncio = ANUNCIOS.includes(b.plantilla)
 
-  type IdPlantilla = 'editorial' | 'franja' | 'anuncio' | 'sobrefoto'
+  type IdPlantilla = 'editorial' | 'franja' | 'anuncio' | 'anuncioOscuro' | 'anuncioMarca' | 'sobrefoto'
   const PLANTILLAS: Array<{ id: IdPlantilla; label: string }> = [
     { id: 'editorial', label: 'Editorial' },
     { id: 'franja', label: 'Franja' },
     { id: 'anuncio', label: 'Anuncio' },
+    { id: 'anuncioOscuro', label: 'Oscuro' },
+    { id: 'anuncioMarca', label: 'Marca' },
     { id: 'sobrefoto', label: 'Sobre foto' },
   ]
   const elegirPlantilla = (id: IdPlantilla) => {

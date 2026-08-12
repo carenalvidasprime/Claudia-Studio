@@ -36,7 +36,7 @@ export function MarcaOverlay({
   /** Vista ampliada (detalle): tipografía y logo mayores. */
   grande?: boolean
   mostrarLogo?: boolean
-  plantilla?: 'editorial' | 'franja' | 'anuncio' | 'sobrefoto'
+  plantilla?: 'editorial' | 'franja' | 'anuncio' | 'anuncioOscuro' | 'anuncioMarca' | 'sobrefoto'
   extra?: React.ReactNode
 }) {
   const app = useApp()
@@ -47,9 +47,22 @@ export function MarcaOverlay({
 
   // Plantilla ANUNCIO: foto arriba + panel de marca abajo (titular, subtítulo,
   // botón CTA, logo). El texto es nuestra capa, nunca lo pinta la IA.
-  if (plantilla === 'anuncio') {
+  if (plantilla === 'anuncio' || plantilla === 'anuncioOscuro' || plantilla === 'anuncioMarca') {
     const conCta = mostrarCta && !!cta && cta.trim().length > 0
     const conSub = mostrarSubtitulo && !!subtitulo && subtitulo.trim().length > 0
+    const oscuro = plantilla === 'anuncioOscuro'
+    const marca = plantilla === 'anuncioMarca'
+    const panelBg = marca
+      ? 'linear-gradient(155deg,var(--acento),var(--acento-2))'
+      : oscuro
+        ? 'linear-gradient(180deg,#1b1e26,#0f1218)'
+        : 'linear-gradient(180deg,#ffffff 0%,#e9f0fb 100%)'
+    const fadeCol = marca ? 'rgba(var(--acento-rgb),.9)' : oscuro ? 'rgba(15,18,24,.9)' : 'rgba(245,248,253,.9)'
+    const titCol = oscuro || marca ? '#fff' : '#141821'
+    const subCol = oscuro || marca ? 'rgba(255,255,255,.78)' : 'rgba(23,25,31,.58)'
+    const ctaBg = marca ? '#fff' : 'linear-gradient(135deg,var(--acento),var(--acento-2))'
+    const ctaCol = marca ? 'var(--acento)' : '#fff'
+    const chip = oscuro || marca
     const fsT = grande ? '29px' : '15px'
     const fsS = grande ? '13.5px' : '9px'
     const fsC = grande ? '14px' : '9px'
@@ -65,22 +78,21 @@ export function MarcaOverlay({
               Sin imagen todavía
             </div>
           )}
-          {/* Grado de color de marca sutil sobre la foto (cohesión). */}
-          <div style={sx('position:absolute;inset:0;background:linear-gradient(180deg,rgba(var(--acento-rgb),.06),transparent 30%,rgba(245,248,253,.9) 100%);pointer-events:none')} />
+          <div style={sx(`position:absolute;inset:0;background:linear-gradient(180deg,rgba(var(--acento-rgb),.06),transparent 30%,${fadeCol} 100%);pointer-events:none`)} />
         </div>
         {/* Barra de acento que separa foto y panel */}
         <div style={sx(`position:absolute;left:0;right:0;top:60%;height:${grande ? '4px' : '3px'};transform:translateY(-50%);background:linear-gradient(90deg,var(--acento),var(--acento-2))`)} />
         {/* Panel de marca (nuestra capa editable) */}
         <div
           style={sx(
-            `position:absolute;left:0;right:0;bottom:0;height:40%;background:linear-gradient(180deg,#ffffff 0%,#e9f0fb 100%);display:flex;flex-direction:column;padding:${pad}`,
+            `position:absolute;left:0;right:0;bottom:0;height:40%;background:${panelBg};display:flex;flex-direction:column;padding:${pad}`,
           )}
         >
-          <div style={sx(`font-family:'Poppins','Mulish';font-weight:800;font-size:${fsT};line-height:1.08;letter-spacing:-.025em;color:#141821`)}>
+          <div style={sx(`font-family:'Poppins','Mulish';font-weight:800;font-size:${fsT};line-height:1.08;letter-spacing:-.025em;color:${titCol}`)}>
             {hayCopy ? copy : 'Titular del anuncio'}
           </div>
           {conSub && (
-            <div style={sx(`font-size:${fsS};line-height:1.4;color:rgba(23,25,31,.58);margin-top:${grande ? '9px' : '5px'};max-width:94%`)}>
+            <div style={sx(`font-size:${fsS};line-height:1.4;color:${subCol};margin-top:${grande ? '9px' : '5px'};max-width:94%`)}>
               {subtitulo}
             </div>
           )}
@@ -88,7 +100,7 @@ export function MarcaOverlay({
             {conCta ? (
               <span
                 style={sx(
-                  `display:inline-flex;align-items:center;gap:${grande ? '9px' : '5px'};background:linear-gradient(135deg,var(--acento),var(--acento-2));color:#fff;font-family:'Mulish';font-weight:700;font-size:${fsC};padding:${grande ? '13px 22px' : '7px 11px'};border-radius:30px;box-shadow:0 10px 22px rgba(var(--acento-rgb),.32);white-space:nowrap`,
+                  `display:inline-flex;align-items:center;gap:${grande ? '9px' : '5px'};background:${ctaBg};color:${ctaCol};font-family:'Mulish';font-weight:700;font-size:${fsC};padding:${grande ? '13px 22px' : '7px 11px'};border-radius:30px;box-shadow:0 10px 22px rgba(0,0,0,.18);white-space:nowrap`,
                 )}
               >
                 {cta}
@@ -97,9 +109,14 @@ export function MarcaOverlay({
             ) : (
               <span />
             )}
-            {conLogo && (
-              <img src={logoUrl!} alt={CLIENTE.cliente ?? ''} style={sx(`height:${grande ? '20px' : '11px'};width:auto;display:block;flex:none;opacity:.9`)} />
-            )}
+            {conLogo &&
+              (chip ? (
+                <span style={sx(`flex:none;background:#fff;border-radius:${grande ? '8px' : '5px'};padding:${grande ? '5px 8px' : '3px 5px'};display:flex;align-items:center`)}>
+                  <img src={logoUrl!} alt={CLIENTE.cliente ?? ''} style={sx(`height:${grande ? '17px' : '10px'};width:auto;display:block`)} />
+                </span>
+              ) : (
+                <img src={logoUrl!} alt={CLIENTE.cliente ?? ''} style={sx(`height:${grande ? '20px' : '11px'};width:auto;display:block;flex:none;opacity:.9`)} />
+              ))}
           </div>
         </div>
         {extra}

@@ -88,19 +88,40 @@ interface OpcAnuncio {
   mostrarSubtitulo?: boolean
   mostrarCta?: boolean
   mostrarLogo?: boolean
+  /** Variante de color de la maqueta «anuncio»: claro (defecto), oscuro o marca. */
+  variante?: 'claro' | 'oscuro' | 'marca'
+}
+
+function hexRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '')
+  const n = parseInt(h.length === 3 ? h.replace(/(.)/g, '$1$1') : h, 16)
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+}
+
+/** Colores de la maqueta «anuncio» según la variante. */
+function esquemaAnuncio(variante: OpcAnuncio['variante']) {
+  const acento = CLIENTE.tema.acento
+  const acento2 = CLIENTE.tema.acento2
+  const [r, g, b] = hexRgb(acento)
+  if (variante === 'oscuro')
+    return { pA: '#1b1e26', pB: '#0f1218', tit: '#ffffff', sub: 'rgba(255,255,255,0.78)', fade: 'rgba(15,18,24,', ctaSolid: '', ctaText: '#ffffff', chip: true }
+  if (variante === 'marca')
+    return { pA: acento, pB: acento2, tit: '#ffffff', sub: 'rgba(255,255,255,0.9)', fade: `rgba(${r},${g},${b},`, ctaSolid: '#ffffff', ctaText: acento, chip: true }
+  return { pA: '#ffffff', pB: '#e9f0fb', tit: '#141821', sub: 'rgba(23,25,31,0.58)', fade: 'rgba(233,240,251,', ctaSolid: '', ctaText: '#ffffff', chip: false }
 }
 
 /** Dibuja la plantilla ANUNCIO sobre el canvas: foto arriba + panel de marca. */
 async function dibujarAnuncioPNG(ctx: CanvasRenderingContext2D, url: string, W: number, H: number, o: OpcAnuncio) {
   const acento = CLIENTE.tema.acento
   const acento2 = CLIENTE.tema.acento2
+  const esq = esquemaAnuncio(o.variante)
   const fotoH = Math.round(H * 0.6)
   const pad = Math.round(W * 0.06)
 
-  // Panel (fondo con degradado sutil).
+  // Panel (fondo con degradado según variante).
   const gp = ctx.createLinearGradient(0, fotoH, 0, H)
-  gp.addColorStop(0, '#ffffff')
-  gp.addColorStop(1, '#e9f0fb')
+  gp.addColorStop(0, esq.pA)
+  gp.addColorStop(1, esq.pB)
   ctx.fillStyle = gp
   ctx.fillRect(0, fotoH, W, H - fotoH)
 
@@ -121,8 +142,8 @@ async function dibujarAnuncioPNG(ctx: CanvasRenderingContext2D, url: string, W: 
   }
   // Fundido de la foto al color del panel.
   const fade = ctx.createLinearGradient(0, fotoH * 0.82, 0, fotoH)
-  fade.addColorStop(0, 'rgba(233,240,251,0)')
-  fade.addColorStop(1, 'rgba(233,240,251,.95)')
+  fade.addColorStop(0, `${esq.fade}0)`)
+  fade.addColorStop(1, `${esq.fade}0.95)`)
   ctx.fillStyle = fade
   ctx.fillRect(0, Math.round(fotoH * 0.82), W, Math.round(fotoH * 0.18))
 
@@ -142,7 +163,7 @@ async function dibujarAnuncioPNG(ctx: CanvasRenderingContext2D, url: string, W: 
   const lhT = Math.round(fsT * 1.08)
   await cargarFuente(`800 ${fsT}px Mulish`)
   ctx.font = `800 ${fsT}px Poppins, Mulish, system-ui, sans-serif`
-  ctx.fillStyle = '#141821'
+  ctx.fillStyle = esq.tit
   const lineasT = envolver(ctx, (o.copy || 'Titular del anuncio').trim(), W - pad * 2)
   y += fsT
   lineasT.forEach((l, i) => ctx.fillText(l, pad, y + i * lhT))
@@ -154,7 +175,7 @@ async function dibujarAnuncioPNG(ctx: CanvasRenderingContext2D, url: string, W: 
     const lhS = Math.round(fsS * 1.4)
     await cargarFuente(`600 ${fsS}px Mulish`)
     ctx.font = `600 ${fsS}px Mulish, system-ui, sans-serif`
-    ctx.fillStyle = 'rgba(23,25,31,.58)'
+    ctx.fillStyle = esq.sub
     const lineasS = envolver(ctx, o.subtitulo.trim(), Math.round((W - pad * 2) * 0.94))
     y += Math.round(fsS * 1.7)
     lineasS.forEach((l, i) => ctx.fillText(l, pad, y + i * lhS))
@@ -175,27 +196,41 @@ async function dibujarAnuncioPNG(ctx: CanvasRenderingContext2D, url: string, W: 
     const pillH = fsC + py * 2
     const pillX = pad
     const pillY = bottomY - pillH
-    const gc = ctx.createLinearGradient(pillX, pillY, pillX + pillW, pillY + pillH)
-    gc.addColorStop(0, acento)
-    gc.addColorStop(1, acento2)
-    ctx.fillStyle = gc
+    if (esq.ctaSolid) {
+      ctx.fillStyle = esq.ctaSolid
+    } else {
+      const gc = ctx.createLinearGradient(pillX, pillY, pillX + pillW, pillY + pillH)
+      gc.addColorStop(0, acento)
+      gc.addColorStop(1, acento2)
+      ctx.fillStyle = gc
+    }
     rectRedondeado(ctx, pillX, pillY, pillW, pillH, pillH / 2)
     ctx.fill()
-    ctx.fillStyle = '#ffffff'
+    ctx.fillStyle = esq.ctaText
     ctx.fillText(txt, pillX + px, pillY + pillH / 2 + fsC * 0.35)
   }
 
-  // Logo abajo a la derecha.
+  // Logo abajo a la derecha (con chip blanco en variantes oscuras/marca).
   if (o.mostrarLogo !== false) {
     const logoUrl = marcaActiva().logoUrl
     if (logoUrl) {
       try {
         const logo = await cargarImagen(logoUrl, /^https?:/.test(logoUrl))
-        const lh = Math.round(W * 0.045)
+        const lh = Math.round(W * 0.042)
         const lw = Math.round(lh * (logo.width / logo.height))
-        ctx.globalAlpha = 0.9
-        ctx.drawImage(logo, W - pad - lw, bottomY - lh, lw, lh)
-        ctx.globalAlpha = 1
+        if (esq.chip) {
+          const cpad = Math.round(lh * 0.42)
+          const cw = lw + cpad * 2
+          const ch = lh + cpad * 2
+          ctx.fillStyle = '#ffffff'
+          rectRedondeado(ctx, W - pad - cw, bottomY - ch, cw, ch, Math.round(ch * 0.24))
+          ctx.fill()
+          ctx.drawImage(logo, W - pad - cw + cpad, bottomY - ch + cpad, lw, lh)
+        } else {
+          ctx.globalAlpha = 0.9
+          ctx.drawImage(logo, W - pad - lw, bottomY - lh, lw, lh)
+          ctx.globalAlpha = 1
+        }
       } catch {
         /* sin logo */
       }
@@ -338,6 +373,9 @@ async function dibujarSobreFotoPNG(ctx: CanvasRenderingContext2D, url: string, W
 async function anuncioSVG(url: string, W: number, H: number, o: OpcAnuncio): Promise<string> {
   const acento = CLIENTE.tema.acento
   const acento2 = CLIENTE.tema.acento2
+  const esq = esquemaAnuncio(o.variante)
+  const subFill = o.variante === 'oscuro' || o.variante === 'marca' ? '#ffffff' : '#17191f'
+  const subOp = o.variante === 'marca' ? '0.9' : o.variante === 'oscuro' ? '0.78' : '0.58'
   const fotoH = Math.round(H * 0.6)
   const pad = Math.round(W * 0.06)
   const fondoData = await comoDataURL(url)
@@ -361,7 +399,7 @@ async function anuncioSVG(url: string, W: number, H: number, o: OpcAnuncio): Pro
   const tsT = lineasT
     .map((l, i) => `<tspan x="${pad}" ${i === 0 ? `y="${y}"` : `dy="${lhT}"`}>${escaparXML(l)}</tspan>`)
     .join('')
-  capas.push(`<text font-family="Poppins, Mulish, sans-serif" font-weight="800" font-size="${fsT}" fill="#141821">${tsT}</text>`)
+  capas.push(`<text font-family="Poppins, Mulish, sans-serif" font-weight="800" font-size="${fsT}" fill="${esq.tit}">${tsT}</text>`)
   y += (lineasT.length - 1) * lhT
 
   if (o.mostrarSubtitulo !== false && o.subtitulo && o.subtitulo.trim()) {
@@ -374,7 +412,7 @@ async function anuncioSVG(url: string, W: number, H: number, o: OpcAnuncio): Pro
       .map((l, i) => `<tspan x="${pad}" ${i === 0 ? `y="${ys}"` : `dy="${lhS}"`}>${escaparXML(l)}</tspan>`)
       .join('')
     capas.push(
-      `<text font-family="Mulish, sans-serif" font-weight="600" font-size="${fsS}" fill="#17191f" fill-opacity="0.58">${tsS}</text>`,
+      `<text font-family="Mulish, sans-serif" font-weight="600" font-size="${fsS}" fill="${subFill}" fill-opacity="${subOp}">${tsS}</text>`,
     )
   }
 
@@ -390,9 +428,10 @@ async function anuncioSVG(url: string, W: number, H: number, o: OpcAnuncio): Pro
     const pillH = fsC + py * 2
     const pillX = pad
     const pillY = bottomY - pillH
-    capas.push(`<rect x="${pillX}" y="${pillY}" width="${pillW}" height="${pillH}" rx="${Math.round(pillH / 2)}" fill="url(#cta)"/>`)
+    const pillFill = esq.ctaSolid ? esq.ctaSolid : 'url(#cta)'
+    capas.push(`<rect x="${pillX}" y="${pillY}" width="${pillW}" height="${pillH}" rx="${Math.round(pillH / 2)}" fill="${pillFill}"/>`)
     capas.push(
-      `<text x="${pillX + px}" y="${pillY + Math.round(pillH / 2 + fsC * 0.35)}" font-family="Mulish, sans-serif" font-weight="700" font-size="${fsC}" fill="#ffffff">${escaparXML(txt)}</text>`,
+      `<text x="${pillX + px}" y="${pillY + Math.round(pillH / 2 + fsC * 0.35)}" font-family="Mulish, sans-serif" font-weight="700" font-size="${fsC}" fill="${esq.ctaText}">${escaparXML(txt)}</text>`,
     )
   }
 
@@ -400,15 +439,23 @@ async function anuncioSVG(url: string, W: number, H: number, o: OpcAnuncio): Pro
   if (o.mostrarLogo !== false && logoUrl) {
     const img = await cargarImagen(logoUrl, /^https?:/.test(logoUrl))
     const logoData = await comoDataURL(logoUrl)
-    const lh = Math.round(W * 0.045)
+    const lh = Math.round(W * 0.042)
     const lw = Math.round(lh * (img.width / img.height))
-    capas.push(`<image x="${W - pad - lw}" y="${bottomY - lh}" width="${lw}" height="${lh}" href="${logoData}" opacity="0.9"/>`)
+    if (esq.chip) {
+      const cpad = Math.round(lh * 0.42)
+      const cw = lw + cpad * 2
+      const ch = lh + cpad * 2
+      capas.push(`<rect x="${W - pad - cw}" y="${bottomY - ch}" width="${cw}" height="${ch}" rx="${Math.round(ch * 0.24)}" fill="#ffffff"/>`)
+      capas.push(`<image x="${W - pad - cw + cpad}" y="${bottomY - ch + cpad}" width="${lw}" height="${lh}" href="${logoData}"/>`)
+    } else {
+      capas.push(`<image x="${W - pad - lw}" y="${bottomY - lh}" width="${lw}" height="${lh}" href="${logoData}" opacity="0.9"/>`)
+    }
   }
 
   const defs =
     `<defs>` +
-    `<linearGradient id="panel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e9f0fb"/></linearGradient>` +
-    `<linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9f0fb" stop-opacity="0"/><stop offset="1" stop-color="#e9f0fb" stop-opacity="0.95"/></linearGradient>` +
+    `<linearGradient id="panel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${esq.pA}"/><stop offset="1" stop-color="${esq.pB}"/></linearGradient>` +
+    `<linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${esq.pA}" stop-opacity="0"/><stop offset="1" stop-color="${esq.pA}" stop-opacity="0.95"/></linearGradient>` +
     `<linearGradient id="bar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${acento}"/><stop offset="1" stop-color="${acento2}"/></linearGradient>` +
     `<linearGradient id="cta" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${acento}"/><stop offset="1" stop-color="${acento2}"/></linearGradient>` +
     `</defs>`
@@ -521,7 +568,7 @@ export async function componerPiezaPNG(opciones: {
   mostrarCta?: boolean
   ratio?: string | null
   mostrarLogo?: boolean
-  plantilla?: 'editorial' | 'franja' | 'anuncio' | 'sobrefoto'
+  plantilla?: 'editorial' | 'franja' | 'anuncio' | 'anuncioOscuro' | 'anuncioMarca' | 'sobrefoto'
 }): Promise<Blob> {
   const { url, copy, ratio, mostrarLogo = true, plantilla = 'editorial' } = opciones
   const [W, H] = RESOLUCION[ratio ?? '1:1'] ?? RESOLUCION['1:1']
@@ -532,9 +579,10 @@ export async function componerPiezaPNG(opciones: {
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('Tu navegador no permite componer la imagen.')
 
-  if (plantilla === 'anuncio' || plantilla === 'sobrefoto') {
+  if (plantilla === 'anuncio' || plantilla === 'anuncioOscuro' || plantilla === 'anuncioMarca' || plantilla === 'sobrefoto') {
+    const variante = plantilla === 'anuncioOscuro' ? 'oscuro' : plantilla === 'anuncioMarca' ? 'marca' : 'claro'
     if (plantilla === 'sobrefoto') await dibujarSobreFotoPNG(ctx, url, W, H, opciones)
-    else await dibujarAnuncioPNG(ctx, url, W, H, opciones)
+    else await dibujarAnuncioPNG(ctx, url, W, H, { ...opciones, variante })
     return await new Promise<Blob>((resolve, reject) =>
       canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('No se pudo generar el PNG.'))), 'image/png'),
     )
@@ -670,11 +718,14 @@ export async function componerPiezaSVG(opciones: {
   mostrarCta?: boolean
   ratio?: string | null
   mostrarLogo?: boolean
-  plantilla?: 'editorial' | 'franja' | 'anuncio' | 'sobrefoto'
+  plantilla?: 'editorial' | 'franja' | 'anuncio' | 'anuncioOscuro' | 'anuncioMarca' | 'sobrefoto'
 }): Promise<string> {
   const { url, copy, ratio, mostrarLogo = true, plantilla = 'editorial' } = opciones
   const [W, H] = RESOLUCION[ratio ?? '1:1'] ?? RESOLUCION['1:1']
-  if (plantilla === 'anuncio') return await anuncioSVG(url, W, H, opciones)
+  if (plantilla === 'anuncio' || plantilla === 'anuncioOscuro' || plantilla === 'anuncioMarca') {
+    const variante = plantilla === 'anuncioOscuro' ? 'oscuro' : plantilla === 'anuncioMarca' ? 'marca' : 'claro'
+    return await anuncioSVG(url, W, H, { ...opciones, variante })
+  }
   if (plantilla === 'sobrefoto') return await sobreFotoSVG(url, W, H, opciones)
   const pad = Math.round(W * 0.055)
   const fondoData = await comoDataURL(url)
