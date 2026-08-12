@@ -6,10 +6,13 @@ import { OrbMorph } from '../components/OrbMorph'
 import { CLIENTE, DE_CLIENTE } from '../lib/cliente'
 import { useApp } from '../store'
 
+const CLAVE_CORREO = 'claudia:correoRecordado'
+
 export function Login() {
   const app = useApp()
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(() => localStorage.getItem(CLAVE_CORREO) ?? '')
   const [password, setPassword] = useState('')
+  const [recordar, setRecordar] = useState(() => localStorage.getItem(CLAVE_CORREO) != null)
   const [error, setError] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
 
@@ -19,6 +22,10 @@ export function Login() {
     setEnviando(true)
     try {
       await app.entrar(email.trim(), password)
+      // Solo el correo (nunca la contraseña): la contraseña la guarda, si el
+      // usuario quiere, el gestor del propio navegador.
+      if (recordar) localStorage.setItem(CLAVE_CORREO, email.trim())
+      else localStorage.removeItem(CLAVE_CORREO)
     } catch (err) {
       setError((err as Error).message)
     } finally {
@@ -59,6 +66,7 @@ export function Login() {
           <input
             type="email"
             required
+            name="email"
             autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -70,12 +78,27 @@ export function Login() {
           <input
             type="password"
             required
+            name="password"
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
-            style={sx(campo, 'margin-bottom:20px')}
+            style={sx(campo, 'margin-bottom:14px')}
           />
+
+          <label
+            style={sx(
+              'display:flex;align-items:center;gap:8px;margin-bottom:20px;cursor:pointer;font-size:12px;color:rgba(23,25,31,.65);user-select:none',
+            )}
+          >
+            <input
+              type="checkbox"
+              checked={recordar}
+              onChange={(e) => setRecordar(e.target.checked)}
+              style={sx('width:15px;height:15px;accent-color:var(--acento);cursor:pointer')}
+            />
+            Recordar mi correo
+          </label>
 
           {error && (
             <div
