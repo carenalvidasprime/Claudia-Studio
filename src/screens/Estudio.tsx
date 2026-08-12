@@ -116,9 +116,11 @@ export function Estudio() {
             >
               <span style={sx('flex:none')}>ℹ️</span>
               <span>
-                Para <strong>fotos y escenas</strong>. No sirve para anuncios ya maquetados (con titular, CTA, logo…): la
-                IA repinta la imagen y el texto se estropea. Variar anuncios manteniendo el diseño llegará con la función
-                de <strong>versiones de anuncio</strong>.
+                Sube una <strong>foto o escena</strong> para variarla. ¿Quieres variar un <strong>anuncio hecho en
+                Claudia</strong>? Ábrelo desde Contenido y pulsa <strong>«Generar versiones»</strong>: la IA cambia solo
+                la foto y el titular, el CTA y el logo se mantienen intactos. Lo único que se estropea es subir aquí un
+                anuncio externo <strong>ya aplanado</strong> (con el texto pegado dentro de la imagen): esos píxeles la IA
+                los repinta.
               </span>
             </div>
             <FotoBase />

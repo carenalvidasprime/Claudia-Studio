@@ -1028,6 +1028,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
         )
       }
 
+      // Diagnóstico del desajuste: si pedimos N y aparecen menos, casi siempre
+      // es que n8n insertó menos filas (p. ej. sobrescribe por título repetido).
+      // Antes esto pasaba en silencio; ahora lo decimos con los datos a la vista.
+      const idsUnicos = new Set(idsDevueltos).size
+      const desajuste =
+        resultados.length > 0 && resultados.length < nVariantes
+          ? `Pediste ${nVariantes} variantes pero solo aparecieron ${resultados.length}. ` +
+            `n8n devolvió ${idsDevueltos.length} id(s) (${idsUnicos} distinto/s). ` +
+            'Si los ids se repiten, el workflow está sobrescribiendo la misma pieza en vez de crear una nueva.'
+          : null
+
       setSt((p) => ({
         ...p,
         piezas: piezasFinal,
@@ -1035,10 +1046,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         resultados,
         piezaId: resultados[0] ?? p.piezaId,
         errorGeneracion: resultados.length
-          ? null
+          ? desajuste
           : 'n8n respondió, pero no han aparecido piezas nuevas en Supabase. Revisa el workflow.',
       }))
-      if (resultados.length)
+      if (resultados.length && !desajuste)
         avisar(`${resultados.length === 1 ? 'Pieza generada' : `${resultados.length} variantes generadas`} ✓`)
     } catch (error) {
       setSt((p) => ({ ...p, generando: false, errorGeneracion: mensajeError(error) }))
