@@ -376,6 +376,10 @@ export function Estudio() {
                         ratio={b.ratio}
                         radio="0"
                         copy={b.marca ? b.copy : undefined}
+                        subtitulo={b.subtitulo}
+                        cta={b.cta}
+                        mostrarSubtitulo={b.mostrarSubtitulo}
+                        mostrarCta={b.mostrarCta}
                         mostrarLogo={b.marca}
                         plantilla={b.plantilla}
                         extra={

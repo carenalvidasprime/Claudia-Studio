@@ -143,6 +143,10 @@ export function Detalle() {
     void app.generar()
   }
 
+  // Genera versiones del anuncio: N fotos nuevas manteniendo la maqueta y los
+  // textos (mismo modelo que "otras versiones", enmarcado para el anuncio).
+  const generarVersiones = otrasVersiones
+
   // Remezclar: parte de ESTA imagen (imagen-a-imagen) y crea variaciones
   // parecidas, manteniendo el texto y la marca de la capa superpuesta.
   const variaciones = () => {
@@ -296,9 +300,22 @@ export function Detalle() {
               onBlur={() => void guardarBrief({ maqueta: { cta: b.cta } })}
               placeholder="Ej.: «Pide tu cita»"
               style={sx(
-                "width:100%;border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:10px 11px;font-family:'Mulish';font-size:12px;background:#fff;color:#17191f;margin-bottom:18px",
+                "width:100%;border:1px solid rgba(23,25,31,.12);border-radius:10px;padding:10px 11px;font-family:'Mulish';font-size:12px;background:#fff;color:#17191f;margin-bottom:14px",
               )}
             />
+            {/* Generar versiones: N fotos nuevas con esta misma maqueta y textos. */}
+            <button
+              onClick={() => void generarVersiones()}
+              disabled={app.generando || !app.generarDisponible}
+              title={app.generarDisponible ? 'Genera varias fotos nuevas manteniendo la maqueta y el texto' : 'Falta configurar el webhook de n8n.'}
+              style={sx(
+                "width:100%;display:flex;flex-direction:column;align-items:center;gap:1px;background:var(--acento);color:#fff;border:none;border-radius:11px;padding:12px;font-family:'Mulish';cursor:pointer;margin-bottom:18px",
+                (app.generando || !app.generarDisponible) && 'opacity:.55;cursor:not-allowed',
+              )}
+            >
+              <span style={sx('font-weight:700;font-size:13px')}>✨ {app.generando ? 'Generando versiones…' : 'Generar versiones'}</span>
+              <span style={sx('font-size:10px;opacity:.85')}>{b.variantes} fotos nuevas · misma maqueta y textos</span>
+            </button>
           </>
         )}
 
