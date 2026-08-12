@@ -56,7 +56,7 @@ export function Estudio() {
           {(
             [
               ['crear', 'Crear', 'desde una idea'],
-              ['remezclar', 'Remezclar', 'desde una imagen'],
+              ['remezclar', 'Remezclar', 'varía una foto'],
             ] as const
           ).map(([val, label, sub]) => {
             const on = modo === val
@@ -107,6 +107,18 @@ export function Estudio() {
         {modo === 'remezclar' && (
           <>
             <div style={sx(rotulo)}>IMAGEN DE PARTIDA</div>
+            <div
+              style={sx(
+                'display:flex;gap:8px;background:var(--suave-1);border:1px solid rgba(var(--acento-rgb),.22);border-radius:10px;padding:9px 11px;margin-bottom:12px;font-size:10.5px;line-height:1.5;color:#1D1D1B',
+              )}
+            >
+              <span style={sx('flex:none')}>ℹ️</span>
+              <span>
+                Para <strong>fotos y escenas</strong>. No sirve para anuncios ya maquetados (con titular, CTA, logo…): la
+                IA repinta la imagen y el texto se estropea. Variar anuncios manteniendo el diseño llegará con la función
+                de <strong>versiones de anuncio</strong>.
+              </span>
+            </div>
             <FotoBase />
             {recientes.length > 0 && (
               <>
