@@ -50,13 +50,14 @@ export function MarcaOverlay({
   if (plantilla === 'anuncio') {
     const conCta = mostrarCta && !!cta && cta.trim().length > 0
     const conSub = mostrarSubtitulo && !!subtitulo && subtitulo.trim().length > 0
-    const fsT = grande ? '27px' : '15px'
+    const fsT = grande ? '29px' : '15px'
     const fsS = grande ? '13.5px' : '9px'
     const fsC = grande ? '14px' : '9px'
+    const pad = grande ? '24px 28px 22px' : '12px 13px 12px'
     return (
-      <div style={sx(base, 'background:#f7f9fc')}>
-        {/* Foto (IA) — mitad superior */}
-        <div style={sx('position:absolute;top:0;left:0;right:0;height:58%;overflow:hidden;background:#e6e9ec')}>
+      <div style={sx(base, 'background:#f5f8fd')}>
+        {/* Foto (IA) — parte superior, con velo de marca y fundido al panel */}
+        <div style={sx('position:absolute;top:0;left:0;right:0;height:60%;overflow:hidden;background:#e6e9ec')}>
           {url ? (
             <img src={url} alt={copy ?? 'Creatividad'} loading="lazy" style={sx('width:100%;height:100%;object-fit:cover;display:block')} />
           ) : (
@@ -64,19 +65,22 @@ export function MarcaOverlay({
               Sin imagen todavía
             </div>
           )}
+          {/* Grado de color de marca sutil sobre la foto (cohesión). */}
+          <div style={sx('position:absolute;inset:0;background:linear-gradient(180deg,rgba(var(--acento-rgb),.06),transparent 30%,rgba(245,248,253,.9) 100%);pointer-events:none')} />
         </div>
+        {/* Barra de acento que separa foto y panel */}
+        <div style={sx(`position:absolute;left:0;right:0;top:60%;height:${grande ? '4px' : '3px'};transform:translateY(-50%);background:linear-gradient(90deg,var(--acento),var(--acento-2))`)} />
         {/* Panel de marca (nuestra capa editable) */}
         <div
           style={sx(
-            `position:absolute;left:0;right:0;bottom:0;height:42%;background:linear-gradient(180deg,#fff,#f7f9fc);display:flex;flex-direction:column;padding:${grande ? '22px 26px 20px' : '11px 13px 12px'}`,
+            `position:absolute;left:0;right:0;bottom:0;height:40%;background:linear-gradient(180deg,#ffffff 0%,#e9f0fb 100%);display:flex;flex-direction:column;padding:${pad}`,
           )}
         >
-          <div style={sx(`width:${grande ? '40px' : '22px'};height:${grande ? '5px' : '3px'};border-radius:3px;background:var(--acento);margin-bottom:${grande ? '13px' : '7px'}`)} />
-          <div style={sx(`font-family:'Poppins','Mulish';font-weight:800;font-size:${fsT};line-height:1.1;letter-spacing:-.02em;color:#17191f`)}>
+          <div style={sx(`font-family:'Poppins','Mulish';font-weight:800;font-size:${fsT};line-height:1.08;letter-spacing:-.025em;color:#141821`)}>
             {hayCopy ? copy : 'Titular del anuncio'}
           </div>
           {conSub && (
-            <div style={sx(`font-size:${fsS};line-height:1.4;color:rgba(23,25,31,.6);margin-top:${grande ? '9px' : '5px'};max-width:94%`)}>
+            <div style={sx(`font-size:${fsS};line-height:1.4;color:rgba(23,25,31,.58);margin-top:${grande ? '9px' : '5px'};max-width:94%`)}>
               {subtitulo}
             </div>
           )}
@@ -84,16 +88,17 @@ export function MarcaOverlay({
             {conCta ? (
               <span
                 style={sx(
-                  `background:var(--acento);color:#fff;font-family:'Mulish';font-weight:700;font-size:${fsC};padding:${grande ? '13px 22px' : '7px 12px'};border-radius:30px;box-shadow:0 6px 16px rgba(var(--acento-rgb),.35);white-space:nowrap`,
+                  `display:inline-flex;align-items:center;gap:${grande ? '9px' : '5px'};background:linear-gradient(135deg,var(--acento),var(--acento-2));color:#fff;font-family:'Mulish';font-weight:700;font-size:${fsC};padding:${grande ? '13px 22px' : '7px 11px'};border-radius:30px;box-shadow:0 10px 22px rgba(var(--acento-rgb),.32);white-space:nowrap`,
                 )}
               >
                 {cta}
+                <span style={sx(`font-size:${grande ? '15px' : '10px'};line-height:1`)}>→</span>
               </span>
             ) : (
               <span />
             )}
             {conLogo && (
-              <img src={logoUrl!} alt={CLIENTE.cliente ?? ''} style={sx(`height:${grande ? '20px' : '11px'};width:auto;display:block;flex:none`)} />
+              <img src={logoUrl!} alt={CLIENTE.cliente ?? ''} style={sx(`height:${grande ? '20px' : '11px'};width:auto;display:block;flex:none;opacity:.9`)} />
             )}
           </div>
         </div>
